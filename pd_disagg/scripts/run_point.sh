@@ -63,5 +63,6 @@ GPU_COUNT=${GPU_COUNT:-$([ "$ARM" = colocate ] && echo 1 || echo 2)}
   --input-len "$IN" --output-len "$OUT" --rps "$RPS" \
   --gpu-count "$GPU_COUNT" --engine-ports "${ENGINE_PORTS[@]}" \
   --gpu-csv "$GPUCSV" --seed "${SEED:-42}" \
+  ${PROV_ENV_LABEL:+--env-label "$PROV_ENV_LABEL"} ${PROV_SHA_OVR:+--sha "$PROV_SHA_OVR"} \
   ${SLO_TTFT_MS:+--slo-ttft-ms "$SLO_TTFT_MS"} ${SLO_TPOT_MS:+--slo-tpot-ms "$SLO_TPOT_MS"}
 echo "[run_point] done: $PREFIX"

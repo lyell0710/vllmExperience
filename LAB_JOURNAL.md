@@ -313,3 +313,29 @@
   （SEED 支持 + seed 字段入行）。
 - **下一步**：出图（figures/）→ B4 报告 → B3 有限对照 → C1/C3 MoE 上卡 →
   汇总单+教学手册。MoE 模型下载后台进行中。
+
+## §13 出图 + B3 有限对照 + C1 MoE 上卡（~20:30–21:05，EXP-008/009）
+
+- **做了什么（时序）**：
+  1. **出图**（dataviz 流程：先选形式、调色板过验证器、色序固定、结论句标题、
+     provenance 脚注）：fig1 goodput 四臂曲线（+y=x 理想线）、fig2 TTFT p99+SLO 线、
+     fig3 per-GPU 成本、fig4 PD TTFT 分解（传输 54–64%）、fig5 NIXL 延迟地板→
+     带宽墙（log-log）、fig6 SLO 敏感性（0.5–4× 臂间排序稳定）+
+     derived/sweep_summary.csv。亲眼检查全部渲染；修正 fig3 标题过度声明
+     （512 桶 replica2 网格未达真实拐点）与 fig4 百分比区间。
+     v2 数据的意外佐证：干净 seed 下 D 拉取 = 469.8MB = 8192×57344 **精确全量**。
+  2. **B3 有限对照**（0.17.1 vs 0.25.1 单实例，同协议同 seed）：无负载延迟
+     Δ<1%、TPOT 持平；**512 桶饱和 7.14→10.36（+45%）**、计算受限桶零差异；
+     启动 308s vs 58s。只作 system-version comparison 表述。
+  3. **C1 MoE 上卡成功**：Qwen1.5-MoE-A2.7B-Chat TP2+EP（util 0.88，启动 216s 含
+     AOT compile）。**C2 运行时铁证**：日志原文点名
+     `Config file not found at .../E=30,N=1408,device_name=NVIDIA_GeForce_RTX_4090.json`
+     ——证据链三重闭环（本地+远端+运行时）。未调优基线：TPOT **4.62ms**
+     （dense 7B TP2 的 2.0×）、饱和 11.50 req/s@512 ——D2 调优的 before。
+  4. 工装事故：MoE bench 首轮全 404——run_point 的 MODEL 默认值没改，教训
+     "多模型阶段 MODEL 必须显式设置"；失败行按规则保留。
+  5. C3 checkpoint 锁定 Qwen/Qwen3-30B-A3B-GPTQ-Int4（官方 GPTQ Int4 = W4A16
+     路线），后台下载中。
+- **产物**：figures/fig1-6、derived/sweep_summary.csv、EXP-008、EXP-009、
+  台账更新（B1✅ B2◐ B3◐ R0-4✅ C1✅ C2 三重闭环）。
+- **下一步**：C3 上卡 → B4 报告成稿 → 汇总单+教学手册 → RESUME_EVIDENCE 终更新。

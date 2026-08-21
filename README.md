@@ -70,14 +70,17 @@ experiments/
 | R0-4 0.17.1 课程基线 | ⬜ 阻塞 | — | 课程脚本不在本机，待提供；超时降级纯阅读 |
 | R0-5 profiling 工装 | ✅ 8/21 | torch profiler 直控 P/D 端口跑通（trace 落盘）；nsys 容器内可用 | `pd_disagg/profiling/r0_5_torch_profiler_check.txt`、`traces_smoke/`、`scripts/profile_ctl.sh` |
 | R0-6 简历措辞排雷 | ◐ | 本地 tex 无违规表述（已核）；线上稿待改 | 仅用户可操作 |
-| B1 四臂矩阵 | ◐ | **attribution 12/12 全臂完成、gate 全 PASS**。TTFT p50@8K：colocate 925 / replica2 715 / tp2 694 / pd1p1d 2685ms；TPOT：tp2 9.3ms vs 其余 ~16ms；GPU·s/req@8K：2.95/5.58/3.79/9.24。SLO 已锁（328/891/4626ms + TPOT 50ms）。剩 sweep | `results/b1_matrix/runs.jsonl`（12 行）|
+| B1 四臂矩阵 | ✅ 8/21 | **全套完成（协议 v2，84 有效行）**。饱和 req/s（512/2K/8K）：colocate 10.36/3.63/0.90（单卡）· replica2 15.58/7.00/1.78 · tp2 12.31/4.16/1.02 · pd1p1d 7.84/2.12/0.54；goodput 峰值 replica2 全场最高；PD 全负载段被传输延迟压垮（512 桶 66% 饱和度 goodput 仅 1.59） | `results/b1_matrix/runs.jsonl` + `derived/sweep_summary.csv` + `figures/fig1-6` + EXP-007 |
+| B2 归因层 | ◐ | PD TTFT 分解（传输占 54–64%，分量与遥测对账）+ NIXL 延迟地板→带宽墙曲线 + token 记账溯源关闭；剩 request 级关联（EXT-1） | `figures/fig4,fig5`、`analysis/nixl_token_accounting.md` |
+| B3 版本对照 | ◐ 有限版完成 | 无负载延迟 Δ<1%；**512 桶饱和 +45%**（7.14→10.36）；计算受限桶零差异；启动 308→58s。PD-vs-PD 待课程脚本 | EXP-008 |
+| R0-4（降级路径） | ✅ 8/21 | 双 bug 源码机理分析完成（assert connector:433 / 分叉 input_processor.py:212 / 无超时 wait engine:317 / GET 静默乱码 / 四层 ID 链 / NIXL 身份拆分对照），全 file:line 核对 | `analysis/p2pnccl_bugs_id_chain.md`；动态复现仍待课程脚本 |
 | B1 附带发现 | ✅ 8/21 | ① 功率帽节流：持续 prefill 降频 2820→2475MHz（SW Power Cap，非热），TTFT +30%；② NIXL 有效吞吐 0.26–0.27GB/s 恒定（descriptor ~16KB 碎片化）；③ TP2 decode 提速 42%（带宽分摊）但 prefill 零加速（allreduce 撞 1.78GB/s 墙） | runs.jsonl gpu_telemetry / gates 字段；`DECISION.md` 硬件基线 |
 | B2 归因层 | ⬜ | — | — |
 | B3 版本对照 | ⬜ | 已知差异一例：profiler 接口 env var→CLI（见 profiling 检查文件 note） | — |
 | B4 报告 | ⬜ | — | — |
-| C1 Qwen1.5-MoE 上卡 | ⬜ | — | — |
-| C2 config 查重 | ✅ 8/21 | 本地+远端均确认空缺；#48309(4090D fp8, OPEN) 为相邻先例非重复 | `moe_configs/DEDUP.md`（含远端复核节） |
-| C3 W4A16 上卡 | ⬜ | — | — |
+| C1 Qwen1.5-MoE 上卡 | ✅ 8/21 | TP2+EP 可用；未调优基线 TPOT 4.62ms（dense 7B TP2 的 2.0×）、饱和 11.50 req/s@512——D2 的 before 数字 | EXP-009 |
+| C2 config 查重 | ✅ 8/21 | 三重闭环：本地判定 + 远端查重 + **运行时告警原文**（fused_moe.py:1106 点名 E=30,N=1408 缺失） | `moe_configs/DEDUP.md`、EXP-009 §5 |
+| C3 W4A16 上卡 | ◐ | checkpoint 锁定 **Qwen/Qwen3-30B-A3B-GPTQ-Int4**（官方 GPTQ Int4 = W4A16）；下载中 | — |
 | D1–D5 | ⬜ | — | — |
 | EXT-1 / EXT-2 | ⚑ | 弹性，不阻塞主线 | — |
 
