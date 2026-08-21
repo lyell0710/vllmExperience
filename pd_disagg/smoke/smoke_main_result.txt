@@ -1,0 +1,10 @@
+# provenance: sha=7aa248fcfe version=0.26.1rc1.dev682+g7aa248fcf cmd="run_1p1d_smoke.sh /root/venvs/main main" kv_load_failure_policy=fail date=2026-08-21T09:07:55+00:00
+label=main venv=/root/venvs/main
+check3_failure_policy=PASS (both instances started with fail policy)
+req1 text:  city that has been around for over 100 years. It was founded
+req2 text:  city that has been around for over 100 years. It was founded
+check1_e2e=PASS (2/2 requests)
+check2_metrics=PASS
+(APIServer pid=64417) INFO 08-21 09:10:37 [metrics.py:103] KV Transfer metrics: Num successful transfers=2, Avg xfer time (ms)=14.668, P90 xfer time (ms)=24.468, Avg post time (ms)=1.01, P90 post time (ms)=1.041, Avg MB per transfer=0.188, Throughput (MB/s)=12.783, Avg number of descriptors=24.0
+errors_in_./smoke_main_P.log:0
+errors_in_./smoke_main_D.log:0

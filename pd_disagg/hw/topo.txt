@@ -1,0 +1,21 @@
+# provenance: env=n/a sha=n/a version=n/a cmd="nvidia-smi topo -p2p r; nvidia-smi --query-gpu=...pcie..." date=2026-08-21T15:04:43+00:00 gpu="2 NVIDIA GeForce RTX 4090" driver=610.57.04 note=topo -m 在本容器因 hwloc 无 PU 信息不可用，以下为可得替代记录
+== P2P read capability matrix ==
+ 	[4mGPU0	GPU1	[0m
+ GPU0	X	GNS	
+ GPU1	GNS	X	
+
+Legend:
+
+  X    = Self
+  OK   = Status Ok
+  CNS  = Chipset not supported
+  GNS  = GPU not supported
+  TNS  = Topology not supported
+  NS   = Not supported
+  DR   = Disabled by regkey
+  U    = Unknown
+
+== PCIe link ==
+index, name, pci.bus_id, pcie.link.gen.current, pcie.link.gen.max, pcie.link.width.current, pcie.link.width.max
+0, NVIDIA GeForce RTX 4090, 00000000:C1:00.0, 1, 4, 16, 16
+1, NVIDIA GeForce RTX 4090, 00000000:E1:00.0, 1, 4, 16, 16

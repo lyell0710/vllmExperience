@@ -1,0 +1,48 @@
+# provenance: env=n/a sha=n/a version=n/a cmd="p2pBandwidthLatencyTest" date=2026-08-21T15:07:03+00:00 gpu="2 NVIDIA GeForce RTX 4090" driver=610.57.04 tool_sha=b7c5481c55 note=GeForce驱动预期禁用P2P-本身即硬件画像证据
+[P2P (Peer-to-Peer) GPU Bandwidth Latency Test]
+Device: 0, NVIDIA GeForce RTX 4090, pciBusID: c1, pciDeviceID: 0, pciDomainID:0
+Device: 1, NVIDIA GeForce RTX 4090, pciBusID: e1, pciDeviceID: 0, pciDomainID:0
+Device=0 CANNOT Access Peer Device=1
+Device=1 CANNOT Access Peer Device=0
+
+***NOTE: In case a device doesn't have P2P access to other one, it falls back to normal memcopy procedure.
+So you can see lesser Bandwidth (GB/s) and unstable Latency (us) in those cases.
+
+P2P Connectivity Matrix
+     D\D     0     1
+     0	     1     0
+     1	     0     1
+Unidirectional P2P=Disabled Bandwidth Matrix (GB/s)
+   D\D     0      1 
+     0 923.46   0.60 
+     1   0.69 925.10 
+Unidirectional P2P=Enabled Bandwidth (P2P Writes) Matrix (GB/s)
+   D\D     0      1 
+     0 925.65   0.91 
+     1   4.36 944.68 
+Bidirectional P2P=Disabled Bandwidth Matrix (GB/s)
+   D\D     0      1 
+     0 921.83  22.62 
+     1  22.77 926.75 
+Bidirectional P2P=Enabled Bandwidth Matrix (GB/s)
+   D\D     0      1 
+     0 922.92  22.52 
+     1  22.74 926.47 
+P2P=Disabled Latency Matrix (us)
+   GPU     0      1 
+     0   1.35  14.55 
+     1  15.91   1.36 
+
+   CPU     0      1 
+     0   3.67  10.72 
+     1  11.00   3.75 
+P2P=Enabled Latency (P2P Writes) Matrix (us)
+   GPU     0      1 
+     0   1.35  16.71 
+     1  12.28   1.35 
+
+   CPU     0      1 
+     0   3.98  12.62 
+     1  12.55   3.89 
+
+NOTE: The CUDA Samples are not meant for performance measurements. Results may vary when GPU Boost is enabled.
