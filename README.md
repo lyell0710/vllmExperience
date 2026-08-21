@@ -11,6 +11,8 @@ experiments/
 ├── README.md                  # 本文件：约定 + 证据台账 + 红线状态
 ├── LAB_JOURNAL.md             # 实验日记：每个工作段落的过程/决策/数字/产物（时间正序）
 ├── RESUME_EVIDENCE.md         # 简历句 ↔ 证据映射（最终写简历/面试用）
+├── records/                   # 实验记录：每个实验一份 EXP-NNN（模板 TEMPLATE.md）
+│   └── data/                  # 记录直属的小型原始数据（如节流采样 CSV）
 ├── pd_disagg/
 │   ├── DECISION.md            # 版本裁决（锁定 v0.25.1）+ 硬件基线数字
 │   ├── EXPERIMENT_PLAN.md     # 计划 v2 + 17 条代码级核验表（面试深挖素材）
@@ -42,6 +44,21 @@ experiments/
 7. **实验日记**：每个工作段落结束在 `LAB_JOURNAL.md` 追加一节
    （做了什么/为什么/关键数字/产物路径 + 下一步）；写简历时以
    日记（叙事）+ RESUME_EVIDENCE（句子）+ 本台账（状态）三件套为参照。
+8. **实验记录**：每个实验一份 `records/EXP-NNN_<slug>.md`（按 TEMPLATE.md 八节写全：
+   目的/配置/步骤/原始数据/结果/分析/异常/下游影响），实验结束当场写，不隔夜。
+   **任何 GPU 跑——包括诊断跑、临时排障跑——一律存 raw**（bench 加 --save-result）；
+   没存 raw 的数字降级为"终端级证据"，必须在记录 §4 注明证据等级。
+
+## 实验记录索引
+
+| 编号 | 标题 | 关联项 | 状态 |
+|---|---|---|---|
+| [EXP-001](records/EXP-001_nixl_smoke_version_verdict.md) | NIXL 1P1D smoke 与版本裁决 | R0-3 | 完成 |
+| [EXP-002](records/EXP-002_hardware_baseline.md) | 硬件三数 | R0-1 | 完成 |
+| [EXP-003](records/EXP-003_profiling_tooling.md) | profiling 工装验证 | R0-5 | 完成 |
+| [EXP-004](records/EXP-004_b1_colocate_attribution_slo.md) | colocate 归因基线 + SLO 锁定 | B1 | 完成 |
+| [EXP-005](records/EXP-005_replica2_tp2_powercap.md) | replica2/tp2 归因 + 功率帽调查 | B1 | 完成 |
+| [EXP-006](records/EXP-006_pd1p1d_probe_attribution.md) | pd1p1d 探针 + 归因 + NIXL 大传输 | B1/R0-1 | 完成 |
 
 ## 证据台账（勾一项 = 数据落盘 + 本表登记产物路径）
 
