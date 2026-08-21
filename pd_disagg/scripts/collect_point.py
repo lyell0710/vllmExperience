@@ -52,6 +52,7 @@ def main():
     ap.add_argument("--gpu-count", type=int, required=True)
     ap.add_argument("--engine-ports", nargs="+", required=True)
     ap.add_argument("--gpu-csv", default=None)
+    ap.add_argument("--seed", type=int, default=42)
     ap.add_argument("--slo-ttft-ms", type=float, default=None)
     ap.add_argument("--slo-tpot-ms", type=float, default=None)
     ap.add_argument("--env-label", default="ENV-B")
@@ -155,6 +156,7 @@ def main():
         "input_len": args.input_len,
         "output_len": args.output_len,
         "offered_rps": None if args.rps in ("-", "inf") else float(args.rps),
+        "seed": args.seed,
         "num_prompts": g("num_prompts", completed),
         "wall_time_s": round(duration, 3),
         "completed": completed,

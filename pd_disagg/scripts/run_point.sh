@@ -34,6 +34,9 @@ GPUCSV=$R/raw/${PREFIX}_gpu.csv
 
 if [ "$MODE" = attribution ]; then
   RATE_ARGS=(--max-concurrency 1 --request-rate inf)
+elif [ "$MODE" = saturation ]; then
+  # 饱和探测: 无限速率+高并发, 得到该臂×桶的最大吞吐 → sweep 档位按其比例取
+  RATE_ARGS=(--max-concurrency "${SAT_CONC:-64}" --request-rate inf)
 else
   RATE_ARGS=(--request-rate "$RPS")
 fi
@@ -41,7 +44,7 @@ fi
 "$VENV/bin/vllm" bench serve \
   --host localhost --port "$BENCH_PORT" --model "$MODEL" \
   --dataset-name random --random-input-len "$IN" --random-output-len "$OUT" \
-  --num-prompts "$NUM" --ignore-eos --seed 42 \
+  --num-prompts "$NUM" --ignore-eos --seed "${SEED:-42}" \
   "${RATE_ARGS[@]}" \
   --percentile-metrics ttft,tpot,itl,e2el --metric-percentiles 50,90,99 \
   --save-result --save-detailed --result-dir "$R/raw" \
@@ -59,6 +62,6 @@ GPU_COUNT=${GPU_COUNT:-$([ "$ARM" = colocate ] && echo 1 || echo 2)}
   --prefix "$PREFIX" --arm "$ARM" --mode "$MODE" \
   --input-len "$IN" --output-len "$OUT" --rps "$RPS" \
   --gpu-count "$GPU_COUNT" --engine-ports "${ENGINE_PORTS[@]}" \
-  --gpu-csv "$GPUCSV" \
+  --gpu-csv "$GPUCSV" --seed "${SEED:-42}" \
   ${SLO_TTFT_MS:+--slo-ttft-ms "$SLO_TTFT_MS"} ${SLO_TPOT_MS:+--slo-tpot-ms "$SLO_TPOT_MS"}
 echo "[run_point] done: $PREFIX"
