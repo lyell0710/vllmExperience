@@ -17,10 +17,18 @@
 > SLO goodput 和 GPU-seconds/request 建立部署选型边界，在 `[场景]` 下 `[方案]`
 > 相比 `[基线]` 实现 `[X%]` 的 `[指标]` 改善。
 
-- **当前可填**："消费级/互联受限"定语已有硬件实测支撑：P2P 驱动级禁用（GNS）、
-  单向 D2D 0.60–0.91 GB/s、NCCL bus bw 1.78 GB/s → `pd_disagg/hw/`
-- **缺口**：全部矩阵数字（B1 未跑）
-- **支撑文件**：`hw/*`、`results/b1_matrix/runs.jsonl`（待）、`figures/`（待）
+- **当前可填**：
+  - "消费级/互联受限"定语：P2P 驱动级禁用（GNS）、单向 D2D 0.60–0.91 GB/s、
+    NCCL bus bw 1.78 GB/s → `pd_disagg/hw/`
+  - attribution 层四臂对比（并发 1，8K）：TTFT 925/715/694/2685ms、
+    TPOT 16 vs tp2 9.3ms、GPU·s/req 2.95–9.24 → `results/b1_matrix/runs.jsonl`
+  - 归因子结论三条（可各自成半句）：① TP2 decode -42%（带宽分摊）但 prefill
+    零加速（大消息 allreduce 撞 1.78GB/s collective 墙）；② NIXL KV 通路有效
+    吞吐 0.26–0.27GB/s 恒定（~16KB/descriptor 碎片化小拷贝）；③ 消费卡 450W
+    功率帽使持续 prefill 降频 ~12%、TTFT +30%（SW Power Cap 遥测坐实）
+- **缺口**：sweep（offered-load 扫描 + goodput）——headline 数字来源
+- **支撑文件**：`hw/*`、`results/b1_matrix/runs.jsonl`（12 行 attribution）、
+  `figures/`（待）、LAB_JOURNAL 8/21 发现①②（面试叙事线）
 - **面试防御**："凭什么说传输真的发生了" → 每测量点 gate 字段
   （nixl bytes 增量、成功传输数=预期远端请求数、failed=0、expired=0、
   failure_policy=fail、/metrics 直抓引擎端口）随数据同行存于 runs.jsonl。
