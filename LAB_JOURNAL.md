@@ -274,3 +274,42 @@
    sweep 流水线 → 四臂扫描。
 2. B2：xfer_time 直方图桶分析 + "7668 token" 记账溯源（读 D 端调度/connector 源码）。
 3. 每段收尾固定链条：EXP 记录 → 日记追加 → 台账更新 → commit+push。
+
+# 2026-08-21 · Day 0 夜间：B1 sweep 战役（全臂完成）
+
+## §12 sweep 战役 + 两个后台源码分析（~17:30–20:30，EXP-007）
+
+- **做了什么（时序）**：
+  1. 用户下达全量执行令。派两个后台 AI 分析任务（0.17.1 双 bug 机理 →
+     `analysis/p2pnccl_bugs_id_chain.md`；7668 token 溯源 →
+     `analysis/nixl_token_accounting.md`），GPU 战役同时开跑。
+  2. **7668 溯源结果引爆方法论修正**：两计数器实为分毫不差（245,344 token 整；
+     "7668/7667"是双重舍入假象），缺口=前缀缓存命中（511 块可源码定罪到 bench 的
+     test 请求：serve.py:824-871），且**同 seed 下短桶 prompt 是长桶精确前缀**——
+     用快照 local_cache_hit 计数器实测證实：同 session 顺序跑时 2048 桶 25% 命中、
+     8192 桶 8.6%。→ **协议 v2：每点唯一 seed**（跨臂同点位同 seed 保可比），
+     colocate 全套重跑。干净 2048 基线 224.9ms（污染版 178，差值精确等于缓存效应），
+     预测应验。
+  3. 四臂各一个 session（fresh 栈 → attribution → saturation → sweep）：
+     colocate 19 点、replica2 24 点、tp2 23 点、pd1p1d 21 点，v2 有效行 84。
+     偶发 ServerDisconnected 3 次（1/192 请求级，失败行保留+同 seed 重跑）。
+     tp2 首启 OOM（0.9 利用率 warmup 差 26MB）→ 0.88 重启，偏差入记录。
+  4. 0.17.1 双 bug 分析交付（assert 崩溃点 connector:433、随机后缀分叉点
+     input_processor.py:212、D 端无超时 Condition.wait 挂死 engine:317、GET 模式
+     静默乱码、四层 ID 链、NIXL 身份拆分对照）——R0-4 降级路径完成，S2 弹药齐。
+- **关键数字**（详表见 EXP-007 与 runs.jsonl）：
+  - 饱和 req/s（512/2K/8K）：colocate 10.36/3.63/0.90（单卡）、replica2
+    15.58/7.00/1.78（2K/8K 近完美 2×）、tp2 12.31/4.16/1.02（双卡仅 +13-19%）、
+    **pd1p1d 7.84/2.12/0.54（双卡全面低于单卡；8K=0.54 与 0.27GB/s 传输墙
+    理论上限 0.57 吻合）**
+  - goodput 峰值：replica2 12.75/4.96/0.90 全场最高；pd1p1d 512 桶 66% 饱和度时
+    goodput 已崩至 1.59——传输延迟吃光 SLO 余量（"PD 税"定量化）
+  - v2 同热工况归因：四臂 8K prefill 881-925ms 几乎无差（功率帽整平），
+    tp2 decode 优势 9.3ms 依旧
+- **选型结论（S1 主句素材）**：互联受限双 4090 上，短请求 replica2（=colocate×2）
+  吞吐王且 per-GPU 效率与单卡打平；tp2 只在需要 decode 延迟或单卡放不下时考虑；
+  **PD 分离在 0.27GB/s 有效传输带宽下不可取**。
+- **产物**：runs.jsonl（109 行）、records/EXP-007、analysis/ 两篇、协议 v2 工装
+  （SEED 支持 + seed 字段入行）。
+- **下一步**：出图（figures/）→ B4 报告 → B3 有限对照 → C1/C3 MoE 上卡 →
+  汇总单+教学手册。MoE 模型下载后台进行中。
