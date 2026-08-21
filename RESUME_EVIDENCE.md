@@ -26,9 +26,18 @@
     零加速（大消息 allreduce 撞 1.78GB/s collective 墙）；② NIXL KV 通路有效
     吞吐 0.26–0.27GB/s 恒定（~16KB/descriptor 碎片化小拷贝）；③ 消费卡 450W
     功率帽使持续 prefill 降频 ~12%、TTFT +30%（SW Power Cap 遥测坐实）
-- **缺口**：sweep（offered-load 扫描 + goodput）——headline 数字来源
-- **支撑文件**：`hw/*`、`results/b1_matrix/runs.jsonl`（12 行 attribution）、
-  `figures/`（待）、LAB_JOURNAL 8/21 发现①②（面试叙事线）
+- **✅ headline 数字已全部到位（8/21 夜 sweep 完成，60 个扫描点全 gate）**。
+  **S1 成稿候选（数字已填，供压缩）**：
+  > 在双 RTX 4090（无 NVLink、P2P 驱动级禁用）上系统评测 vLLM 四种部署形态
+  > （单卡混部/双副本/TP=2/NIXL Prefill–Decode 分离）：512/2K/8K 输入 × 多档
+  > 负载 60+ 测量点，以 TTFT/TPOT/SLO goodput/GPU·s-per-request 建立选型边界
+  > ——双副本取得近线性 2× 吞吐扩展（2K 输入 7.00 vs 3.63 req/s）与全场最高
+  > goodput；TP=2 的 decode 提速 42% 被 1.78GB/s allreduce 带宽墙抵消（吞吐仅
+  > +13–19%）；以 NIXL telemetry 定量证明 PD 分离在 0.27GB/s 有效 KV 带宽下
+  > 全负载段不可取（KV 传输占无负载 TTFT 的 54–64%）。
+- **支撑文件**：`pd_disagg/REPORT.md`（B4 v1）、`figures/fig1–6`、
+  `derived/sweep_summary.csv`、runs.jsonl（109 行）、EXP-007；
+  面试叙事线：LAB_JOURNAL §9–§12（功率帽/污染修正/传输墙三个完整探案）
 - **面试防御**："凭什么说传输真的发生了" → 每测量点 gate 字段
   （nixl bytes 增量、成功传输数=预期远端请求数、failed=0、expired=0、
   failure_policy=fail、/metrics 直抓引擎端口）随数据同行存于 runs.jsonl。
@@ -46,7 +55,13 @@
   NIXL Pull 实测通路 → `smoke/`。
   另有版本演化实例：profiler 接口 env var → `--profiler-config.*` CLI
   （`profiling/r0_5_torch_profiler_check.txt` note）。
-- **缺口**：0.17.1 崩溃现场复现（R0-4，等课程脚本；降级方案=源码机理分析）
+- **✅ 源码机理分析完成**（`analysis/p2pnccl_bugs_id_chain.md`，全 file:line
+  双版本核对）：assert 崩溃点 connector:433 与崩溃链、随机后缀分叉点
+  input_processor.py:212、PUT 模式 D 端无超时 Condition.wait 挂死
+  （engine:317）+ 内存泄漏、GET 模式静默乱码、四层 ID 传播表、
+  NIXL 三层身份拆分对照；文末含面试 2 分钟口径草稿。
+  版本性能维度补充（EXP-008）：无负载 Δ<1%、512 桶饱和 +45%、启动 308→58s。
+- **残项**：动态崩溃现场复现（等课程脚本，非阻塞）。
 - **红线**：只写"复现/定位/验证/梳理"，禁"发现/修复/吃透"。
 
 ## S3 · MoE kernel 分解与上游贡献——上限最高，最后压轴
@@ -56,9 +71,11 @@
 > 端到端吞吐提高 `[Y%]`，通过 correctness、kernel A/B 与 serving benchmark 验证，
 > 并向上游提交 PR `#[编号]`。（合并后升级为"已合入"。）
 
-- **当前可填**：目标 tuple 本地缺失判定（E=30,N=1408 / E=60,N=704）→
-  `moe_configs/DEDUP.md`。**"社区空缺"措辞在远端查重完成前禁用。**
-- **缺口**：C1/C3 上卡、D1 分解、D2 调优+PR、（可选）D3 kernel 优化
+- **当前可填**："社区空缺"已解锁（三重闭环：本地判定 + 远端查重 + 运行时告警
+  原文点名 E=30,N=1408 缺失，EXP-009）；C1 上卡完成，**未调优基线在案**：
+  TP2+EP TPOT 4.62ms（dense 7B TP2 的 2.0×）、饱和 11.50 req/s@512
+  ——D2 调优 A/B 的 before 数字。
+- **缺口**：D1 nsys 分解、D2 benchmark_moe.py 调优+六件套 PR、（可选）D3
 - **面试防御**：AGENTS.md 六件套（DCO/查重说明/AI 声明/测试命令+数据/e2e bench）。
 
 ## S4 · 量化对比（可选句，D4 做完才上）
