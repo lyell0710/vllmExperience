@@ -9,6 +9,7 @@
 ```
 experiments/
 ├── README.md                  # 本文件：约定 + 证据台账 + 红线状态
+├── LAB_JOURNAL.md             # 实验日记：每个工作段落的过程/决策/数字/产物（时间正序）
 ├── RESUME_EVIDENCE.md         # 简历句 ↔ 证据映射（最终写简历/面试用）
 ├── pd_disagg/
 │   ├── DECISION.md            # 版本裁决（锁定 v0.25.1）+ 硬件基线数字
@@ -38,6 +39,9 @@ experiments/
    `gates.pass=false` 的行保留但**永不进 derived/ 与报告**。
 6. **图表样式**：白底、单图单结论、标题写结论句而非变量名；
    四臂用固定配色贯穿全报告（colocate/replica2/tp2/pd1p1d 一色到底），图脚注 provenance。
+7. **实验日记**：每个工作段落结束在 `LAB_JOURNAL.md` 追加一节
+   （做了什么/为什么/关键数字/产物路径 + 下一步）；写简历时以
+   日记（叙事）+ RESUME_EVIDENCE（句子）+ 本台账（状态）三件套为参照。
 
 ## 证据台账（勾一项 = 数据落盘 + 本表登记产物路径）
 
@@ -49,12 +53,12 @@ experiments/
 | R0-4 0.17.1 课程基线 | ⬜ 阻塞 | — | 课程脚本不在本机，待提供；超时降级纯阅读 |
 | R0-5 profiling 工装 | ✅ 8/21 | torch profiler 直控 P/D 端口跑通（trace 落盘）；nsys 容器内可用 | `pd_disagg/profiling/r0_5_torch_profiler_check.txt`、`traces_smoke/`、`scripts/profile_ctl.sh` |
 | R0-6 简历措辞排雷 | ◐ | 本地 tex 无违规表述（已核）；线上稿待改 | 仅用户可操作 |
-| B1 四臂矩阵 | ⬜ | — | schema 已定：`pd_disagg/results/README.md` |
+| B1 四臂矩阵 | ◐ | colocate attribution 3/3 gate PASS：TTFT p50 66/178/925ms（512/2K/8K），TPOT ~16ms；SLO 已锁（328/891/4626ms + TPOT 50ms） | `results/b1_matrix/runs.jsonl`；schema `results/README.md` |
 | B2 归因层 | ⬜ | — | — |
 | B3 版本对照 | ⬜ | 已知差异一例：profiler 接口 env var→CLI（见 profiling 检查文件 note） | — |
 | B4 报告 | ⬜ | — | — |
 | C1 Qwen1.5-MoE 上卡 | ⬜ | — | — |
-| C2 config 查重 | ◐ | E=30,N=1408 与 E=60,N=704 本地均缺失 | `moe_configs/DEDUP.md`；残项：远端 PR 查重 |
+| C2 config 查重 | ✅ 8/21 | 本地+远端均确认空缺；#48309(4090D fp8, OPEN) 为相邻先例非重复 | `moe_configs/DEDUP.md`（含远端复核节） |
 | C3 W4A16 上卡 | ⬜ | — | — |
 | D1–D5 | ⬜ | — | — |
 | EXT-1 / EXT-2 | ⚑ | 弹性，不阻塞主线 | — |
@@ -64,7 +68,7 @@ experiments/
 | 红线 | 当前 | 解锁条件 / 依据 |
 |---|---|---|
 | "P2P 受限" | ✅ 可用 | `hw/p2p_bandwidth_latency.txt`（connectivity=0）+ `hw/topo.txt`（GNS） |
-| "社区空缺"（MoE config） | 🚫 禁用 | 待 GitHub 远端 PR 查重（C2 残项） |
+| "社区空缺"（MoE config） | ✅ 可用 | 2026-08-21 远端复核完成：`moe_configs/DEDUP.md`（main 无 E=30；E=60,N=704 仅 MI300X；PR/issue 无冲突） |
 | "KV 传输占 TTFT X%" | 🚫 禁用 | 待 EXT-1 request 级关联；此前只可写 telemetry 原生量 |
 | telemetry 带宽表述 | 限定 | 只能称 telemetry-derived effective throughput；xferDuration 不与 postDuration 相加 |
 | 0.17 两 bug | 限定 | 只写"复现/定位/验证"，禁"发现/修复"；"吃透"→"梳理" |

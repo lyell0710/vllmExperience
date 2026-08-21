@@ -57,8 +57,23 @@ results/b1_matrix/
 
 1. `gates.pass=false` 的行**保留在 runs.jsonl**（诚实记录），但绝不进 derived/、
    figures/ 与报告。
-2. **SLO 定义**（goodput 用）：在首个 sweep 之前于此处填死数值并 commit——
-   `TTFT ≤ [待定] ms 且 TPOT ≤ [待定] ms`。之后不得回改（防事后挑阈值）。
+2. **SLO 定义**（goodput 用）——方案 2026-08-21 锁定（DistServe 式相对 SLO）：
+   - **TPOT ≤ 50 ms** 固定（=20 tok/s，约为人类阅读速度 3 倍，体验锚点，与硬件无关）
+   - **TTFT ≤ 5 × 该输入桶的无负载基线**（基线 = colocate 臂 attribution 跑、并发 1 的 p50）
+   - attribution 完成后将换算出的绝对毫秒数填入下表并 commit，**此后不得回改**：
+
+   | 输入桶 | 基线 TTFT p50 (ms) | TTFT SLO = 5× (ms) |
+   |---|---|---|
+   | 512  | 65.52  | **328**  |
+   | 2048 | 178.28 | **891**  |
+   | 8192 | 925.18 | **4626** |
+
+   基线来源：colocate attribution 跑（2026-08-21，runs.jsonl 前三行，gate 全 PASS，
+   服务端配置 `--max-model-len 16384` 其余默认）。**本表自此 commit 起锁定。**
+
+   - **附录必做**：goodput vs SLO-scale（1.25× / 2.5× / 5× / 10×）敏感性曲线，
+     由 raw 的每请求延迟数据重算（bench 必须带 --save-detailed）——回应"为什么是
+     5×/50ms"的完整防御。
 3. gate 增量由 `scripts/metrics_snapshot.sh diff before after` 计算，
    人工誊入 runs.jsonl 或由跑批脚本自动写入。
 4. 每个测量点重复次数与 warmup 规则同样在首跑前定死，写入本文件。
