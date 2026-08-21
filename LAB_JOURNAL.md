@@ -1,166 +1,276 @@
 # 实验日记（Lab Journal）
 
-> 规则：每个工作段落结束追加一节，按时间正序。每节固定四问：
-> **做了什么 / 为什么（决策依据）/ 关键数字 / 产物路径**，末尾记下一步。
-> 写简历时以本文件（过程与叙事）+ RESUME_EVIDENCE.md（句子装配）+
+> 规则：每次运作（任何工作段落）结束在本文件末尾追加一节，同一文件顺写、时间正序。
+> 每节固定四问：**做了什么 / 为什么（决策依据）/ 关键数字 / 产物路径**，末尾记下一步。
+> 细节标准：**凭本文件 + records/ 能复现当天全部操作与决策**——包括弯路、报错原文
+> 关键词、被否掉的方案。写简历时以本文件（叙事）+ RESUME_EVIDENCE.md（句子装配）+
 > README.md 台账（状态速查）三件套为准。数字一律以 provenance 文件为最终依据。
 
 ---
 
-## 2026-08-21 · Day 0：地基全部落定 + B1 开跑
+# 2026-08-21 · Day 0
 
-### 上午：三 venv + NIXL smoke + 版本裁决
-- **做了什么**：搭 `~/venvs/{v0.17.1, v0.25.1, main}`；按官方 nixl_connector_usage
-  同机示例跑 1P1D smoke（GPU0=P:5600 / GPU1=D:5601 / toy proxy），v0.25.1 与
-  main 双版本各跑一遍；按预定规则裁决主战场版本。
-- **为什么**：清单 R0-2/R0-3；裁决规则预先定死（三项检查、平手取 release）防拍脑袋。
-- **关键数字**：双版本 3/3 PASS；v0.25.1 avg xfer 14.128ms / 0.188MB / 13.27MB/s，
-  P90 xfer 23.7ms，descriptors=24；ERROR=0。
-- **产物**：`pd_disagg/smoke/`、`pd_disagg/DECISION.md`（锁定 **v0.25.1=ENV-B 主战场**）。
+## §0 上午：三 venv + NIXL smoke + 版本裁决（~09:03–09:15Z，依据落盘文件重建）
 
-### 下午 1：开发环境修复（会话另线完成，记录关键差异点）
-- main 仓库（/root/projects/vllm@7aa248fc）切为 editable 安装 = ENV-C；
-  注意事项：precompiled 模式下改 csrc/ 不生效；`/root/projects` 下裸跑 python
-  会被目录名遮蔽 import。
+- **做了什么**：搭 `~/venvs/{v0.17.1, v0.25.1, main}`（setup_envs.sh，uv）；按官方
+  `docs/features/nixl_connector_usage.md` 同机示例跑 1P1D smoke：模型
+  Qwen2.5-0.5B-Instruct，P=GPU0:8100(side-channel 5600)、D=GPU1:8200(side 5601)、
+  toy proxy 8192，`--enforce-eager --max-model-len 2048 --gpu-memory-utilization 0.7`，
+  `kv_load_failure_policy=fail`；v0.25.1 与 main 双版本各一遍；按预定规则裁决。
+- **为什么**：清单 R0-2/R0-3。裁决规则**预先定死**防拍脑袋：三项检查
+  （①1P1D 跑通 ②日志出现 "KV Transfer metrics:" ③failure_policy=fail 被接受），
+  平手取 release。
+- **关键数字**：双版本 3/3 全 PASS，平手 → **锁定 v0.25.1 = ENV-B 主战场**。
+  v0.25.1：avg xfer 14.128ms / P90 23.692ms / 0.188MB/次 / 13.271MB/s /
+  descriptors=24 / post 0.911ms；main：avg xfer 14.7ms；双方 ERROR=0。
+- **产物**：`smoke/smoke_{v0.25.1,main}_*`、`DECISION.md`。详见
+  `records/EXP-001`（含 provenance sha 语义问题的说明）。
 
-### 下午 2：R0-1 硬件三数（简历"P2P 受限"定语的实测支撑）
-- **做了什么**：cuda-samples p2pBandwidthLatencyTest + nccl-tests all_reduce_perf
-  （-g 2，NCCL 2.19.7）+ 拓扑记录（`topo -m` 因容器 hwloc 限制不可用，
-  改用 `topo -p2p r` + PCIe link）。
-- **关键数字**：
-  - P2P：connectivity=0，`topo -p2p r`=**GNS（驱动禁用）**
-  - 单向 D2D **0.60–0.91 GB/s**（无 P2P 时 cudaMemcpyPeer 分段中转）；
-    双向 **22.6–22.8 GB/s**；GPU 间延迟 14.5–15.9µs；本卡内 ~924 GB/s
-  - NCCL all_reduce avg bus bw **1.78 GB/s**（大消息 1.85）——仅代表 TP collective 路径
-  - 含义预估：Qwen2-7B 8K 输入 KV≈460MB，穿卡传输在秒级量级；TP=2 将重度受
-    allreduce 约束 → 四臂矩阵预期区分度极大
-- **产物**：`pd_disagg/hw/*.txt`（均带 provenance），DECISION.md 硬件基线节回填。
+## §1 四工程环境体检与修复（~14:10–14:50）
 
-### 下午 3：R0-5 profiling 工装（发现一个版本演化点）
-- **做了什么**：0.5B 起真实引擎验证 torch profiler 直控（start→请求→stop→trace
-  落盘）；nsys 容器内冒烟通过。
-- **发现（B3 素材）**：v0.25.1 **弃用 `VLLM_TORCH_PROFILER_DIR` 环境变量**
-  （日志报 Unknown env var、端点 404），改为
-  `--profiler-config.profiler=torch --profiler-config.torch_profiler_dir=...`；
-  0.17.1 仍是环境变量。代理不转发 profile 端点 → 一律直控引擎端口。
-- **产物**：`pd_disagg/profiling/r0_5_torch_profiler_check.txt`、`traces_smoke/`、
-  `scripts/profile_ctl.sh`。
+- **做了什么**：应用户要求体检 /root/projects 下四个工程（Kernel_Optimazation /
+  Resume / TRT_TritonServer_example / vllm）+ 核对环境文档。逐项：
+  - **机器底账**：2×RTX 4090 24G，driver 610.57.04（CUDA 13.3），toolkit 装有
+    12.8/13.0/13.2（/usr/local/cuda→13.2），cmake 3.22.1，g++ 11.4，conda py312
+    （Python 3.12.11），torch 2.11.0+cu130 双卡可见。
+  - **Kernel_Optimazation**：cmake 报 `No CMAKE_CUDA_COMPILER could be found`
+    → 根因 nvcc 不在 PATH → `export PATH=/usr/local/cuda/bin:$PATH` 写入
+    `~/.bashrc`；四个 kernel（softmax/cuda-reduce/gemv/int8-quantize）全部
+    试编译通过（scratchpad 外部 build，不污染工程）；补装 matplotlib。
+  - **Resume**：ENV.md 写 pdflatex 但 tex 用 fontspec/xeCJK → **必须 xelatex**
+    （文档有误）；缺 `ctexhook.sty` → `apt install texlive-lang-chinese`；中文字体
+    全无（PingFang/Source Han/Noto CJK 三级回退全 miss，仅 DroidSansFallback）
+    → `fonts-noto-cjk`；`photo.jpg` 缺失（需用户提供，且 ENV.md 写的文件名
+    "美签照片.jpg" 与 tex 引用不符）；用 matplotlib 占位图验证整条编译链出合法
+    1 页 PDF。插曲：装字体后首跑报 `can't find file 'Arial'`，重跑消失
+    ——fontconfig 缓存首建的瞬时问题。
+  - **TRT_TritonServer_example**：缺 tensorrt/jupyter notebook/pycocotools/netron/
+    trex/tritonclient，opencv 仅 headless → 批量补装（tensorrt 11.2.1.2）。
+    **假 trex 事件**：ENV.md 的 `pip install trex` 装到的是 PyPI 同名无关包
+    （"Templatosaurus Rex" 模板工具），它钉 typer<0.5 把 typer 降到 0.4.2，
+    破坏 vllm 依赖链（fastapi-cli/fastsafetensors 要 ≥0.16）→ 卸载假包、
+    typer 恢复 0.27.1；真 TREx 主分支已移除，从 NVIDIA/TensorRT
+    **release/10.16** 分支 sparse clone `tools/experimental/trt-engine-explorer`
+    源码安装（0.2.1）。**numpy 震荡**：TREx 的 pandas==2.2.1 把 numpy 拖到
+    1.26.4（破坏 opencv 5.x 的 numpy≥2 要求）；`-U numpy` 又冲到 2.5.2
+    （破坏 numba<2.5 / mistral-common<2.4，均为 vllm 依赖）→ 最终定格
+    **numpy 2.3.5（原版本）+ pandas 2.3.3**，torch/vllm/numba/mistral-common/
+    opencv/trex 全量 import 复验通过。残留 pip 警告仅 trex 的 pandas 钉版本
+    （形式冲突，实测无碍）。
+  - **docker**：装 29.1.3 + nvidia-container-toolkit；本机无 systemd，
+    `dockerd --iptables=false --bridge=none` 可拉起 daemon，但镜像层解压
+    `mount ... operation not permitted`，vfs 驱动再试 `unshare: operation not
+    permitted` → **结论：compshare 无特权容器跑不了任何 docker 容器**（平台级
+    限制），dockerd 已停。TRT 课程第 05 课 Triton 需换特权机或
+    `pip install tritonserver` in-process API。已注记 ENV.md。
+  - 三份 ENV.md 均已修正（xelatex/字体/照片名；trex 安装法+docker 限制；nvcc PATH）。
+- **为什么**：这台是新租的云主机，环境不落定后面全是流沙；ENV.md 的错误
+  （pdflatex、假 trex）都是踩过才知道的坑，修文档=防二次踩坑。
+- **产物**：三份 ENV.md 修正；conda py312 依赖定格。此段属环境维护，无 EXP 记录。
 
-### 下午 4：证据仓库定型 + GitHub 私有备份
-- experiments/ 原被外层 exclude 且无版本控制 → 建独立嵌套 git 仓库，
-  推送 `github.com/lyell0710/vllmExperience`（private）。
-- 四层结构：README（约定+台账+红线）/ RESUME_EVIDENCE（句子装配）/
-  results/README（B1 schema）/ scripts（provenance、metrics_snapshot、run_point、
-  collect_point）。
+## §2 vllm 主仓切 editable（ENV-C 就位，~14:50–15:00）
 
-### 下午 5：C2 远端查重收尾（"社区空缺"红线解锁）
-- **做了什么**：gh 直连复核——上游 main configs 目录无任何 E=30 文件、
-  E=60,N=704 仅 MI300X；全状态 PR/issue 搜索无 config 类冲突；
-  相邻先例 #48309（4090D fp8）仍 OPEN。
-- **结论**：目标 tuple 空缺确认，无重复，**"社区空缺"措辞解锁**（引用本节日期）。
+- **做了什么**：发现装的 vllm 0.25.1 wheel 与仓库 main@7aa248fc
+  （0.26.1rc1.dev682）不是同一份——改源码不生效、traceback 指向 site-packages。
+  用户确认要改源码 → 切 editable：`python use_existing_torch.py` 剥 torch 钉版本
+  （仓库钉 torch==2.13.0，环境是 2.11.0+cu130，直接装会换 torch）→
+  `VLLM_USE_PRECOMPILED=1 pip install -e . --no-build-isolation`。
+  **首次失败**：`ModuleNotFoundError: setuptools_rust`（--no-build-isolation 需自备
+  构建依赖；此 commit 的 setup.py 无条件 import setuptools_rust）→ 补
+  `requirements/build/cuda.txt` 后成功。装后验证：`vllm.__file__` 指向仓库、
+  C 扩展加载 OK、平台识别 cuda；requirements 改动 `git checkout --` 还原，工作区净。
+- **为什么/发现**：
+  - 预编译算子按 torch 2.13 构建，担心 ABI 冲突——实际此版本已改用 **torch
+    stable ABI**（扩展名 `_C_stable_libtorch.abi3.so`），跨 torch 版本兼容，实测过。
+  - **cwd 遮蔽坑**：在 /root/projects 下裸跑 python，目录名 vllm/ 被当命名空间包
+    遮蔽 import（`__path__` 指向仓库根、`__file__=None`）——上午 setup_envs.log
+    里 "v0.17.1 import 失败/版本号错" 正是同一坑的假故障，各 venv 中立目录复验全健康。
+  - 附带升级：flashinfer 0.6.13→0.6.16.post3 及 cutlass-dsl/flashmla/tilelang 等
+    按仓库 requirements 就位。
+  - 注意事项：precompiled 模式改 `csrc/` 不生效（需全量源码构建 30-60min）。
+- **产物**：ENV-C（conda py312 + /root/projects/vllm editable）就位。
+
+## §3 执行清单对齐 + 重复劳动止损（~15:00–15:04）
+
+- **做了什么**：用户贴出 v3 锁定版清单，我按清单启动时误起了 pd-lab 下两个新
+  venv 安装任务——随即读到仓库里已有 `experiments/pd_disagg/`（smoke 结果、
+  DECISION、setup_envs、rr_proxy 都在）→ **发现 R0-3 已完成、R0-2 venv 已在
+  ~/venvs 约定位置** → 杀掉两个重复后台任务、删除 pd-lab 目录，全面转入
+  "先盘点存量再动手"。
+- **为什么**：v3 清单与仓内 EXPERIMENT_PLAN v2 在"主战场"上有历史分歧，
+  以 DECISION.md 裁决 + v3 清单为准（v2 的 "main=交付" 段作废）；R0-6 靶子
+  （两个 bug 的"发现/修复"措辞）在本地 tex 中不存在，确认在线上稿（仅用户可改）。
+- **教训**：动手前先盘点存量。清单状态 ≠ 磁盘状态。
+
+## §4 R0-1 硬件三数（~15:04–15:07，EXP-002）
+
+- **做了什么与弯路**：
+  - `nvidia-smi topo -m` 报 `hwloc: Topology does not contain any PU`（容器读不到
+    CPU 拓扑）→ 换 `topo -p2p r` + PCIe link 查询替代，注记于 topo.txt。
+  - cuda-samples 构建三次试错：新仓库目录已从 `Samples/` 改为 **`cpp/`** 前缀；
+    样例 CMakeLists 还要仓库根 `cmake/`（InstallSamples.cmake）——sparse checkout
+    连补两次目录后编译通过。
+  - nccl-tests：NCCL 取自 ENV-B venv 的 nvidia-nccl wheel（无 .so 链接符号
+    → 自建 nccl-home 软链 libnccl.so→libnccl.so.2），`make MPI=0`，
+    `all_reduce_perf -b 1M -e 512M -f 2 -g 2`。
+- **关键数字**：P2P connectivity=0、`topo -p2p r`=**GNS（驱动级禁用）**；
+  单向 D2D **0.60–0.91 GB/s**（无 P2P 的 cudaMemcpyPeer 分段中转）、双向
+  **22.6–22.8 GB/s**（Gen4 x16 双向流水）、GPU 间延迟 14.5–15.9µs、本卡内
+  ~924 GB/s；NCCL allreduce（SHM 回退）avg bus bw **1.78 GB/s**（256M+ ~1.85）。
+  单双向 25 倍差 = "无 P2P" 的定量指纹。
+- **推论（当场写下，当晚全部应验）**：8K KV≈460MB 穿卡在秒级；TP=2 将被
+  allreduce 重压 → 四臂区分度会极大。
+- **产物**：`hw/{topo,p2p_bandwidth_latency,all_reduce_perf}.txt`（均带 provenance）；
+  工具构建在 /root/tools（仓库外）。红线 **"P2P 受限" 解锁**。
+
+## §5 R0-5 profiling 工装（~15:08–15:16，EXP-003）
+
+- **做了什么与失败现场**：0.5B 起真实引擎验证 torch profiler 直控。首次按旧文档
+  设 `VLLM_TORCH_PROFILER_DIR` → 日志 `Unknown vLLM environment variable`、
+  `/start_profile` **404**。翻 venv 源码定位：
+  `entrypoints/serve/profile/api_router.py` 仅在 `profiler_config.profiler` 非空时
+  注册路由；`config/profiler.py` 的 ProfilerConfig 是新接口 → 改用
+  `--profiler-config.profiler=torch --profiler-config.torch_profiler_dir=<绝对路径>`
+  → start(200)→completion→stop(200)，worker trace(rank0, 6.9MB gz) + AsyncLLM
+  前端 trace + profiler_out_0.txt 落盘。nsys 容器内冒烟（torch matmul）正常出 rep。
+- **B3 素材**：0.17.1 用环境变量、0.25.1 改 CLI config——接口演化实锤一例。
+  代理不转发 profile 端点（核验 #12）→ 工装设计为直控 8100/8200。
+- **产物**：`scripts/profile_ctl.sh`、`profiling/r0_5_torch_profiler_check.txt`、
+  `profiling/traces_smoke/`、`profiling/nsys_smoke.nsys-rep`。
+
+## §6 证据仓库定型 + GitHub 私有备份（~15:20–15:45）
+
+- **做了什么**：发现 experiments/ 被外层仓库 `.git/info/exclude` 忽略——所有证据
+  **零版本控制**，云主机一挂全丢 → 建独立嵌套 git 仓库（外层保持干净，符合
+  AGENTS.md 的 PR 卫生）。用户建 GitHub 私有仓库（我提醒关掉 Add README 避免
+  远端初始 commit 分叉），gh 已登录 lyell0710 → `master→main` 改名、配 origin、
+  首推两个 commit（fece3ca 地基 / 8597516 定型）。四层结构定型：
+  README（约定+台账+红线）/ RESUME_EVIDENCE（句子装配）/ results/README
+  （B1 schema）/ scripts。硬约定六条（provenance 首行 / 统一命名 / raw-derived
+  分离 / 单位入表头 / gate 同行存储 / 图表样式）。
+- **产物**：github.com/lyell0710/vllmExperience（private, main）。
+
+## §7 C2 远端查重收尾（~15:44）
+
+- **做了什么**：gh 直连三查——①上游 main configs 目录：**无任何 E=30 文件**，
+  E=60,N=704 仅 `AMD_Instinct_MI300X`；②PR 全状态搜索 "E=30 N=1408" /
+  "E=60 N=704"：命中仅 #52651(GPTQ bugfix)/#24700(默认config分析,CLOSED)/
+  #41834(DeepSeek SM12x)，无 config 类冲突；③issue "Qwen1.5-MoE 4090 config"：
+  仅 #15561（旧加载问题）。#48309（4090D fp8）仍 OPEN 未合并，继续作相邻先例。
+- **结论**：目标 tuple 空缺确认、无重复 → **红线"社区空缺"解锁**（引用本日）。
 - **产物**：`moe_configs/DEDUP.md` 远端复核节。
 
-### 下午 6：SLO 方案锁定 + B1 colocate 归因跑（3/3 gate PASS）
-- **做了什么**：SLO 采用 DistServe 式相对定义（TTFT≤5×无负载基线、TPOT≤50ms
-  固定、附录做 SLO-scale 敏感性曲线）；colocate 臂（GPU0 单卡，
-  `--max-model-len 16384` 其余默认）跑 512/2048/8192×128 并发=1 归因，
-  全链路（快照→bench→快照→runs.jsonl）首跑验证通过。
-- **关键数字**（p50，32 请求/点，seed=42，ignore-eos）：
+## §8 SLO 方案锁定 + B1 colocate 归因（~15:47–15:52，EXP-004）
 
-  | 输入桶 | TTFT p50 (ms) | TPOT p50 (ms) | → TTFT SLO (5×) |
-  |---|---|---|---|
-  | 512  | 65.52  | 15.87 | 328 |
-  | 2048 | 178.28 | 15.93 | 891 |
-  | 8192 | 925.18 | 16.34 | 4626 |
+- **做了什么**：用户问 SLO 怎么设 → 定 DistServe 式相对方案并说明理由：
+  固定绝对值在 512/2K/8K 三桶下必失效（200ms 让 8K 全零、5s 让 512 全满，
+  信息量归零）→ **TTFT≤5×该桶无负载基线 + TPOT≤50ms 固定**（20 tok/s，
+  约 3 倍人类阅读速度）+ 附录 SLO-scale(1.25/2.5/5/10×) 敏感性曲线
+  （raw 存每请求延迟，可重算——回应"为什么是 5×"的完整防御）。
+  服务：`CUDA_VISIBLE_DEVICES=0 vllm serve Qwen2-7B-Instruct --port 8100
+  --max-model-len 16384`（默认 CUDA graphs，84s 就绪）。跑 512/2048/8192×128、
+  并发 1、32 请求/点（seed 42、ignore-eos、percentiles 50/90/99、
+  --save-result --save-detailed）。工装链（快照→bench→快照→collect_point→
+  runs.jsonl）首跑验证通过。
+- **关键数字**（TTFT p50/p90/p99 // TPOT p50 // GPU·s/req）：
+  - 512: 65.5/66.4/80.5 // 15.87 // 2.08 → SLO **328ms**
+  - 2048: 178.3/181.6/186.2 // 15.93 // 2.20 → SLO **891ms**
+  - 8192: 925.2/946.0/950.8 // 16.34 // 2.95 → SLO **4626ms**
+  - 解读：bs=1 TPOT 恒 ~16ms（≈63 tok/s，decode 权重带宽约束）；TTFT 随输入
+    近线性（prefill 计算主导）。SLO 表 commit 锁定，不回改。
+- **产物**：runs.jsonl 1–3 行、`results/README.md` SLO 表、
+  `scripts/{run_point.sh,collect_point.py}`。
 
-  解读：bs=1 时 TPOT 恒定 ~16ms（≈63 tok/s，decode 带宽约束），TTFT 随输入
-  长度近线性——prefill 计算主导，与 GDDR6X 预期一致。
-- **产物**：`results/b1_matrix/runs.jsonl`（前 3 行）、`raw/`、`snapshots/`；
-  SLO 表锁进 `results/README.md`。
+## §9 replica2 + 异常调查（功率帽）+ tp2（~16:24–16:45，EXP-005）
 
-### 下一步（8/22）
-1. replica2 / tp2 / pd1p1d 三臂 attribution（PD 臂首跑：人工核对 NIXL 指标名
-   → 固化 collect_point 的 gate 判定；顺手拿 8K 大传输的 NIXL 实测补硬件画像）。
-2. sweep 网格设计（每桶 rps 档位由 attribution 吞吐推算），跑 colocate sweep。
-3. 待办：R0-4 课程脚本（用户提供）、R0-6 线上稿（用户）。
+- **做了什么（时序）**：
+  1. replica2 起双实例（8100 就绪 ~70s、8200 ~2s）+ rr_proxy:8300，三点归因：
+     512=65.2 / 2048=173.5 / **8192=714.6ms**。
+  2. **异常**：8K 比 colocate(925) 快 30%？并发 1 下不应该。诊断三连（直连绕代理）：
+     - diag-1 @8100 16 请求：p50 **901.2** / p90 929.0 —— ≈ colocate
+     - diag-2 @8200 同参：p50 **892.7** / p90 912.1 —— 两卡无差异
+     - 拆 colocate 8K 原始分布：**双段**！前 ~8 请求 702–739ms，其后 897–951ms；
+       replica2 全部 697–733ms → 指向"单卡持续负载劣化"
+     - diag-3 持续负载（8192×16out×40 请求）+ nvidia-smi 1.5s 采样：
+       空闲 210MHz/14W/reason 0x1 → 负载 40→63°C、427–443W（帽 450W）、
+       SM 2820↔2460–2535MHz、**reason 0x4 = SW Power Cap**。TTFT 稳态
+       p50 905.6ms。**机理坐实：功率帽（非热，63°C）**；replica2 轮转=50%
+       占空比维持 boost。频率降 ~12% 与 TTFT +30% 不完全成比例（疑瞬时
+       boost/显存钟，未深究）。
+  3. **方法论决定**：attribution=各臂占空比工况，headline 以 sweep 为准；
+     run_point.sh 即刻加 GPU 遥测（2s 采样→runs.jsonl `gpu_telemetry`）；
+     SLO 维持锁定值（5× 余量≫30% 效应，且换基线=回改）。
+  4. tp2（`-tp 2`，96s 就绪，双卡各 23.8G）：512=62.8 / 2048=173.5 /
+     8192=693.7ms；TPOT **9.26–9.48ms**。
+- **发现② TP2 不对称收益**：decode 16→9.3ms（**-42%**：每卡半份权重带宽分摊，
+  小消息 allreduce 代价 ~1.3ms/token）；8K prefill **零加速**（694≈冷态单卡
+  700ms）：28 层 × 58.7MB 大消息 allreduce 撞 1.78GB/s collective 墙（§4 印证）
+  ——计算减半被通信吃光。
+- **工装事故记录**：pkill 模式含字面量两次误杀自身 shell（exit 144）→ 改
+  `pkill -f '[v]llm serve'` 方括号技巧。诊断三连未存 raw（当时图快）→
+  数字为终端级证据，完整命令补录于 EXP-005 §4，并催生约定 #8。
+- **产物**：runs.jsonl 4–9 行、`records/data/EXP-005_throttle_trace.csv`。
 
-## 2026-08-21 · Day 0（续）：四臂 attribution 全部完成 + 两个一手发现
+## §10 PD 探针 + pd1p1d 归因 + NIXL 大传输（~16:49–16:58，EXP-006）
 
-### 晚 1：replica2 / tp2 / pd1p1d 三臂归因（12/12 gate 全 PASS）
-- **做了什么**：三臂各跑 512/2048/8192×128、并发 1、32 请求/点。replica2 =
-  双 TP1 副本 + rr_proxy(8300)；tp2 = TP=2 单实例；pd1p1d = NixlConnector
-  P(GPU0:8100,side 5600)+D(GPU1:8200,side 5601)+toy proxy(8192)，
-  **未用 enforce-eager（CUDA graphs 正常）**，failure_policy=fail。
-- **四臂汇总（p50）**：
+- **做了什么（时序）**：
+  1. 起 P（GPU0:8100/side5600/kv_producer）+ D（GPU1:8200/side5601/kv_consumer）
+     + toy proxy:8192。**未用 enforce-eager，CUDA graphs 与 NIXL 共存正常**
+     （相对 smoke 的升级）。单请求验证通路（"The capital of France is → Paris"）。
+  2. **指标探针**（快照→1 请求→快照→diff）摸清 v0.25.1 指标体系：
+     - 传输计数**全在 D 端**（Pull 语义）：`nixl_bytes_transferred_{sum,count}`、
+       `nixl_xfer_time_seconds_sum`、`nixl_post_time_seconds_sum`、
+       `nixl_num_descriptors_sum`；
+     - P 端仅 `nixl_num_failed_{transfers,notifications}_total`、
+       `nixl_num_kv_expired_reqs_total`；`_created` 系列是时间戳须排除；
+     - bonus：`prompt_tokens_by_source_total{source="external_kv_transfer"}`
+       D 端逐 token 记账远端 KV——比 bytes 更硬的"传输真实发生"证据；
+     - 单请求对账：bytes=917504 = **16 token × 57344B**（block=16 取整），
+       ext_kv_tokens=8（=9-1，D 自算最后一 token），desc=28（=28 层）。
+  3. collect_point.py gate 判定改精确指标名（跨端口求和，弃子串猜测），字段扩展
+     （xfer/post 时间、descriptors、external_kv_tokens、failed_notifications）。
+  4. 三点归因：512=214.4 / 2048=554.6 / **8192=2685.4ms**，TPOT ~16ms，
+     GPU·s/req 4.46/5.16/**9.24**。gate 全 PASS（transfers=32=completed，
+     failed/expired 全 0）。
+- **NIXL 大传输实测**（R0-1 第三数收尾）：
+  | 桶 | bytes | MB/次 | avg xfer | post 总 | desc/次 | 有效吞吐 |
+  |---|---|---|---|---|---|---|
+  | 512 | 0.940GB | 29.4 | 113.9ms | 121ms | 1792 | 0.26GB/s |
+  | 2048 | 2.820GB | 88.1 | 330.2ms | 142ms | 5380 | 0.27GB/s |
+  | 8192 | 14.069GB | 439.7 | **1602.7ms** | 714ms | 26834 | **0.27GB/s** |
+  - **有效吞吐跨尺寸恒定 0.26–0.27GB/s**：descriptor ≈16KB/个（每 block 每层
+    单发，56/block=28 层×K,V）→ 碎片化小拷贝，量级与 §4 无 P2P 单向路径一致。
+  - PD TTFT 分量对账：2685 ≈ P prefill(~900 热态) + xfer(1603) + D 首步/代理 ✓。
+  - 措辞红线：只可称 telemetry-derived effective throughput；xfer 不与 post 相加。
+- **开放问题 → B2**：D 实拉 **7668 token/req**（<8192；bytes/57344=7668 与
+  ext_kv_tokens/32=7667 独立互证）——疑与 block 取整/前缀缓存/末 block 自算的
+  记账规则相关。定论前 KV 量一律引用 bytes 实测，不用 input_len 推算。
+- **产物**：runs.jsonl 10–12 行、`snapshots/exp006_probe_*`（探针快照×4）。
 
-  | arm | TTFT@512 | @2048 | @8192 | TPOT | GPU·s/req@8K |
-  |---|---|---|---|---|---|
-  | colocate | 65.5 | 178.3 | 925.2* | 15.9–16.3 | 2.95 |
-  | replica2 | 65.2 | 173.5 | 714.6 | 15.9–16.4 | 5.58 |
-  | tp2      | 62.8 | 173.5 | 693.7 | **9.3–9.5** | 3.79 |
-  | pd1p1d   | 214.4 | 554.6 | 2685.4 | 15.9–16.4 | 9.24 |
+## §11 实验记录体系建立 + 证据完备性修复（~17:00+）
 
-  *colocate@8K 是冷→稳态混合（见发现①），稳态约 905ms。
+- **做了什么**：用户要求"每次的实验记录完全写好"→ 建 `records/` 体系
+  （TEMPLATE 八节：目的/配置/步骤/原始数据/结果/分析/异常/下游影响），
+  EXP-001~006 全量回填（含完整命令、失败现场、决策依据）；自查抓出两个漏洞并修复：
+  ①功率帽采样 CSV 与探针快照还在会话临时目录（会话结束即丢）→ 入库；
+  ②诊断三连没存 raw → 记录里如实标"终端级证据"+补录命令，定 **README 约定 #8**
+  （任何 GPU 跑一律存 raw；记录当场写不隔夜）。用户再定死日记规矩：
+  **每次运作=本文件末尾追加一节**（已存入 Claude 长期记忆，跨会话生效）。
+  随后按"复现级"标准重写本日全部日记（本版）。
+- **产物**：`records/`（TEMPLATE+EXP-001~006+data/）、README 索引表与约定 #7/#8。
 
-### 发现①：功率帽节流（先见异常 → 分布拆解 → 机理坐实）
-- 异常：replica2@8K(715ms) 反而快过 colocate(925ms)，并发 1 下不应如此。
-- 拆解：colocate 32 请求 TTFT 分布双段（前 ~8 个 702–739ms，其后 897–951ms）；
-  replica2 全部 697–733ms。
-- 机理（nvidia-smi 采样坐实）：持续 8K prefill 下 GPU 功率 427–443W 顶 450W 帽，
-  SM 频率 2820→2460–2535MHz，节流原因位 **0x4 = SW Power Cap**（温度仅 63°C，
-  非热因）。replica2 轮转 = 每卡 50% 占空比 → 维持 boost。
-- **方法论决定**：attribution 数字代表各臂占空比下的真实工况，headline 以
-  sweep（满负载，各臂同为持续态）为准；工装已加 GPU 遥测
-  （run_point.sh 2s 采样 → runs.jsonl `gpu_telemetry`），此后每点自带工况证据。
-  SLO 表维持已锁值（5× 余量远大于 30% 效应）。
+## Day 0 未完成清单（诚实账）
 
-### 发现②：TP2 的不对称收益 —— 硬件三数的因果闭环
-- decode TPOT **16→9.3ms（-42%）**：bs=1 decode 是权重带宽约束，每卡半份权重；
-  小消息 allreduce 走延迟路径，代价 ~1.3ms/token。
-- 8K prefill **零加速**（694 vs 冷态单卡 ~700ms）：prefill allreduce 是大消息
-  （28 层 × 58.7MB），正好受 1.78GB/s collective 带宽约束 → 计算减半被通信吃掉。
+- **sweep（offered-load 扫描）未跑**——S1 headline 数字与 goodput 全部来自它，8/22 首位。
+- B2 归因未动（xfer 直方图桶分析、"7668 token"溯源）。
+- R0-4 阻塞：0.17.1 课程脚本不在本机（等用户提供；超时降级为源码机理分析）。
+- R0-6 线上稿（仅用户可改）。
+- EXT-1/EXT-2 未动（弹性，不阻塞）。
+- colocate/replica2 六个点无 gpu_telemetry（遥测工装晚于它们；如报告需要可低成本重跑）。
 
-### 晚 2：PD 指标探针 → gate 判定固化 → NIXL 大传输实测
-- 探针（单请求 before/after diff）确认 v0.25.1 指标体系：传输计数全在 **D 端**
-  （Pull 语义）——`nixl_bytes_transferred_sum/count`、`nixl_xfer_time_seconds_sum`、
-  `nixl_post_time_seconds_sum`、`nixl_num_descriptors_sum`；P 端仅 failed/expired；
-  `_created` 是时间戳需排除；bonus:
-  `prompt_tokens_by_source_total{source="external_kv_transfer"}` 逐 token 记账远端 KV。
-- collect_point.py gate 判定换成精确指标名（跨端口求和），字段扩展
-  （xfer/post 时间、descriptors、external_kv_tokens、failed_notifications）。
-- **NIXL 大传输实测**（R0-1 收尾）：**0.26–0.27 GB/s 恒定**
-  （29.4/88.1/439.7 MB/xfer；8K avg xfer 1602.7ms；descriptor ~16KB/个 =
-  每 block 每层单发 → 碎片化小拷贝）。PD TTFT 各分量对账：
-  2685 ≈ P prefill(~900) + xfer(1603) + 首步/代理。只可称
-  telemetry-derived effective throughput。
-- **开放问题（B2 归因）**：D 端实拉 7668 token/req（<8192），bytes 与
-  external_kv_tokens 两计数器独立互证——疑与 block/前缀缓存记账相关，待查。
+## 下一步（8/22）
 
-### 下一步（8/22）
-1. sweep 网格设计与试跑（rps 档位由 attribution 吞吐推算；先 colocate 臂）。
-2. B2：xfer 时间直方图桶分析 + "7668 token"记账问题溯源（读 D 端调度代码）。
-3. 考虑给 attribution 加标准化冷却协议后补一轮（报告用哪版由 sweep 结果决定）。
-
-## 2026-08-21 · Day 0（终）：实验记录体系建立 + 证据完备性修复
-
-- **做了什么**：
-  1. 建 `records/` 实验记录体系：八节模板（TEMPLATE.md：目的/配置/步骤/原始数据/
-     结果/分析/异常/下游影响）+ **EXP-001~006 六份记录全量回填**（含完整启动命令、
-     全部关键数字、失败现场与决策依据），README 加实验记录索引表；
-  2. 抢救散落证据入库：EXP-005 功率帽节流采样 CSV（原在会话临时目录，会话结束
-     即丢）→ `records/data/EXP-005_throttle_trace.csv`；EXP-006 探针快照 ×4 →
-     `snapshots/exp006_probe_*`；
-  3. EXP-005 三次诊断跑当时未存 raw —— 在记录 §4 如实标注为"终端级证据"并补录
-     完整命令与数字；由此定 **README 约定 #8**：任何 GPU 跑（含诊断）一律
-     --save-result 存 raw，实验记录当场写、不隔夜；
-  4. 工作流定死（用户拍板）：**每次运作 = 本文件末尾追加一节**，同一文件顺写；
-     收尾固定链条 = EXP 记录（如适用）→ 日记追加 → README 台账 → commit+push；
-  5. RESUME_EVIDENCE.md S1"当前可填"更新：attribution 四臂数字 + 三条归因子结论
-     （TP2 不对称收益 / NIXL 0.27GB/s 碎片化 / 功率帽节流）。
-- **为什么**：这套文件是最终写简历和面试的唯一素材源，证据只在租的云主机上，
-  不落库=丢失；记录不全=面试被追问时断链。本次自查抓出的两个真实漏洞
-  （临时目录证据、无 raw 诊断跑）正是规则 #8 的直接动因。
-- **产物**：`records/`（TEMPLATE + EXP-001~006 + data/）、README 索引表与约定 #8、
-  commits `91b7145` / `66534d7`（已推送 GitHub）。
-- **下一步**：不变（sweep 网格 → B2 溯源 → R0-4/R0-6 等用户输入）；
-  自本节起所有工作段落按固定链条收尾。
+1. sweep 网格设计（各桶 rps 档位由 attribution 吞吐推算）→ colocate 先行验证
+   sweep 流水线 → 四臂扫描。
+2. B2：xfer_time 直方图桶分析 + "7668 token" 记账溯源（读 D 端调度/connector 源码）。
+3. 每段收尾固定链条：EXP 记录 → 日记追加 → 台账更新 → commit+push。
