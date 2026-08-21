@@ -339,3 +339,24 @@
 - **产物**：figures/fig1-6、derived/sweep_summary.csv、EXP-008、EXP-009、
   台账更新（B1✅ B2◐ B3◐ R0-4✅ C1✅ C2 三重闭环）。
 - **下一步**：C3 上卡 → B4 报告成稿 → 汇总单+教学手册 → RESUME_EVIDENCE 终更新。
+
+## §14 报告成稿 + 汇总单/教学手册 + C3 上卡（~21:05–21:30，EXP-010）——Day 0 收官
+
+- **做了什么**：
+  1. **B4 报告 v1**（`pd_disagg/REPORT.md`）：一页结论（选型表+三机理发现）、
+     硬件画像、四臂矩阵（归因/扫描/PD 公平陈述）、演化三句话展开、
+     bug 链路（诚实署名）、归因方法论声明、附录。
+  2. **汇总单**（SUMMARY.md）+ **零基础教学手册**（STUDY_GUIDE.md：10 概念全用
+     自家数字锚定 + 12 数字卡 + 15 题面试预演 + 4 小时学习路径），并发布网页版
+     手册（artifact："四臂实验手册"，嵌 4 张核心图 + 折叠式自测）。
+  3. **C3 上卡**：checkpoint 锁定 Qwen/Qwen3-30B-A3B-GPTQ-Int4（官方 GPTQ Int4
+     = W4A16，MarlinLinearKernel 确认）；TP2+EP 启动 184s，smoke 连贯；
+     TPOT **4.93ms** / 饱和 10.02 req/s@512。有趣对比：30B 总参 W4A16 与
+     2.7B 激活 BF16 的 decode 速度相当（4.93 vs 4.62ms）——D1/D4 的现成切入点。
+     注：该 shape 未出现 config 缺失告警，机制待 D 阶段核实，不作断言。
+  4. RESUME_EVIDENCE 数字成稿（S1 候选句已填全部实测值）；README 台账/索引全同步。
+- **Day 0 终账**：清单 R0 全绿（R0-6 线上稿除外）、B1✅ B2◐ B3◐(有限) B4✅v1、
+  C1✅ C2✅ C3✅；EXP-001~010；runs.jsonl 111 行；六图一表；GitHub 全量备份。
+  磁盘余 12GB（D4 需对照模型时先清理）。
+- **下一步（8/22）**：教用户过 STUDY_GUIDE（15 题自测）；用户侧两件事
+  （线上稿排雷、课程脚本）；然后按 M2/M3 节奏进 D 阶段（D2 baseline 已备）。
