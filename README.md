@@ -83,7 +83,7 @@ experiments/
 | B4 报告 | ⬜ | — | — |
 | C1 Qwen1.5-MoE 上卡 | ✅ 8/21 | TP2+EP 可用；未调优基线 TPOT 4.62ms（dense 7B TP2 的 2.0×）、饱和 11.50 req/s@512——D2 的 before 数字 | EXP-009 |
 | C2 config 查重 | ✅ 8/21 | 三重闭环：本地判定 + 远端查重 + **运行时告警原文**（fused_moe.py:1106 点名 E=30,N=1408 缺失） | `moe_configs/DEDUP.md`、EXP-009 §5 |
-| C3 W4A16 上卡 | ◐ | checkpoint 锁定 **Qwen/Qwen3-30B-A3B-GPTQ-Int4**（官方 GPTQ Int4 = W4A16）；下载中 | — |
+| C3 W4A16 上卡 | ✅ 8/21 | **Qwen/Qwen3-30B-A3B-GPTQ-Int4**（W4A16，Marlin 路径确认）TP2+EP 上卡；TPOT 4.93ms / 饱和 10.02 req/s@512——与 2.7B BF16 相当（D1/D4 切入点） | EXP-010 |
 | D1–D5 | ⬜ | — | — |
 | EXT-1 / EXT-2 | ⚑ | 弹性，不阻塞主线 | — |
 
