@@ -26,13 +26,18 @@ def read_prom(path):
     return vals
 
 
-def pick_delta(deltas, *substrings):
+def exact_delta(deltas, metric_name, label_sub=None):
+    """按精确指标名(跨引擎端口求和)取增量。名字来源: 2026-08-21 PD 探针实测,
+    v0.25.1 传输计数在 D(consumer)端, P 端仅 failed/expired; _created 是时间戳需排除。"""
     total, found = 0.0, False
     for k, v in deltas.items():
-        kl = k.lower()
-        if all(s in kl for s in substrings):
-            total += v
-            found = True
+        prom = k.split(":", 1)[1]          # 去掉 "port:" 前缀
+        if prom.split("{")[0] != metric_name:
+            continue
+        if label_sub and label_sub not in prom:
+            continue
+        total += v
+        found = True
     return total if found else None
 
 
@@ -46,6 +51,7 @@ def main():
     ap.add_argument("--rps", default="-")
     ap.add_argument("--gpu-count", type=int, required=True)
     ap.add_argument("--engine-ports", nargs="+", required=True)
+    ap.add_argument("--gpu-csv", default=None)
     ap.add_argument("--slo-ttft-ms", type=float, default=None)
     ap.add_argument("--slo-tpot-ms", type=float, default=None)
     ap.add_argument("--env-label", default="ENV-B")
@@ -68,20 +74,30 @@ def main():
     duration = g("duration", 0.0)
     failed_requests = len([e for e in (g("errors") or []) if e])
 
-    nixl_bytes = pick_delta(deltas, "bytes") if is_pd else None
-    nixl_xfers = pick_delta(deltas, "transfer", "count") if is_pd else None
-    failed_xfers = pick_delta(deltas, "fail") if is_pd else None
-    expired = pick_delta(deltas, "expired") if is_pd else None
-
+    nixl_bytes = nixl_xfers = xfer_time_s = post_time_s = None
+    descriptors = failed_xfers = failed_notifs = expired = ext_kv_tokens = None
     if is_pd:
-        gate_pass = None  # PD 臂首跑需人工核对指标名后在本脚本固化判定
-        if None not in (nixl_bytes, nixl_xfers, failed_xfers):
+        nixl_bytes = exact_delta(deltas, "vllm:nixl_bytes_transferred_sum")
+        nixl_xfers = exact_delta(deltas, "vllm:nixl_bytes_transferred_count")
+        xfer_time_s = exact_delta(deltas, "vllm:nixl_xfer_time_seconds_sum")
+        post_time_s = exact_delta(deltas, "vllm:nixl_post_time_seconds_sum")
+        descriptors = exact_delta(deltas, "vllm:nixl_num_descriptors_sum")
+        failed_xfers = exact_delta(deltas, "vllm:nixl_num_failed_transfers_total")
+        failed_notifs = exact_delta(deltas, "vllm:nixl_num_failed_notifications_total")
+        expired = exact_delta(deltas, "vllm:nixl_num_kv_expired_reqs_total")
+        ext_kv_tokens = exact_delta(
+            deltas, "vllm:prompt_tokens_by_source_total",
+            label_sub='source="external_kv_transfer"',
+        )
+        gate_pass = None
+        if None not in (nixl_bytes, nixl_xfers, failed_xfers, failed_notifs, expired):
             gate_pass = (
                 failed_requests == 0
                 and nixl_bytes > 0
                 and nixl_xfers == completed
                 and failed_xfers == 0
-                and (expired or 0) == 0
+                and failed_notifs == 0
+                and expired == 0
             )
     else:
         gate_pass = failed_requests == 0
@@ -100,6 +116,36 @@ def main():
 
     def pct(metric):
         return {p: g(f"{p}_{metric}_ms") for p in ("p50", "p90", "p99")}
+
+    gpu_telemetry = None
+    if args.gpu_csv and Path(args.gpu_csv).exists():
+        per = {}
+        for line in Path(args.gpu_csv).read_text().splitlines():
+            parts = [x.strip() for x in line.split(",")]
+            if len(parts) < 5:
+                continue
+            idx = parts[0]
+            try:
+                temp = float(parts[1])
+                sm = float(parts[2].split()[0])
+                pw = float(parts[3].split()[0])
+            except ValueError:
+                continue
+            d = per.setdefault(idx, {"temps": [], "sms": [], "pws": [], "reasons": set()})
+            d["temps"].append(temp); d["sms"].append(sm); d["pws"].append(pw)
+            d["reasons"].add(parts[4].split()[0])
+        gpu_telemetry = {}
+        for idx, d in per.items():
+            loaded = [s for s, p_ in zip(d["sms"], d["pws"]) if p_ > 100]
+            gpu_telemetry[idx] = {
+                "samples": len(d["sms"]),
+                "temp_max_c": max(d["temps"]),
+                "power_max_w": max(d["pws"]),
+                "sm_clock_min_loaded_mhz": min(loaded) if loaded else None,
+                "sm_clock_mean_loaded_mhz": round(sum(loaded) / len(loaded), 0)
+                if loaded else None,
+                "throttle_reasons_seen": sorted(d["reasons"] - {"0x0000000000000000"}),
+            }
 
     row = {
         "run_id": args.prefix,
@@ -125,6 +171,7 @@ def main():
             if completed else None,
         },
         "gpu_count": args.gpu_count,
+        "gpu_telemetry": gpu_telemetry,
         "gates": {
             "kv_load_failure_policy": "fail",
             "log_stats_enabled": True,
@@ -132,9 +179,17 @@ def main():
             "nixl_bytes_delta": nixl_bytes,
             "nixl_transfers_delta": nixl_xfers,
             "transfers_expected": completed if is_pd else None,
+            "nixl_xfer_time_delta_s": xfer_time_s,
+            "nixl_post_time_delta_s": post_time_s,
+            "nixl_descriptors_delta": descriptors,
+            "external_kv_tokens_delta": ext_kv_tokens,
             "failed_transfers": failed_xfers,
-            "expired_reqs_P": expired,
-            "kv_deltas_raw": {k: v for k, v in deltas.items() if v != 0} or None,
+            "failed_notifications": failed_notifs,
+            "expired_reqs": expired,
+            "kv_deltas_raw": {
+                k: v for k, v in deltas.items()
+                if v != 0 and "_bucket{" not in k and "_created" not in k
+            } or None,
             "pass": gate_pass,
         },
         "snapshot_before": [
@@ -143,7 +198,8 @@ def main():
         "snapshot_after": [
             f"snapshots/{args.prefix}_{p}_after.prom" for p in args.engine_ports
         ],
-        "raw": [f"raw/{args.prefix}_bench.json", f"raw/{args.prefix}_bench.log"],
+        "raw": [f"raw/{args.prefix}_bench.json", f"raw/{args.prefix}_bench.log",
+                f"raw/{args.prefix}_gpu.csv"],
         "provenance": {
             "env": args.env_label,
             "sha": args.sha,

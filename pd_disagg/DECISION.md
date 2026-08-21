@@ -40,5 +40,13 @@
   GPU 间延迟 14.5–15.9 µs,本卡内 memcpy ~924 GB/s → `hw/p2p_bandwidth_latency.txt`
 - PCIe: 双卡均 Gen4 x16(空闲降 Gen1),bus C1/E1;`topo -m` 在本容器不可用
   (hwloc 无 PU 信息),以 `topo -p2p r`+PCIe link 替代 → `hw/topo.txt`
-- NIXL KV 通路初值(来自 R0-3 smoke,小传输、延迟主导,B1 时补大传输样本):
+- NIXL KV 通路初值(来自 R0-3 smoke,小传输、延迟主导):
   avg 0.188 MB/transfer,avg xfer 14.1 ms,13.3 MB/s → `smoke/smoke_v0.25.1_result.txt`
+- NIXL KV 通路大传输实测(B1 pd1p1d attribution,2026-08-21,7B/BF16):
+  **telemetry-derived effective throughput ≈ 0.26–0.27 GB/s,跨尺寸恒定**
+  (29.4/88.1/439.7 MB/xfer @ 512/2K/8K 输入;8K avg xfer 1602.7ms;
+  descriptor 粒度 ~16KB/个 = 每 block 每层单发 → 碎片化小拷贝跑不满 PCIe,
+  与 p2p 测试"无 P2P 分段中转"路径一致) → `results/b1_matrix/runs.jsonl` pd1p1d 行
+- **功率帽节流(8/21 发现)**:持续 8K prefill 使 SM 频率 2820→~2475MHz
+  (SW Power Cap 0x4,~440W/450W,温度仅 63°C 非热因)、TTFT p50 700→925ms;
+  单点遥测已进 run_point.sh 工装(runs.jsonl gpu_telemetry 字段)

@@ -53,7 +53,8 @@ experiments/
 | R0-4 0.17.1 课程基线 | ⬜ 阻塞 | — | 课程脚本不在本机，待提供；超时降级纯阅读 |
 | R0-5 profiling 工装 | ✅ 8/21 | torch profiler 直控 P/D 端口跑通（trace 落盘）；nsys 容器内可用 | `pd_disagg/profiling/r0_5_torch_profiler_check.txt`、`traces_smoke/`、`scripts/profile_ctl.sh` |
 | R0-6 简历措辞排雷 | ◐ | 本地 tex 无违规表述（已核）；线上稿待改 | 仅用户可操作 |
-| B1 四臂矩阵 | ◐ | colocate attribution 3/3 gate PASS：TTFT p50 66/178/925ms（512/2K/8K），TPOT ~16ms；SLO 已锁（328/891/4626ms + TPOT 50ms） | `results/b1_matrix/runs.jsonl`；schema `results/README.md` |
+| B1 四臂矩阵 | ◐ | **attribution 12/12 全臂完成、gate 全 PASS**。TTFT p50@8K：colocate 925 / replica2 715 / tp2 694 / pd1p1d 2685ms；TPOT：tp2 9.3ms vs 其余 ~16ms；GPU·s/req@8K：2.95/5.58/3.79/9.24。SLO 已锁（328/891/4626ms + TPOT 50ms）。剩 sweep | `results/b1_matrix/runs.jsonl`（12 行）|
+| B1 附带发现 | ✅ 8/21 | ① 功率帽节流：持续 prefill 降频 2820→2475MHz（SW Power Cap，非热），TTFT +30%；② NIXL 有效吞吐 0.26–0.27GB/s 恒定（descriptor ~16KB 碎片化）；③ TP2 decode 提速 42%（带宽分摊）但 prefill 零加速（allreduce 撞 1.78GB/s 墙） | runs.jsonl gpu_telemetry / gates 字段；`DECISION.md` 硬件基线 |
 | B2 归因层 | ⬜ | — | — |
 | B3 版本对照 | ⬜ | 已知差异一例：profiler 接口 env var→CLI（见 profiling 检查文件 note） | — |
 | B4 报告 | ⬜ | — | — |

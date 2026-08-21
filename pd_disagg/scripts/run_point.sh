@@ -24,6 +24,14 @@ for p in "${ENGINE_PORTS[@]}"; do
   scripts/metrics_snapshot.sh snap "$p" "$R/snapshots/${PREFIX}_${p}_before.prom"
 done
 
+# GPU 遥测采样(2s): 功率帽节流会使持续 prefill 降频~12%、TTFT 抬升(8/21 实测),
+# 每个测量点必须留下工况证据
+GPUCSV=$R/raw/${PREFIX}_gpu.csv
+( while true; do
+    nvidia-smi --query-gpu=index,temperature.gpu,clocks.sm,power.draw,clocks_event_reasons.active \
+      --format=csv,noheader >> "$GPUCSV"; sleep 2
+  done ) & SAMPLER=$!
+
 if [ "$MODE" = attribution ]; then
   RATE_ARGS=(--max-concurrency 1 --request-rate inf)
 else
@@ -40,6 +48,8 @@ fi
   --result-filename "${PREFIX}_bench.json" \
   2>&1 | tee "$R/raw/${PREFIX}_bench.log"
 
+kill "$SAMPLER" 2>/dev/null || true
+
 for p in "${ENGINE_PORTS[@]}"; do
   scripts/metrics_snapshot.sh snap "$p" "$R/snapshots/${PREFIX}_${p}_after.prom"
 done
@@ -49,5 +59,6 @@ GPU_COUNT=${GPU_COUNT:-$([ "$ARM" = colocate ] && echo 1 || echo 2)}
   --prefix "$PREFIX" --arm "$ARM" --mode "$MODE" \
   --input-len "$IN" --output-len "$OUT" --rps "$RPS" \
   --gpu-count "$GPU_COUNT" --engine-ports "${ENGINE_PORTS[@]}" \
+  --gpu-csv "$GPUCSV" \
   ${SLO_TTFT_MS:+--slo-ttft-ms "$SLO_TTFT_MS"} ${SLO_TPOT_MS:+--slo-tpot-ms "$SLO_TPOT_MS"}
 echo "[run_point] done: $PREFIX"

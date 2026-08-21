@@ -83,3 +83,60 @@
    → 固化 collect_point 的 gate 判定；顺手拿 8K 大传输的 NIXL 实测补硬件画像）。
 2. sweep 网格设计（每桶 rps 档位由 attribution 吞吐推算），跑 colocate sweep。
 3. 待办：R0-4 课程脚本（用户提供）、R0-6 线上稿（用户）。
+
+## 2026-08-21 · Day 0（续）：四臂 attribution 全部完成 + 两个一手发现
+
+### 晚 1：replica2 / tp2 / pd1p1d 三臂归因（12/12 gate 全 PASS）
+- **做了什么**：三臂各跑 512/2048/8192×128、并发 1、32 请求/点。replica2 =
+  双 TP1 副本 + rr_proxy(8300)；tp2 = TP=2 单实例；pd1p1d = NixlConnector
+  P(GPU0:8100,side 5600)+D(GPU1:8200,side 5601)+toy proxy(8192)，
+  **未用 enforce-eager（CUDA graphs 正常）**，failure_policy=fail。
+- **四臂汇总（p50）**：
+
+  | arm | TTFT@512 | @2048 | @8192 | TPOT | GPU·s/req@8K |
+  |---|---|---|---|---|---|
+  | colocate | 65.5 | 178.3 | 925.2* | 15.9–16.3 | 2.95 |
+  | replica2 | 65.2 | 173.5 | 714.6 | 15.9–16.4 | 5.58 |
+  | tp2      | 62.8 | 173.5 | 693.7 | **9.3–9.5** | 3.79 |
+  | pd1p1d   | 214.4 | 554.6 | 2685.4 | 15.9–16.4 | 9.24 |
+
+  *colocate@8K 是冷→稳态混合（见发现①），稳态约 905ms。
+
+### 发现①：功率帽节流（先见异常 → 分布拆解 → 机理坐实）
+- 异常：replica2@8K(715ms) 反而快过 colocate(925ms)，并发 1 下不应如此。
+- 拆解：colocate 32 请求 TTFT 分布双段（前 ~8 个 702–739ms，其后 897–951ms）；
+  replica2 全部 697–733ms。
+- 机理（nvidia-smi 采样坐实）：持续 8K prefill 下 GPU 功率 427–443W 顶 450W 帽，
+  SM 频率 2820→2460–2535MHz，节流原因位 **0x4 = SW Power Cap**（温度仅 63°C，
+  非热因）。replica2 轮转 = 每卡 50% 占空比 → 维持 boost。
+- **方法论决定**：attribution 数字代表各臂占空比下的真实工况，headline 以
+  sweep（满负载，各臂同为持续态）为准；工装已加 GPU 遥测
+  （run_point.sh 2s 采样 → runs.jsonl `gpu_telemetry`），此后每点自带工况证据。
+  SLO 表维持已锁值（5× 余量远大于 30% 效应）。
+
+### 发现②：TP2 的不对称收益 —— 硬件三数的因果闭环
+- decode TPOT **16→9.3ms（-42%）**：bs=1 decode 是权重带宽约束，每卡半份权重；
+  小消息 allreduce 走延迟路径，代价 ~1.3ms/token。
+- 8K prefill **零加速**（694 vs 冷态单卡 ~700ms）：prefill allreduce 是大消息
+  （28 层 × 58.7MB），正好受 1.78GB/s collective 带宽约束 → 计算减半被通信吃掉。
+
+### 晚 2：PD 指标探针 → gate 判定固化 → NIXL 大传输实测
+- 探针（单请求 before/after diff）确认 v0.25.1 指标体系：传输计数全在 **D 端**
+  （Pull 语义）——`nixl_bytes_transferred_sum/count`、`nixl_xfer_time_seconds_sum`、
+  `nixl_post_time_seconds_sum`、`nixl_num_descriptors_sum`；P 端仅 failed/expired；
+  `_created` 是时间戳需排除；bonus:
+  `prompt_tokens_by_source_total{source="external_kv_transfer"}` 逐 token 记账远端 KV。
+- collect_point.py gate 判定换成精确指标名（跨端口求和），字段扩展
+  （xfer/post 时间、descriptors、external_kv_tokens、failed_notifications）。
+- **NIXL 大传输实测**（R0-1 收尾）：**0.26–0.27 GB/s 恒定**
+  （29.4/88.1/439.7 MB/xfer；8K avg xfer 1602.7ms；descriptor ~16KB/个 =
+  每 block 每层单发 → 碎片化小拷贝）。PD TTFT 各分量对账：
+  2685 ≈ P prefill(~900) + xfer(1603) + 首步/代理。只可称
+  telemetry-derived effective throughput。
+- **开放问题（B2 归因）**：D 端实拉 7668 token/req（<8192），bytes 与
+  external_kv_tokens 两计数器独立互证——疑与 block/前缀缓存记账相关，待查。
+
+### 下一步（8/22）
+1. sweep 网格设计与试跑（rps 档位由 attribution 吞吐推算；先 colocate 臂）。
+2. B2：xfer 时间直方图桶分析 + "7668 token"记账问题溯源（读 D 端调度代码）。
+3. 考虑给 attribution 加标准化冷却协议后补一轮（报告用哪版由 sweep 结果决定）。
