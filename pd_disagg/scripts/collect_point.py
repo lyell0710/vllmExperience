@@ -70,7 +70,7 @@ def main():
         for k in after:
             deltas[f"{port}:{k}"] = after[k] - before.get(k, 0.0)
 
-    is_pd = args.arm == "pd1p1d"
+    is_pd = args.arm.startswith("pd1p1d")   # 含 pd1p1d_push（EXT-2 修正）
     completed = g("completed", 0)
     duration = g("duration", 0.0)
     failed_requests = len([e for e in (g("errors") or []) if e])
