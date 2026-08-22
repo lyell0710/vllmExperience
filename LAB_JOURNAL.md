@@ -360,3 +360,21 @@
   磁盘余 12GB（D4 需对照模型时先清理）。
 - **下一步（8/22）**：教用户过 STUDY_GUIDE（15 题自测）；用户侧两件事
   （线上稿排雷、课程脚本）；然后按 M2/M3 节奏进 D 阶段（D2 baseline 已备）。
+
+## §15 EXT-2 push 单点 + R0-4 复现环境搭建（2026-08-22 上午，EXP-011）
+
+- **做了什么**：①磁盘清缓存（uv 37G + pip 4.5G，纯缓存）；②EXT-2：从 v0.25.1 tag
+  提取 push 专用 proxy（disagg_proxy_pushconnector_demo.py），起 NixlPushConnector
+  1P1D，512/8192 归因跑通，与 pull 同 seed 对照（EXP-011）；③R0-4：从 v0.17.1 tag
+  提取官方 xPyD proxy+脚本，精简为本机 launch_1p1d.sh（Qwen2-7B 双卡 P2pNccl），
+  P/D 起成功、NCCL 握手 OK，装了 quart；一次经 proxy 的请求探测被额度中断未得结论。
+- **关键数字**：push 8K TTFT 2537ms（pull 2718，-6.7%）、有效吞吐 0.30GB/s
+  （pull 0.27）、计数在 P 端（WRITE 发起方）——但量级不变，**传输方向救不了 PD**。
+- **为什么**：EXT-2 是清单弹性项但数据便宜（复用 pd 栈换 connector）；R0-4 发现
+  课程脚本非必需——官方示例就在 git tag 里，可自建复现。
+- **产物**：EXP-011、matrix/disagg_proxy_pushconnector_demo.py、
+  p2pnccl_repro/（launch_1p1d.sh + proxy + 日志）、collect_point is_pd 修复、
+  **HANDOFF.md（交接文档）**。
+- **下一步（交接给下个 agent）**：见 HANDOFF.md §5——P1 跑完 R0-4 动态复现
+  （bash launch_1p1d.sh 后发请求看 D 挂死）→ EXP-012 + B3 完整版；P2 EXT-1；
+  P3 B4 v2；P4 九月 D 阶段。
