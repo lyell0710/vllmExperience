@@ -65,6 +65,7 @@ experiments/
 | [EXP-010](records/EXP-010_c3_w4a16_bringup.md) | C3 W4A16 Qwen3-30B-A3B 上卡 | C3 | 完成 |
 | [EXP-011](records/EXP-011_ext2_nixl_push.md) | EXT-2 NixlPush 推方向单点对照 | EXT-2 | 完成 |
 | [EXP-012](records/EXP-012_p2pnccl_dynamic_repro.md) | R0-4 P2pNccl 两 bug 动态复现 | R0-4 | 完成 |
+| [EXP-013](records/EXP-013_ext1_request_level_kv_attribution.md) | EXT-1 request 级 KV-wait 关联 | EXT-1/B2 | 完成 |
 
 ## 证据台账（勾一项 = 数据落盘 + 本表登记产物路径）
 
@@ -77,7 +78,7 @@ experiments/
 | R0-5 profiling 工装 | ✅ 8/21 | torch profiler 直控 P/D 端口跑通（trace 落盘）；nsys 容器内可用 | `pd_disagg/profiling/r0_5_torch_profiler_check.txt`、`traces_smoke/`、`scripts/profile_ctl.sh` |
 | R0-6 简历措辞排雷 | ◐ | 本地 tex 无违规表述（已核）；线上稿待改 | 仅用户可操作 |
 | B1 四臂矩阵 | ✅ 8/21 | **全套完成（协议 v2，84 有效行）**。饱和 req/s（512/2K/8K）：colocate 10.36/3.63/0.90（单卡）· replica2 15.58/7.00/1.78 · tp2 12.31/4.16/1.02 · pd1p1d 7.84/2.12/0.54；goodput 峰值 replica2 全场最高；PD 全负载段被传输延迟压垮（512 桶 66% 饱和度 goodput 仅 1.59） | `results/b1_matrix/runs.jsonl` + `derived/sweep_summary.csv` + `figures/fig1-6` + EXP-007 |
-| B2 归因层 | ◐ | PD TTFT 分解（传输占 54–64%，分量与遥测对账）+ NIXL 延迟地板→带宽墙曲线 + token 记账溯源关闭；剩 request 级关联（EXT-1） | `figures/fig4,fig5`、`analysis/nixl_token_accounting.md` |
+| B2 归因层 | ✅ 8/23 | **收官**：EXT-1 request 级三段关联落地——KV 等待占 TTFT **54.2/62.5/64.2%**（512/2K/8K，p50，因果占比），闭环误差 ≤0.08%，bytes 与 Prometheus 分毫不差；此前的分量对账（54–64%）被追认 | `figures/fig4,fig5`、`analysis/nixl_token_accounting.md`、EXP-013、`ext1/` |
 | B3 版本对照 | ◐ 有限版完成 | 无负载延迟 Δ<1%；**512 桶饱和 +45%**（7.14→10.36）；计算受限桶零差异；启动 308→58s。PD-vs-PD 待课程脚本 | EXP-008 |
 | R0-4（降级路径） | ✅ 8/21 | 双 bug 源码机理分析完成（assert connector:433 / 分叉 input_processor.py:212 / 无超时 wait engine:317 / GET 静默乱码 / 四层 ID 链 / NIXL 身份拆分对照），全 file:line 核对 | `analysis/p2pnccl_bugs_id_chain.md` |
 | R0-4 动态复现 | ✅ 8/23 | **实机 1P1D 坐实两 bug**：bug1 精确命中 `connector:433` AssertionError（addr串id+max_tokens>1）；bug2 D 整实例挂死（双请求 hang + 全线程 futex_wait + P /health 恒 200）；**实证修正**：裸直连先崩于 `connector:518` parse_request_id 早于 :433。py-spy 因容器 ptrace 限制未取栈帧（已诚实标注） | EXP-012；`pd_disagg/p2pnccl_repro/raw/EXP-012/` |
@@ -89,7 +90,8 @@ experiments/
 | C2 config 查重 | ✅ 8/21 | 三重闭环：本地判定 + 远端查重 + **运行时告警原文**（fused_moe.py:1106 点名 E=30,N=1408 缺失） | `moe_configs/DEDUP.md`、EXP-009 §5 |
 | C3 W4A16 上卡 | ✅ 8/21 | **Qwen/Qwen3-30B-A3B-GPTQ-Int4**（W4A16，Marlin 路径确认）TP2+EP 上卡；TPOT 4.93ms / 饱和 10.02 req/s@512——与 2.7B BF16 相当（D1/D4 切入点） | EXP-010 |
 | D1–D5 | ⬜ | — | — |
-| EXT-1 / EXT-2 | ⚑ | 弹性，不阻塞主线 | — |
+| EXT-1 request 级关联 | ✅ 8/23 | 本地 patch（16 行，可还原）；KV 占 TTFT 54.2/62.5/64.2%；上游不投（#52859 在途，见 `ext1/DEDUP.md`） | EXP-013、`pd_disagg/ext1/` |
+| EXT-2 NixlPush | ✅ 8/22 | 推方向 8K TTFT -6.7%、吞吐 +10–13%，量级不变（方向救不了 PD） | EXP-011 |
 
 ## 措辞红线状态（写简历/报告前查此表）
 
@@ -97,7 +99,7 @@ experiments/
 |---|---|---|
 | "P2P 受限" | ✅ 可用 | `hw/p2p_bandwidth_latency.txt`（connectivity=0）+ `hw/topo.txt`（GNS） |
 | "社区空缺"（MoE config） | ✅ 可用 | 2026-08-21 远端复核完成：`moe_configs/DEDUP.md`（main 无 E=30；E=60,N=704 仅 MI300X；PR/issue 无冲突） |
-| "KV 传输占 TTFT X%" | 🚫 禁用 | 待 EXT-1 request 级关联；此前只可写 telemetry 原生量 |
+| "KV 传输占 TTFT X%" | ✅ 可用 | **EXT-1 已解锁（EXP-013，2026-08-23）**：request 级三段关联（同身份同时钟域），KV 等待占 TTFT 54.2/62.5/64.2%（512/2K/8K），闭环误差 ≤0.08% |
 | telemetry 带宽表述 | 限定 | 只能称 telemetry-derived effective throughput；xferDuration 不与 postDuration 相加 |
 | 0.17 两 bug | 限定 | 只写"复现/定位/验证"，禁"发现/修复"；"吃透"→"梳理"。**动态复现已闭环（EXP-012）**：静态 file:line + 实机崩溃/挂死现场 + 实证修正，"复现/定位/验证"三词均有实测背书 |
 | A/B 版本对照 | 限定 | 只称 system-version comparison，标注传输方向不同 |

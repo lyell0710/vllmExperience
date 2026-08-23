@@ -1,7 +1,8 @@
 # 消费级双卡上的 vLLM 部署形态实验：四臂矩阵、PD 成本结构与架构演化
 
-> **B4 报告 · v1 草稿**（2026-08-21 数据全部落定；v2 定稿前待补：EXT-1 request 级
-> 关联、R0-4 动态复现——均不阻塞主结论）
+> **B4 报告 · v2 定稿**（2026-08-23。v1 → v2 变更：吸收 EXT-1 request 级
+> KV 归因（EXP-013，§2.2/§5 升级为因果占比声明）、EXT-2 推/拉对照
+> （EXP-011，§2.4）、R0-4 动态复现（EXP-012，§3/§4，B3 完整版表述定稿））
 > 数据与图表全部可由 `results/b1_matrix/runs.jsonl` + `raw/` 重算
 > （`scripts/make_figures.py`）；每个测量点带 provenance 与 gate 字段。
 > 环境：2×RTX 4090 24GB · driver 610.57.04 · vLLM v0.25.1（752a3a5044）·
@@ -68,8 +69,13 @@ failed/expired=0、GPU 遥测同行存储。SLO 预注册锁定（328/891/4626ms
 | TPOT (ms) | 15.9–16.4 | 15.9–16.4 | **9.3–9.5** | 15.9–16.4 |
 
 - 非 PD 三臂 TTFT 无实质差异（prefill 无并行收益：TP2 的计算减半被 allreduce 吃光）。
-- PD 的 TTFT 溢价全部来自传输：**分解图（fig4）传输占 54–64%**，且各分量与
-  独立遥测（xfer_time 直方图）对账吻合：8K 的 2719 ≈ prefill ~920 + xfer 1730 + 其余。
+- PD 的 TTFT 溢价全部来自传输——**request 级因果占比（EXT-1，EXP-013）**：
+  本地最小 patch 使 P / D / NIXL 三段在同一 request 身份 + 同一时钟域下逐请求
+  关联，测得 **D 等待远端 KV 占 TTFT 54.2% / 62.5% / 64.2%**（512/2K/8K，p50，
+  p10–p90 带宽 ±2% 内），六段分解闭环误差 ≤0.08%；占比随输入长饱和于 ~64%
+  （P 段与传输同为 O(输入长)，比值趋常数；短输入被 ~40ms 固定开销稀释）。
+  v1 的分量对账（fig4，54–64%）被逐请求数据追认。kv_wait 与 NIXL
+  xferDuration 仅差 0.3–1.2ms——等待窗口就是传输本身，不在调度轮询。
 
 ### 2.3 负载扫描（headline，fig1/fig2）
 | 桶 | 饱和 req/s：colo/repl/tp2/pd | goodput 峰值 rps |
@@ -95,7 +101,15 @@ PD 分离的价值主张（消除 prefill 对 decode 的干扰、独立扩缩 P/
 **跨节点大集群 + 高速互联（NVLink/IB/RDMA NIC）**下成立。本实验证明的是其
 **适用边界**：当 KV 通路只有 ~0.27GB/s 时，1P1D 在任何负载与任何输入长度下都
 无法收回传输成本。这不是 NIXL 的缺陷——是部署形态与互联能力的错配。
-（若 EXT-2 做 NixlPush 单点，此节补推/拉对照。）
+
+**传输方向对照（EXT-2，EXP-011）**：用 NixlPushConnector 专用 push proxy
+（P 端 NIXL WRITE 推送，与 pull 的 D 端 READ 相反）同 seed 复测 512/8192 单点：
+推方向略优——8K TTFT 2537 vs 2718ms（-6.7%），有效吞吐 0.278–0.305 vs
+0.26–0.27 GB/s（+10–13%），机理是 WRITE 免去请求-应答回合且 P 完成 prefill
+即推、与 D 调度解耦；但**量级不变，两个方向同贴互联墙**——"形态与互联能力
+错配"的结论对推/拉同时成立。附带机制对照：push 模式 D 端注册全部本地块、
+P 全量推送（8K 全量 469.8MB/req），不做 pull 侧的前缀缓存尾对齐裁剪；
+WRITE 的 posting 成本在 P 端显著更高（71–149ms vs pull 的 ~4ms）。
 
 ## 3. P2pNccl → NIXL：架构演化（三句话定稿版展开）
 
@@ -114,14 +128,32 @@ PD 分离的价值主张（消除 prefill 对 decode 的干扰、独立扩缩 P/
 
 完整机理（含 chunked_prefill assert 崩溃链 connector:433、四层 ID 传播表、全部
 file:line）：`analysis/p2pnccl_bugs_id_chain.md`。
-版本性能维度（system-version comparison）：无负载延迟 8 个月未变（物理约束未动），
-512 桶饱和 +45%（每请求开销路径的收益），启动 308s→58s（EXP-008）。
+
+**版本对照的完整表述（B3 定稿，EXP-008 + EXP-012）**，分两个正交维度：
+1. **单实例 system-version comparison**（EXP-008）：无负载延迟 8 个月未变
+   （物理约束未动），512 桶饱和 +45%（每请求开销路径的收益），启动 308s→58s。
+2. **PD 可用性对照**（EXP-012 实机坐实）：0.17.1 P2pNccl 1P1D 在**默认配置下
+   正常请求即触发 D 整实例挂死**（request_id 随机后缀分叉 → 无超时
+   `recv_store_cv.wait()`，D 全线程 futex 停摆、不自愈，而 P /health 恒 200）——
+   0.17.1 的 PD 不构成可用对照臂，跨版本 PD-vs-PD **没有吞吐对比可做，
+   对照结论即"不可用 vs 可用"本身**。这也是为什么 B3 不给 PD 吞吐对比表。
 
 ## 4. 已知 bug 的复现与链路分析（诚实署名）
 
 两个缺陷为课程已记录的已知问题；本工作为**复现级源码定位与机理验证**
-（措辞红线：复现/定位/验证，非发现/修复）。动态崩溃现场复现待课程脚本
-（R0-4），静态分析已完成且全部 file:line 在本机两版本源码核对。
+（措辞红线：复现/定位/验证，非发现/修复）。静态分析全部 file:line 在本机
+两版本源码核对；**动态复现已实机闭环（EXP-012，2026-08-23）**：
+- **缺陷 1**（chunked_prefill assert）：直连 P + 地址串 request_id +
+  max_tokens>1 → 精确命中 `p2p_nccl_connector.py:433` AssertionError，
+  EngineCore 崩溃（一级证据：原生 traceback）。**实证修正静态分析**：裸
+  request_id 直连会先崩于 `connector:518` parse_request_id（ValueError），
+  根本走不到 :433——精确触发需要 id 内嵌 peer 地址串。
+- **缺陷 2**（rendezvous key 分叉）：经 proxy 的正常请求 → D 整实例挂死
+  （双请求 hang + 全线程 futex_wait + util 0 + P /health 恒 200，不自愈）；
+  :317 定位由 wchan + 行为学 + 静态 file:line 三方闭环（py-spy 栈帧因容器
+  ptrace 限制未取，诚实标注）。
+- 三条触发路径（裸 id 崩 :518 / 地址串 id 崩 :433 / 经 proxy 触发 D 侧挂死）
+  构成该连接器脆弱性的完整触发图景。
 面试展开口径见 analysis 文末"2 分钟版"。
 
 ## 5. 归因方法论（可信度声明）
@@ -129,8 +161,12 @@ file:line）：`analysis/p2pnccl_bugs_id_chain.md`。
 - 每测量点：provenance 行 + gate 字段同行存储 + before/after /metrics 快照
   （直抓引擎，代理不可信）+ GPU 遥测（频率/功率/节流位）。
 - NIXL 数字只称 telemetry-derived effective throughput；xferDuration 含 posting，
-  不与 postDuration 相加；"KV 传输占 TTFT X%"仅在分量对账语境下给出
-  （request 级关联待 EXT-1，故不作因果占比声明）。
+  不与 postDuration 相加。**"KV 传输占 TTFT X%"为因果占比声明（EXT-1 解锁）**，
+  依据三重互证：① 逐请求 bytes 求和与 Prometheus 计数器分毫不差；
+  ② kv_wait（墙钟）≈ xferDuration（telemetry，差 0.3–1.2ms）；③ 六段全链分解
+  vs client TTFT 闭环误差 ≤0.08%。观测无扰动：打 patch 后 TTFT 218/727/2738
+  vs 矩阵 219/719/2719（噪声内）。patch 上游化已查重放弃（#52859 在途，
+  `ext1/DEDUP.md`）。
 - token 记账双计数器互证（bytes vs prompt_tokens_by_source）分毫不差；
   缺口逐块对账到前缀缓存命中（analysis/nixl_token_accounting.md）——
   测量体系自洽性的独立证明。
@@ -140,6 +176,7 @@ file:line）：`analysis/p2pnccl_bugs_id_chain.md`。
 ## 附录
 - A. SLO 敏感性：fig6（0.5–4× 排序稳定）
 - B. 全量数据表：results/b1_matrix/derived/sweep_summary.csv
-- C. 实验记录索引：../records/（EXP-001~009）
+- C. 实验记录索引：../records/（EXP-001~013）
+- E. request 级 KV 归因全数据：ext1/derived/ext1_per_request.csv（EXP-013）
 - D. MoE 前瞻（第 2 阶段）：Qwen1.5-MoE-A2.7B TP2+EP 未调优基线 TPOT 4.62ms
   （dense 7B TP2 的 2.0×）；E=30,N=1408 config 缺失的运行时告警在案（EXP-009）

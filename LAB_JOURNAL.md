@@ -401,3 +401,27 @@
   README 台账 R0-4 转 ✅ + EXP 索引补 010/011/012 + 措辞红线更新。
 - **下一步**：B3 完整版表述据此定（0.17.1 PD 默认配置正常请求即触发 D 挂死→不可用对照臂，
   vs 0.25.1 NIXL 可用）；再往后 P2 EXT-1（解锁 KV 占比红线）、P3 B4 v2 定稿（8/31）。
+
+## §17 EXT-1 request 级 KV 归因落地 + B4 v2 定稿（2026-08-23，EXP-013）
+
+- **做了什么**：①上游查重：发现开放 draft PR **#52859**（NVIDIA，NIXL push/pull
+  lifecycle tracing）已覆盖 EXT-1 上游化方向 → fail-closed，定位为**本地测量 patch**
+  （`ext1/DEDUP.md`）。②Patch：ENV-B site-packages 16 行（`# EXT1` 标记全可还原，
+  原件备份 ext1/orig/）——pull_worker 首见请求记时 + base_worker 传输 DONE 时按
+  req_id 聚合 telemetry 并输出 `EXT1_KV` 行 + 失败路径清理。③测量栈：instrumented
+  proxy（6 epoch 打点+透传 X-Request-Id）+ 流式 client（每请求唯一 id/seed）+
+  EXP-006 同配置 1P1D，3 桶×12 请求。④三方 join 分析 + B4 报告 v1→v2 全量升级。
+- **关键数字**：**KV 等待占 TTFT 54.2% / 62.5% / 64.2%**（512/2K/8K，p50，
+  p10–p90 ±2% 内）——红线"KV 占 TTFT X%"正式解锁为因果占比声明。三重互证：
+  逐请求 bytes 和 = Prometheus 计数器**分毫不差**（7398752256）；kv_wait −
+  xferDuration = 0.3–1.2ms（等待≈传输本身）；六段分解闭环误差 ≤0.08%。
+  无扰动：patch 后 TTFT 218/727/2738 vs 矩阵 219/719/2719。36/36 身份匹配；
+  idx=0 首请求显式观测到 handshake 一次性成本（512 桶 +292ms）。
+- **为什么**：这是 B2 归因层最后一块——之前只能"分量对账"，现在 P/D/NIXL 三段
+  同 request 身份同时钟域逐请求关联，因果占比可发布。
+- **产物**：EXP-013、`pd_disagg/ext1/`（patch+DEDUP+工装 4 件+raw/EXP-013+
+  derived/ext1_per_request.csv）、README 台账（B2 ✅ 收官、EXT-1/EXT-2 ✅、
+  红线解锁、索引+013）、**REPORT.md v2 定稿**（§2.2 因果占比、§2.4 推/拉对照、
+  §3 B3 完整版两维度表述、§4 动态复现三路径、§5 三重互证方法论）。
+- **下一步**：M1 交付物已成稿（8/31 前富余）。转 P4 九月 D 阶段前置：D1 nsys
+  MoE 分解（baseline EXP-009/010 在案）→ D2 config 调优 + PR 六件套准备。
