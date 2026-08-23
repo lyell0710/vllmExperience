@@ -67,9 +67,9 @@ experiments/
 | [EXP-012](records/EXP-012_p2pnccl_dynamic_repro.md) | R0-4 P2pNccl 两 bug 动态复现 | R0-4 | 完成 |
 | [EXP-013](records/EXP-013_ext1_request_level_kv_attribution.md) | EXT-1 request 级 KV-wait 关联 | EXT-1/B2 | 完成 |
 | [EXP-014](records/EXP-014_d1_moe_kernel_decomposition.md) | D1 MoE decode 分解(曲线+nsys) | D1 | 完成 |
+| [EXP-015](records/EXP-015_d2_moe_config_tuning.md) | D2 MoE config 调优+六件套验证 | D2/P1 | 完成 |
 | [EXP-016](records/EXP-016_d4_fp8_vs_w4a16.md) | D4 FP8 vs W4A16(30B-A3B, Ada) | D4 | 完成 |
 | [EXP-017](records/EXP-017_d5_eplb_gate.md) | D5 EPLB gate(W4A16拒/FP8重排+对照) | D5 | 完成 |
-| [EXP-015](records/EXP-015_d2_moe_config_tuning.md) | D2 MoE config 调优+六件套验证 | D2/P1 | 完成 |
 
 ## 证据台账（勾一项 = 数据落盘 + 本表登记产物路径）
 

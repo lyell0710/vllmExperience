@@ -46,7 +46,9 @@ ppl_{fp8,w4a16}.{json,log}、kernel path 摘录、manifest(provenance)。
   backend out of potential backends: ['AITER','FLASHINFER_TRTLLM',
   'FLASHINFER_CUTLASS','DEEPGEMM','TRITON','MARLIN',...]`;
   另 `symm_mem.py:66 Device capability 8.9 not supported`。
-- W4A16:GPTQ-Int4 → Marlin(EXP-010 确认,W4 权重 + BF16 计算)。
+- W4A16:GPTQ-Int4 → `MarlinLinearKernel` + `'MARLIN' WNA16 MoE backend`
+  (本实验 ppl_w4a16.log 原文,已补录 w4a16_kernel_path.txt;serve 臂
+  server.log 因超时误杀重启仅含幸存进程输出——8/23 审计勘正;与 EXP-010 一致)。
 
 ## 6. 分析与结论
 - **decode 全 regime W4A16 胜(23–48%)**:decode 是权重带宽受限

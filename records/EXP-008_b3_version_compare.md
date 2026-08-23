@@ -22,7 +22,10 @@
 attribution×3（512/2048/8192，并发 1）+ saturation×3，与 ENV-B colocate v2 同协议。
 
 ## 4. 原始数据
-runs.jsonl arm=colocate_v0171 六行；raw/b3_v0171_server.log；raw/snapshots 同前缀。
+runs.jsonl arm=colocate_v0171 六行(在 b1_matrix 下,B3 未另设目录);
+raw/ 内同前缀 bench json/log/gpu csv 18 件 + snapshots 12 件。
+**勘误(8/23 审计)**:v0171 的 server 日志未保留(其余臂均有),该臂服务端
+证据等级降为"终端级";结论数字全部来自 bench raw 与 /metrics 快照,不受影响。
 
 ## 5. 结果
 | 指标 | v0.17.1 | v0.25.1 | Δ |

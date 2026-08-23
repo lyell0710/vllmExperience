@@ -82,5 +82,6 @@ results/b1_matrix/
 
 ## B3 版本对照数据
 
-同 schema，`provenance.env=ENV-A`，文件放 `results/b3_version_compare/`；
+同 schema，`provenance.env=ENV-A`。**实际落点(8/23 勘正)**:数据并入
+`b1_matrix/`(arm=colocate_v0171),`b3_version_compare/` 目录未启用；
 结论只能称 **system-version comparison**（scheduler/kernel/默认配置/传输方向均不同）。

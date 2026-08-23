@@ -6,7 +6,8 @@
 
 **项目标题**：vLLM 推理部署与 MoE 性能优化｜RTX 4090×2｜2026.08–2026.09
 
-**时间语义**：9 月初投递版 = S1/S2 完成时 + S3 进行时；面试季随 D3/D4/D5 逐句升级。
+**时间语义(8/23 更新)**:9 月初投递版 = S1–S4 全部成稿(S3 按 PR 状态写
+"材料备齐"或"已提交(附链接)");S5 维持不上简历;面试季随 PR review 进展升级 S3。
 
 ---
 
@@ -25,7 +26,7 @@
     TPOT 16 vs tp2 9.3ms、GPU·s/req 2.94–9.59 → REPORT §2.2 / runs.jsonl v2 行
   - 归因子结论三条（可各自成半句）：① TP2 decode -42%（带宽分摊）但 prefill
     零加速（大消息 allreduce 撞 1.78GB/s collective 墙）；② NIXL KV 通路有效
-    吞吐 0.26–0.27GB/s 恒定（~16KB/descriptor 碎片化小拷贝）；③ 消费卡 450W
+    吞吐 0.26–0.27GB/s 恒定（telemetry-derived）（~16KB/descriptor 碎片化小拷贝）；③ 消费卡 450W
     功率帽使持续 prefill 降频 ~12%、TTFT +30%（SW Power Cap 遥测坐实）
 - **✅ headline 数字已全部到位（8/21 夜 sweep 完成，60 个扫描点全 gate）**。
   **S1 成稿候选（数字已填，供压缩）**：
@@ -67,7 +68,8 @@
   input_processor.py:212、PUT 模式 D 端无超时 Condition.wait 挂死
   （engine:317）+ 内存泄漏、GET 模式静默乱码、四层 ID 传播表、
   NIXL 三层身份拆分对照；文末含面试 2 分钟口径草稿。
-  版本性能维度补充（EXP-008）：无负载 Δ<1%、512 桶饱和 +45%、启动 308→58s。
+  版本性能维度补充（EXP-008，system-version comparison 非组件归因）：
+  无负载 Δ<1%、512 桶饱和 +45%、启动 308→58s。
 - **✅ 动态复现闭环（EXP-012，8/23）**：bug1 精确命中 connector:433 原生
   traceback（需地址串 id + max_tokens>1 两条件，实证修正静态分析——裸 id 先崩
   :518）；bug2 D 整实例挂死行为学+wchan 闭环；B3 完整版表述定稿
@@ -94,7 +96,8 @@
   > 时间 56%，据此为社区空缺的 RTX 4090 BF16 config（E=30,N=1408 EP /
   > E=60,N=704 TP，本地+远端+运行时告警三重查重确认空缺）完成上游标准调优
   > （benchmark_moe.py，1920 配置×19 M 档×2 tuple）：kernel 延迟两端改善
-  > （decode M=1 -8.5%，prefill M≥128 -3.3~-3.9%），e2e TPOT +0.8~1.2%，
+  > （decode M=1 -8.5%[EP 臂;非 EP -3.8%]，prefill M≥128 -3.3~-3.9%），
+  > e2e TPOT +0.8~1.2%，
   > 经 correctness（120 passed）/kernel A/B/e2e bench 三级验证，PR 材料
   > 按仓库六件套标准备齐。
   （PR 提交后把"材料备齐"升级为"已提交(附链接)";merge 后再升级。）

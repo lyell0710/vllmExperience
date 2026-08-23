@@ -22,9 +22,13 @@ step_interval=100, log_balancedness=true`(默认 1000/3000 调小 20-30×)。
 w4a16 臂 → 失败取证 → fp8 臂(gate 1/2)→ 对照组(gate 2 归因)。
 
 ## 4. 原始数据
-`moe_perf/raw/EXP-017/{w4a16,fp8,control_noeplb}/`:各臂 server.log、
-probe_{before,after}.txt、probe_diff.txt、rearrange_evidence.txt、load.log、
-manifest(provenance)。fp8 臂 server.log 含 2852 条 balancedness 逐 step 记录。
+`moe_perf/raw/EXP-017/` 按臂列(8/23 审计修正,此前"各臂"统述不准确):
+- `fp8/`(全套 7 类):server.log(含 2852 条 balancedness 逐 step 记录)、
+  probe_{before,after}.txt、probe_diff.txt、rearrange_evidence.txt(注:摘录
+  仅含 profile 行,两次真实重排行在 server.log 10:09:38/10:10:19)、load.log、manifest。
+- `w4a16/`(启动即抛 NotImplementedError,无探针阶段):server.log、manifest。
+- `control_noeplb/`(probe 逐字节一致故无 diff;关 EPLB 故无重排证据):
+  server.log、probe_{before,after}.txt、load.log、manifest。
 
 ## 5. 结果
 **GATE3(W4A16 兼容性)= 上游显式不支持**:

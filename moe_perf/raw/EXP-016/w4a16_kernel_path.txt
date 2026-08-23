@@ -1,0 +1,4 @@
+# 来源: 本实验 raw/EXP-016/ppl_w4a16.log(同 checkpoint 同会话;serve 臂 server.log 因超时误杀重启仅含幸存进程输出,初始化行未落入——8/23 审计补录)
+(Worker_TP1_EP1 pid=325151) INFO 08-23 09:57:36 [auto_gptq.py:357] Using MarlinLinearKernel for AutoGPTQLinearMethod
+(Worker_TP0_EP0 pid=325069) INFO 08-23 09:57:36 [auto_gptq.py:357] Using MarlinLinearKernel for AutoGPTQLinearMethod
+(Worker_TP0_EP0 pid=325069) INFO 08-23 09:57:36 [int_wna16.py:197] Using 'MARLIN' WNA16 MoE backend.
