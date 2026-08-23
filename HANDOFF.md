@@ -79,7 +79,14 @@ P2P 驱动禁用）上做推理部署选型 + MoE 性能优化，产出简历/�
 
 ## 5. 未完成（按优先级，接手就干这些）
 
-### ⬜ P1 · R0-4 动态复现（环境已搭好，差最后一跑）
+### ✅ P1 · R0-4 动态复现（2026-08-23 完成 → EXP-012）
+两 bug 实机坐实：bug1 精确命中 `connector:433` AssertionError（手工 addr串id+max_tokens>1）；
+bug2 D 整实例挂死（双请求 hang + 全线程 futex_wait + P /health 恒 200）。实证修正：裸直连 P
+先崩于 `connector:518` parse_request_id，早于 :433。py-spy 因容器 ptrace 限制未取栈帧（诚实标注）。
+raw 见 `pd_disagg/p2pnccl_repro/raw/EXP-012/`。**接续**：据此定 B3 完整版表述（0.17.1 PD 默认配置
+正常请求即触发 D 挂死 = 不可用对照臂，vs 0.25.1 NIXL 可用），然后做下面 P2。
+
+<details><summary>原 P1 说明（已完成，存档）</summary>
 - **现状**：`pd_disagg/p2pnccl_repro/` 已备好 `launch_1p1d.sh`（0.17.1 P2pNccl 1P1D，
   Qwen2-7B 双卡，proxy http 10001 / zmq 30001，P:20003 D:20005）。昨晚起过一次，
   P/D 就绪、NCCL 握手成功（见 `repro_decode_tail.txt`），但一次经 proxy 的请求探测
@@ -94,8 +101,9 @@ P2P 驱动禁用）上做推理部署选型 + MoE 性能优化，产出简历/�
   截图/存日志坐实。产出 → EXP-012 + 解锁 B3 完整版(PD-vs-PD)。
 - **注意**：quart 已装进 0.17.1 venv。proxy 会给两端传同一 request_id，
   分叉发生在各实例内部 InputProcessor（已确认默认 `VLLM_DISABLE_REQUEST_ID_RANDOMIZATION=False`）。
+</details>
 
-### ⬜ P2 · EXT-1 telemetry request 级关联（解锁最后一条红线）
+### ⬜ P2 · EXT-1 telemetry request 级关联（解锁最后一条红线，现为最高优先）
 - 目标：给 NIXL telemetry 加 request 关联的**本地最小 patch**（ENV-C=main 上改，
   改前 `gh` 查重），解锁"D 等待远端 KV 对 TTFT 的关键路径贡献占比"。
 - 解锁后可把 REPORT §2.2 的传输占比从"分量对账"升级为因果占比声明。
@@ -121,7 +129,8 @@ P2P 驱动禁用）上做推理部署选型 + MoE 性能优化，产出简历/�
   run_point 已自动采 GPU 遥测入 runs.jsonl。
 - ~3% 运行率的客户端 ServerDisconnected 瞬断：失败行保留(gate_pass=false)，同 seed 重跑。
 
-## 7. 当前状态快照（交接时刻）
-- 所有进程已停，双卡空闲。git 干净，最新 commit `23e3b7c`（已推送）。
-- runs.jsonl 122 行（含 EXT-2 的 pd1p1d_push 2 行）。
-- 下一步第一命令：`cd pd_disagg/p2pnccl_repro && bash launch_1p1d.sh`（做 R0-4）。
+## 7. 当前状态快照（2026-08-23 更新）
+- 所有进程已停，双卡空闲。git 干净，最新 commit `28b4bd8`（已推送）。
+- R0-4 动态复现（EXP-012）✅ 收官；py-spy 因容器 ptrace 限制装了但用不了（同 docker 平台限制）。
+- 未完：P2 EXT-1（现最高优先）→ P3 B4 v2（8/31）→ P4 九月 D 阶段；B3 完整版表述据 EXP-012 定。
+- 下一步第一动作：读 EXP-012 记录确认 B3 表述，然后开 P2（EXT-1，ENV-C=main 上改前先 gh 查重）。
