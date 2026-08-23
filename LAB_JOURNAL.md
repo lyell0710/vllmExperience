@@ -445,3 +445,31 @@
 - **下一步**:D2 调优已后台开跑(EP → 非 EP);FP8 checkpoint(D4)已下载就位;
   D5 预研完成(qwen3_moe 支持 EPLB/qwen2_moe 不支持 → 用 30B-A3B-GPTQ,
   rearrange 证据锚点 eplb_state.py:748)。
+
+## §19 D4/D5 收官 + 交付物对抗校验(2026-08-23 下午,EXP-016/017)
+
+- **做了什么**:①D4:FP8 vs W4A16 双臂 bench(4 点)+ 同 token 集 wikitext
+  PPL;②D5:三臂(w4a16 拒/fp8 重排/无-EPLB 对照组)gate 判定;③20 个
+  校验 agent 对 REPORT/记录/台账做数字重算与一致性对抗校验,确认 20 条真实
+  问题(台账重复行、陈旧引用、闭环误差口径 0.084%>0.08% 等)全部修复;
+  ④调度重构:GPU 管线做成自驱动链(D4→PPL→D5→tune→AB),D2 全量调优移到
+  最后长跑。
+- **关键数字**:D4——W4A16 decode 全 regime 胜 23–48%(TPOT 4.91 vs
+  7.10ms@bs1),FP8 仅 c128 TTFT 反超(497 vs 613ms)+ PPL 优 3.3% 相对
+  (7.663 vs 7.922,同 31212 计分 token);Ada 落地解释钉到
+  oracle/fp8.py:103-122(capability 90/100 快路径跳过 SM89 → TRITON)。
+  D5——GPTQ 拒于 routed_experts.py:151;FP8 臂 2 次真实重排(balancedness
+  0.53–0.74);**对照组逐字节一致 → 分歧因果归属 EPLB**,定性数值性;
+  按 gate 规则 D5 不上简历(维持默认)。
+- **事故与教训(三则,均已记录在案)**:①pkill 连坐第三形态:后台命令
+  wrapper 的 cmdline 含 heredoc 全文,pattern 匹配 wrapper 自身 → heredoc
+  写脚本与执行必须分开投递;②被杀链的子进程成为孤儿继续跑,与新链抢 GPU
+  → 清理必须按 PID 全树,且清理模式可能误伤新链同名进程(D5 首败即此竞态,
+  复跑排除);③服务健康检查窗必须按最慢臂设置(GPTQ 加载 11 分钟 vs 10
+  分钟窗,差 1 分钟被误判启动失败)。
+- **产物**:EXP-016/017、moe_perf/raw/EXP-01{6,7}/ 全套 raw、d4_ppl.py、
+  d5_control.sh、对抗校验修复批次(commit cc473de)、台账/简历证据/WEEKLY
+  同步、SUMMARY 快照横幅。
+- **下一步**:链 5 长跑中(D2 全量调优 EP→非EP→AB,预计 10–14h)→ 出数后
+  EXP-015 + PR 分支 + PR_DRAFT 回填(提交必须由用户本人);推送队列在途
+  (大文件 ~13KB/s 慢爬,本地 commit 为锚)。

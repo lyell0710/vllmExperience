@@ -5,13 +5,14 @@
 # 任一不过 → D5 整条砍掉(白板级保留),原样记录。
 set -u
 DIR=$(cd "$(dirname "$0")" && pwd)
-RAW=$DIR/raw/EXP-017
+TAG=${TAG:-w4a16}
+RAW=$DIR/raw/EXP-017/$TAG
 mkdir -p "$RAW"
 source "$DIR/../pd_disagg/scripts/provenance.sh"
 prov_env B
 VENV=/root/venvs/v0.25.1
-MODEL=Qwen/Qwen3-30B-A3B-GPTQ-Int4
-prov_line "d5_eplb.sh (GPTQ-Int4 TP2+EP+EPLB window=50 interval=100)" > "$RAW/manifest.txt"
+MODEL=${MODEL:-Qwen/Qwen3-30B-A3B-GPTQ-Int4}
+prov_line "d5_eplb.sh ($MODEL TP2+EP+EPLB window=50 interval=100)" > "$RAW/manifest.txt"
 
 CUDA_VISIBLE_DEVICES=0,1 "$VENV/bin/vllm" serve "$MODEL" --port 8100 \
   --max-model-len 4096 --tensor-parallel-size 2 --enable-expert-parallel \

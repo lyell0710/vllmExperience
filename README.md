@@ -68,6 +68,7 @@ experiments/
 | [EXP-013](records/EXP-013_ext1_request_level_kv_attribution.md) | EXT-1 request 级 KV-wait 关联 | EXT-1/B2 | 完成 |
 | [EXP-014](records/EXP-014_d1_moe_kernel_decomposition.md) | D1 MoE decode 分解(曲线+nsys) | D1 | 完成 |
 | [EXP-016](records/EXP-016_d4_fp8_vs_w4a16.md) | D4 FP8 vs W4A16(30B-A3B, Ada) | D4 | 完成 |
+| [EXP-017](records/EXP-017_d5_eplb_gate.md) | D5 EPLB gate(W4A16拒/FP8重排+对照) | D5 | 完成 |
 
 ## 证据台账（勾一项 = 数据落盘 + 本表登记产物路径）
 
@@ -91,7 +92,8 @@ experiments/
 | C3 W4A16 上卡 | ✅ 8/21 | **Qwen/Qwen3-30B-A3B-GPTQ-Int4**（W4A16，Marlin 路径确认）TP2+EP 上卡；TPOT 4.93ms / 饱和 10.02 req/s@512——与 2.7B BF16 相当（D1/D4 切入点） | EXP-010 |
 | D1 MoE 分解 | ✅ 8/23 | **反转点发现**:MoE/dense 2.03×(bs=1)→0.97×(bs=8)→0.82×(bs=128);nsys node 级分解:fused_moe grouped GEMM 占 56.4%(bs=32)/ dense GEMV 40.9%(bs=1);D2/D3 目标由数据锁定 fused_moe | EXP-014、`moe_perf/`(figures+derived+raw) |
 | D4 FP8 vs W4A16 | ✅ 8/23 | **W4A16(Marlin)decode 全 regime 胜 23–48%**(TPOT 4.91 vs 7.10ms@bs1),FP8 仅 c128 TTFT 反超(497 vs 613ms,prefill 计算受限)+ PPL 优 3.3% 相对(7.663 vs 7.922,同 31212 token);Ada 落地解释:oracle/fp8.py:103-122 capability 提升跳过 SM89 → TRITON block-scaled | EXP-016、`moe_perf/raw/EXP-016/` |
-| D2/D3/D5 | 进行中 | D2 调优+AB 链上跑批(EXP-015);D5 重跑中(EXP-017,前次被进程清理竞态误杀,EPLB+GPTQ 配置已证可被接受);D3 依 D2 A/B 定 | — |
+| D5 EPLB gate | ✅ 8/23 判定完成 | **W4A16 拒**(`routed_experts.py:151` NotImplementedError,上游 TODO 指认工程缺口);**FP8 臂 2 次真实重排**(balancedness 0.53–0.74 实测)+ **对照组**(无 EPLB 同负载逐字节一致)→ 输出分歧因果归属 EPLB(数值性定性);按清单 gate 规则**不上简历,白板级保留** | EXP-017、`moe_perf/raw/EXP-017/` |
+| D2/D3 | 进行中 | D2 调优+AB 链上最终长跑(EXP-015);D3 依 D2 A/B 定 | — |
 | EXT-1 request 级关联 | ✅ 8/23 | 本地 patch（16 行，可还原）；KV 占 TTFT 54.2/62.5/64.2%；上游不投（#52859 在途，见 `ext1/DEDUP.md`） | EXP-013、`pd_disagg/ext1/` |
 | EXT-2 NixlPush | ✅ 8/22 | 推方向 8K TTFT -6.7%、吞吐 +10–13%，量级不变（方向救不了 PD） | EXP-011 |
 

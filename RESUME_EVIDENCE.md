@@ -107,10 +107,16 @@
 - **面试防御**：同 token 集 PPL 协议、regime 反转的机理（decode 带宽受限 vs
   prefill 计算受限 + Marlin 反量化开销）、oracle/fp8.py:103-122 行号。
 
-## S5 · EPLB（默认不上简历）
+## S5 · EPLB（✅ gate 已跑完 8/23，维持不上简历）
 
-- D5 全部 gate（真实重排 + 一致性 + W4A16 兼容）通过才升格为一个短句；
-  否则仅作面试白板素材。
+- **判定（EXP-017）**：W4A16 兼容 gate 上游显式拒绝（`routed_experts.py:151`
+  NotImplementedError，TODO 指认为工程缺口非根本不兼容）；FP8 臂 2 次真实
+  重排 + balancedness 0.53–0.74 实测；一致性 gate FAIL 但经无-EPLB 对照组
+  归因为重排引起的数值性分歧（浮点归约顺序）。按清单规则不上简历。
+- **白板素材升级**：对照组方法学、量化×EPLB 支持矩阵 file:line、
+  "bitwise 一致性不是 EP 布局变化下的合理判据"的反思。
+- **潜在上游素材**（9 月可选池）：AutoGPTQMoEMethod 补 supports_eplb
+  （上游 TODO 邀请参照 Fp8MoEMethod），做前查重。
 
 ---
 
