@@ -17,9 +17,10 @@
 | 两 bug 动态复现:connector:433 原生 traceback + D 挂死行为学闭环 | S2 | EXP-012 |
 | MoE 上卡:A2.7B TP2+EP TPOT 4.62ms(dense 2.0×);30B-A3B W4A16 TPOT 4.93ms | S3 | EXP-009/010 |
 | E=30,N=1408 config 社区空缺(三重闭环) | S3 | C2 DEDUP |
+| **D4:W4A16 decode 快 23–48%(4.91 vs 7.10ms TPOT),FP8 PPL 优 3.3%,TTFT c128 反转** | S4 | **EXP-016(本周日)** |
 | **D1 分解:MoE/dense 反转点 2.03×→0.97×@8→0.82×@128;fused_moe 占 56.4%@bs32** | S3 | **EXP-014(本周日)** |
 
 **里程碑状态**:M1(8/31)报告 v2 已定稿,提前 8 天;M2(9/1)MoE 上卡已达成。
-**缺口**:S3 的 D2 config 调优 A/B 数字(跑批中);S4 等 D4 收尾(FP8 臂已测)。
+**缺口**:S3 的 D2 config 调优 A/B 数字(跑批中);S4 已解锁(EXP-016 全套完成)。
 **下周(8/24–8/30)目标**:D2 调优 JSON + A/B + PR 六件套材料(用户 review 后
 提交);D4/D5 记录收尾;D3 依 D2 A/B 数据定夺。

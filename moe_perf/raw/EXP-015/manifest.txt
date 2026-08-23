@@ -1,1 +1,1 @@
-# provenance: env=ENV-C sha=7aa248fcfe version=0.26.1rc1.dev682+g7aa248fcf.precompiled cmd="d2_tune.sh (benchmark_moe --tune, EP then non-EP)" date=2026-08-23T08:37:56+00:00 gpu="2 NVIDIA GeForce RTX 4090" driver=610.57.04 
+# provenance: env=ENV-C sha=7aa248fcfe version=0.26.1rc1.dev682+g7aa248fcf.precompiled cmd="d2_tune.sh (benchmark_moe --tune, EP then non-EP)" date=2026-08-23T10:03:51+00:00 gpu="2 NVIDIA GeForce RTX 4090" driver=610.57.04 

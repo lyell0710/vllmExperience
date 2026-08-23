@@ -1,1 +1,1 @@
-# provenance: env=ENV-B sha=752a3a5044 version=0.25.1 cmd="d5_eplb.sh (GPTQ-Int4 TP2+EP+EPLB window=50 interval=100)" date=2026-08-23T09:54:48+00:00 gpu="2 NVIDIA GeForce RTX 4090" driver=610.57.04 
+# provenance: env=ENV-B sha=752a3a5044 version=0.25.1 cmd="d5_eplb.sh (GPTQ-Int4 TP2+EP+EPLB window=50 interval=100)" date=2026-08-23T10:02:46+00:00 gpu="2 NVIDIA GeForce RTX 4090" driver=610.57.04 

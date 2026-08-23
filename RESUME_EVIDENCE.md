@@ -92,12 +92,20 @@
 - **缺口**：D2 benchmark_moe.py 调优+六件套 PR（跑批中）、（可选）D3
 - **面试防御**：AGENTS.md 六件套（DCO/查重说明/AI 声明/测试命令+数据/e2e bench）。
 
-## S4 · 量化对比（可选句，D4 做完才上）
+## S4 · 量化对比（✅ D4 完成 8/23，可上简历）
 
 > 在 RTX 4090 上对比 `[具体FP8格式]` 与 `[具体W4A16 checkpoint/格式]`，量化吞吐、
 > 显存与 PPL/任务精度变化，给出 Ada 平台在不同 batch 和上下文长度下的量化选型边界。
 
-- **前置**：C3 锁定具体 checkpoint + 量化格式（AWQ/GPTQ/AutoRound 不许混称）。
+- **✅ 已完成（EXP-016）**，成稿候选：
+  > 在 2×RTX 4090 上对比 Qwen3-30B-A3B 官方 FP8（block FP8，Triton
+  > block-scaled 路径）与 GPTQ-Int4（W4A16，Marlin）：W4A16 在 decode 全
+  > regime 快 23–48%（TPOT 4.91 vs 7.10ms@bs1）且权重减半，FP8 仅在高并发
+  > prefill 段 TTFT 反超（497 vs 613ms@c128）并以 wikitext PPL 占优 3.3%
+  > 相对（同 31k 计分 token）；并从 vLLM backend 分派逻辑（capability 90/100
+  > 快路径跳过 SM89）解释 Ada 为何只能走 Triton 而非 Hopper FP8 路径。
+- **面试防御**：同 token 集 PPL 协议、regime 反转的机理（decode 带宽受限 vs
+  prefill 计算受限 + Marlin 反量化开销）、oracle/fp8.py:103-122 行号。
 
 ## S5 · EPLB（默认不上简历）
 
