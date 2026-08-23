@@ -54,27 +54,25 @@ P2P 驱动禁用)上做推理部署选型 + MoE 性能优化,产出简历/面试
 
 R0-1~R0-5、B1、**B2(EXT-1 收官,KV 占 TTFT 54.2/62.5/64.2%)**、B3(两维度
 定稿)、**B4 报告 v2 定稿**、C1/C2/C3、EXT-2、R0-4 动态复现(EXP-012)、
-**D1(EXP-014:MoE decode 反转点 2.03×→0.82×,fused_moe 56.4%@bs32)**。
-记录 EXP-001~014。M1 提前达成;M2 已达成。
+**D1(EXP-014:MoE decode 反转点 2.03×→0.82×,fused_moe 56.4%@bs32)**、
+**D4(EXP-016:W4A16 decode 胜 23–48%,FP8 PPL 优 3.3%,Ada 路径 file:line)**、
+**D5(EXP-017:gate 判定完成,不上简历,白板素材)**、交付物对抗校验(20 条
+修复,commit cc473de)。记录 EXP-001~014+016+017。M1/M2 均提前达成。
 
 ## 5. 进行中/未完成(按序接手)
 
-1. **D2(EXP-015,后台跑批中)**:`d2_tune.sh`(EP E=30,N=1408 → 非 EP
-   E=60,N=704)→ watcher 自动接 `d2_ab.sh`(kernel A/B + e2e A/B +
-   correctness)。完成后:写 EXP-015、回填 `PR_DRAFT.md` 数字、在
-   `/root/projects/vllm` 建分支 `moe-config-4090-qwen15moe` 放两个 JSON。
-   **PR 由用户本人 review + `git commit -s` + 提交(AGENTS.md 禁纯 agent PR)**。
-2. **D4(EXP-016)**:`d4_fp8_w4a16.sh`(FP8 上卡成败本身是数据;Ada SM89
-   无 Hopper FP8 路径的落地解释写进记录)+ `d4_ppl.py` 两 checkpoint wikitext
-   PPL。GPU 空了就跑。
-3. **D5(EXP-017)**:`d5_eplb.sh`(窗口 50/间隔 100 逼真实重排;gate 三项,
-   任一不过整条砍)。预研已做:qwen3_moe 支持 EPLB、qwen2_moe 不支持;
-   证据锚点 `eplb_state.py:748 "Rearranging experts"`。
-4. **D3**:目标已由 D1 锁定 = fused_moe 路径;等 D2 A/B 数据决定 config 之外
-   还有没有 kernel 级机会(若 tuned config 已贴 roofline,D3 改为"以数据说明
-   config 即最优杠杆")。
-5. 收尾:EXP-015~017 记录 + README 台账 + WEEKLY + LAB_JOURNAL + commit/push;
-   RESUME_EVIDENCE S3/S4/S5 按结果升级。
+1. **D2(EXP-015,链 5 最终长跑中,任务 b6l7lff67)**:`gpu_chain5.sh` =
+   d2_tune(EP E=30,N=1408 → 非 EP E=60,N=704,全量 18 batch 档,~10–14h)
+   → 自动接 `d2_ab.sh`(kernel A/B + e2e A/B + correctness)。完成后:
+   写 EXP-015、回填 `PR_DRAFT.md` 数字、在 `/root/projects/vllm` 建分支
+   `moe-config-4090-qwen15moe` 放两个 JSON(d2_ab 的 phase3 已把 JSON 拷进
+   configs/,分支化即可)。**PR 由用户本人 review + `git commit -s` + 提交**。
+2. **D3**:等 D2 A/B 数据定——若 tuned config 已贴 roofline,D3 改为
+   "以数据说明 config 即最优杠杆";否则按 A/B 差距找 kernel 级机会。
+3. 收尾:EXP-015 记录 + 台账/WEEKLY/日记 + commit/push;可选:更新两个
+   artifact(凡跑必录 / 四臂实验手册)收录 8/23 全部新结果。
+4. 可选上游素材(9 月池):AutoGPTQMoEMethod 补 supports_eplb(EXP-017 §8,
+   上游 TODO 邀请,做前查重)。
 
 ### 用户本人负责(agent 干不了)
 - **R0-6**:线上简历稿"发现/修复"→"复现/定位/验证"(从 8/21 挂起至今)。
@@ -89,9 +87,12 @@ R0-1~R0-5、B1、**B2(EXT-1 收官,KV 占 TTFT 54.2/62.5/64.2%)**、B3(两维度
 - 功率帽:持续 prefill 降频 ~12%,同热工况才可比。
 - 大文件 push 慢(nsys rep 上百 MB),push 放后台跑。
 
-## 7. 当前状态快照(2026-08-23 ~09:00Z)
+## 7. 当前状态快照(2026-08-23 ~10:45Z)
 
-- 后台:d2 tune(EP 进行中,1.92k 配置×18 batch 档×2 tuple,数小时)→
-  watcher 自动接 d2_ab;git push(EXP-014 大文件)后台中。
-- 本地 commit 到 d5693e4(EXP-013/014 + B4 v2 + WEEKLY + whiteboard/3 图)。
-- 下一步第一动作:等 d2_ab 出数 → EXP-015 + PR 分支;GPU 空隙插 D4/D5。
+- 后台:**链 5**(任务 b6l7lff67)= d2 全量调优(EP→非EP)→ d2_ab,不再
+  抢占;Monitor bdl4ab1ps 盯阶段标记。git push 慢爬中(大文件 ~13KB/s,
+  落后若干 commit,本地为锚,勿并发第二个 push)。
+- 本地 commit 到 07c8c94(EXP-016/017 + 对抗校验修复 + 台账全同步)。
+- 下一步第一动作:收 STAGE_D2_TUNE_DONE / STAGE_D2_AB_DONE → 读
+  raw/EXP-015(configs_{ep,noep} JSON + kernel_*.log + e2e_*.json +
+  correctness_pytest.log)→ 写 EXP-015 → PR 分支 + PR_DRAFT 回填。
