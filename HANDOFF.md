@@ -59,24 +59,20 @@ R0-1~R0-5、B1、**B2(EXT-1 收官,KV 占 TTFT 54.2/62.5/64.2%)**、B3(两维度
 **D5(EXP-017:gate 判定完成,不上简历,白板素材)**、交付物对抗校验(20 条
 修复,commit cc473de)。记录 EXP-001~014+016+017。M1/M2 均提前达成。
 
-## 5. 进行中/未完成(按序接手)
+## 5. 状态:清单全线完成(2026-08-23 傍晚)
 
-1. **D2(EXP-015,链 5 最终长跑中,任务 b6l7lff67)**:`gpu_chain5.sh` =
-   d2_tune(EP E=30,N=1408 → 非 EP E=60,N=704,全量 18 batch 档,~10–14h)
-   → 自动接 `d2_ab.sh`(kernel A/B + e2e A/B + correctness)。完成后:
-   写 EXP-015、回填 `PR_DRAFT.md` 数字、在 `/root/projects/vllm` 建分支
-   `moe-config-4090-qwen15moe` 放两个 JSON(d2_ab 的 phase3 已把 JSON 拷进
-   configs/,分支化即可)。**PR 由用户本人 review + `git commit -s` + 提交**。
-2. **D3**:等 D2 A/B 数据定——若 tuned config 已贴 roofline,D3 改为
-   "以数据说明 config 即最优杠杆";否则按 A/B 差距找 kernel 级机会。
-3. 收尾:EXP-015 记录 + 台账/WEEKLY/日记 + commit/push;可选:更新两个
-   artifact(凡跑必录 / 四臂实验手册)收录 8/23 全部新结果。
-4. 可选上游素材(9 月池):AutoGPTQMoEMethod 补 supports_eplb(EXP-017 §8,
-   上游 TODO 邀请,做前查重)。
+D0 地基、B1–B4、C1–C3、D1–D5、EXT-1/2、P1(材料层)/P2/P3 全部收官,
+记录 EXP-001~017 齐(见 README 索引)。M1/M2 提前达成;M3 = 材料齐备。
 
-### 用户本人负责(agent 干不了)
-- **R0-6**:线上简历稿"发现/修复"→"复现/定位/验证"(从 8/21 挂起至今)。
-- **D2 PR 的最终提交**(review 每一行 + DCO 签名 + 开 PR)。
+### 唯余两项,均只能由用户本人执行
+1. **R0-6**:线上简历稿"发现/修复"→"复现/定位/验证"。
+2. **D2 PR 提交**:分支 `moe-config-4090-qwen15moe`(/root/projects/vllm,
+   两 JSON 已暂存)→ 逐行 review → `git commit -s` → fork/push → 按
+   `moe_perf/PR_DRAFT.md` 开 PR(六件套数字已全部回填)。
+
+### 可选(9 月池)
+- AutoGPTQMoEMethod 补 supports_eplb(EXP-017 §8,上游 TODO 邀请,先查重);
+- B4 报告终稿通读;简历 9 月投递版成稿(S1–S4 全有数,见 RESUME_EVIDENCE)。
 
 ## 6. 已知坑(别重复踩)
 
