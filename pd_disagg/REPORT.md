@@ -178,5 +178,9 @@ file:line）：`analysis/p2pnccl_bugs_id_chain.md`。
 - B. 全量数据表：results/b1_matrix/derived/sweep_summary.csv
 - C. 实验记录索引：../records/（EXP-001~013）
 - E. request 级 KV 归因全数据：ext1/derived/ext1_per_request.csv（EXP-013）
-- D. MoE 前瞻（第 2 阶段）：Qwen1.5-MoE-A2.7B TP2+EP 未调优基线 TPOT 4.62ms
-  （dense 7B TP2 的 2.0×）；E=30,N=1408 config 缺失的运行时告警在案（EXP-009）
+- D. MoE 前瞻（第 2 阶段，EXP-009/014）：Qwen1.5-MoE-A2.7B TP2+EP 未调优基线
+  TPOT 4.62ms（dense 7B TP2 的 2.0×）；**decode 优势在 bs≈8 反转**
+  （2.03×@bs1 → 0.82×@bs128，top-4/60 命中并集随 batch 趋全量的读放大）；
+  nsys node 级分解：serving batch 下 fused_moe grouped GEMM 占 GPU 时间
+  56.4%——E=30,N=1408 config 缺失（运行时告警在案）正中该热点，调优见
+  moe_perf/（EXP-015）
