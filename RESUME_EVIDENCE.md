@@ -33,14 +33,19 @@
   > 负载 60+ 测量点，以 TTFT/TPOT/SLO goodput/GPU·s-per-request 建立选型边界
   > ——双副本取得近线性 2× 吞吐扩展（2K 输入 7.00 vs 3.63 req/s）与全场最高
   > goodput；TP=2 的 decode 提速 42% 被 1.78GB/s allreduce 带宽墙抵消（吞吐仅
-  > +13–19%）；以 NIXL telemetry 定量证明 PD 分离在 0.27GB/s 有效 KV 带宽下
-  > 全负载段不可取（KV 传输占无负载 TTFT 的 54–64%）。
+  > +13–19%）；以 request 级三段关联（同请求身份+同时钟域，本地 telemetry
+  > patch）测得 KV 等待占 TTFT 54–64%（因果占比，闭环误差 ≤0.08%），定量证明
+  > PD 分离在 0.27GB/s 有效 KV 带宽下全负载段不可取；推/拉两方向实测同贴
+  > 互联墙（push 仅 -6.7% TTFT）。
 - **支撑文件**：`pd_disagg/REPORT.md`（B4 v1）、`figures/fig1–6`、
   `derived/sweep_summary.csv`、runs.jsonl（109 行）、EXP-007；
   面试叙事线：LAB_JOURNAL §9–§12（功率帽/污染修正/传输墙三个完整探案）
 - **面试防御**："凭什么说传输真的发生了" → 每测量点 gate 字段
   （nixl bytes 增量、成功传输数=预期远端请求数、failed=0、expired=0、
   failure_policy=fail、/metrics 直抓引擎端口）随数据同行存于 runs.jsonl。
+  "54–64% 怎么来的" → EXP-013 三重互证：逐请求 bytes 和=Prometheus 分毫不差、
+  kv_wait≈xferDuration（差 0.3–1.2ms）、六段分解闭环误差 ≤0.08%；观测无扰动
+  （patch 前后 TTFT 噪声内）；36/36 请求身份双端匹配。
 
 ## S2 · 架构演化与 bug 链路——面试深挖主力，不做头号成果
 
@@ -61,7 +66,10 @@
   （engine:317）+ 内存泄漏、GET 模式静默乱码、四层 ID 传播表、
   NIXL 三层身份拆分对照；文末含面试 2 分钟口径草稿。
   版本性能维度补充（EXP-008）：无负载 Δ<1%、512 桶饱和 +45%、启动 308→58s。
-- **残项**：动态崩溃现场复现（等课程脚本，非阻塞）。
+- **✅ 动态复现闭环（EXP-012，8/23）**：bug1 精确命中 connector:433 原生
+  traceback（需地址串 id + max_tokens>1 两条件，实证修正静态分析——裸 id 先崩
+  :518）；bug2 D 整实例挂死行为学+wchan 闭环；B3 完整版表述定稿
+  （0.17.1 PD 默认配置不可用对照臂 vs 0.25.1 NIXL 可用）。
 - **红线**：只写"复现/定位/验证/梳理"，禁"发现/修复/吃透"。
 
 ## S3 · MoE kernel 分解与上游贡献——上限最高，最后压轴

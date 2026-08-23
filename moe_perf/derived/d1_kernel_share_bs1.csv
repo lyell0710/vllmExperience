@@ -1,0 +1,10 @@
+bucket,time_ms,share_pct
+dense GEMM/GEMV (proj/shared-exp/lm_head),17608.1,40.89
+grouped GEMM (fused_moe),8054.96,18.71
+AllReduce (NCCL/custom),5932.75,13.78
+norm/rope/act/elementwise,3751.95,8.71
+attention,3118.23,7.24
+routing (topk/softmax),2088.55,4.85
+moe_align_block_size,1776.49,4.13
+other,511.84,1.19
+permute/unpermute/moe_sum,216.44,0.5

@@ -1,0 +1,142 @@
+#!/usr/bin/env python3
+"""D1 分析:decode 吞吐-batch 曲线(MoE vs dense)+ 派生表(EXP-014)。
+
+图样式沿用 pd_disagg/scripts/make_figures.py 的既定规范(dataviz validated
+palette、白底、单图单结论、图脚注 provenance)。
+Roofline 锚点(bs=1, decode 权重读取带宽上限,GDDR6X 1008GB/s):
+  dense 7B BF16 TP2: 每 token 读全权重 ~14.2GB,双卡并行各读一半
+      → 上限 ~ 1008 / 7.1 ≈ 142 tok/s
+  MoE A2.7B BF16 TP2+EP: bs=1 每 token 激活 ~2.7B 参数(~5.4GB),
+      双卡各 ~2.7GB → 上限 ~ 1008 / 2.7 ≈ 373 tok/s
+  (大 batch 下 MoE 每 step 命中专家数↑ → 每 step 权重读取趋向全量 28.6GB,
+   bs=1 优势按机理递减——正是本图的结论。)
+"""
+
+import csv
+import json
+from pathlib import Path
+
+import matplotlib
+
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt
+
+BASE = Path(__file__).resolve().parent
+RAW = BASE / "raw" / "EXP-014"
+FIG = BASE / "figures"
+DER = BASE / "derived"
+FIG.mkdir(exist_ok=True)
+DER.mkdir(exist_ok=True)
+
+COLOR = {"moe_tp2ep": "#2a78d6", "dense_tp2": "#eb6834"}
+LABEL = {
+    "moe_tp2ep": "Qwen1.5-MoE-A2.7B (TP2+EP, 激活 2.7B)",
+    "dense_tp2": "Qwen2-7B (TP2, dense)",
+}
+CONCS = [1, 2, 4, 8, 16, 32, 64, 128]
+ROOFLINE = {"moe_tp2ep": 373, "dense_tp2": 142}
+PROV = ("source: moe_perf/raw/EXP-014 (in128/out256, seed-per-point) · "
+        "2×RTX4090 · vLLM 0.25.1 · 2026-08-23")
+
+plt.rcParams.update({
+    "font.sans-serif": ["Noto Sans CJK SC", "DejaVu Sans"],
+    "axes.unicode_minus": False,
+    "figure.facecolor": "white",
+    "axes.facecolor": "white",
+    "axes.edgecolor": "#c9c9c9",
+    "axes.linewidth": 0.8,
+    "axes.grid": True,
+    "grid.color": "#e8e8e8",
+    "grid.linewidth": 0.6,
+    "axes.spines.top": False,
+    "axes.spines.right": False,
+    "text.color": "#1a1a19",
+    "axes.labelcolor": "#1a1a19",
+    "xtick.color": "#555555",
+    "ytick.color": "#555555",
+    "font.size": 10,
+})
+
+
+def load(model):
+    rows = []
+    for c in CONCS:
+        f = RAW / f"d1_{model}_c{c}_bench.json"
+        if not f.exists():
+            continue
+        d = json.loads(f.read_text())
+        rows.append(
+            dict(model=model, conc=c,
+                 output_tok_s=d["output_throughput"],
+                 tpot_p50_ms=d["median_tpot_ms"],
+                 ttft_p50_ms=d["median_ttft_ms"],
+                 req_s=d["request_throughput"]))
+    return rows
+
+
+def main():
+    all_rows = []
+    for m in ("moe_tp2ep", "dense_tp2"):
+        all_rows += load(m)
+
+    with open(DER / "d1_scaling.csv", "w", newline="") as f:
+        w = csv.DictWriter(f, fieldnames=list(all_rows[0].keys()))
+        w.writeheader()
+        w.writerows(all_rows)
+
+    fig, ax = plt.subplots(figsize=(7.2, 4.6))
+    for m in ("moe_tp2ep", "dense_tp2"):
+        rows = [r for r in all_rows if r["model"] == m]
+        xs = [r["conc"] for r in rows]
+        ys = [r["output_tok_s"] for r in rows]
+        ax.plot(xs, ys, "-o", color=COLOR[m], label=LABEL[m],
+                linewidth=2, markersize=5)
+        ax.annotate(f"{ys[-1]:.0f}", (xs[-1], ys[-1]), textcoords="offset points",
+                    xytext=(6, -2), fontsize=9, color="#1a1a19")
+        ax.axhline(ROOFLINE[m], color=COLOR[m], linestyle=":", linewidth=1.2,
+                   alpha=0.55)
+    ax.annotate("MoE bs=1 roofline ~373 tok/s(1008GB/s ÷ 2.7GB 激活权重/卡)",
+                (16, ROOFLINE["moe_tp2ep"]), textcoords="offset points",
+                xytext=(0, 5), fontsize=8, color=COLOR["moe_tp2ep"], alpha=0.9)
+    ax.annotate("dense bs=1 roofline ~142 tok/s(÷ 7.1GB/卡)",
+                (16, ROOFLINE["dense_tp2"]), textcoords="offset points",
+                xytext=(0, -11), fontsize=8, color=COLOR["dense_tp2"], alpha=0.9)
+    moe = {r["conc"]: r["output_tok_s"] for r in all_rows
+           if r["model"] == "moe_tp2ep"}
+    den = {r["conc"]: r["output_tok_s"] for r in all_rows
+           if r["model"] == "dense_tp2"}
+    ax.annotate("2.03×", (1, moe[1]), textcoords="offset points",
+                xytext=(-4, 14), fontsize=10, color="#555555", ha="center",
+                bbox=dict(boxstyle="round,pad=0.25", fc="white",
+                          ec="#c9c9c9", lw=0.6))
+    ax.annotate("0.82×", (96, (moe[128] * den[128]) ** 0.5),
+                fontsize=10, color="#555555", ha="center",
+                bbox=dict(boxstyle="round,pad=0.25", fc="white",
+                          ec="#c9c9c9", lw=0.6))
+    ax.set_xscale("log", base=2)
+    ax.set_xticks(CONCS)
+    ax.set_xticklabels([str(c) for c in CONCS])
+    ax.set_xlabel("并发(≈decode batch size)")
+    ax.set_ylabel("decode 吞吐(输出 tok/s)")
+    ax.set_title("MoE 的 decode 优势在 bs≈8 反转:2.03×(bs=1)→ 0.74×(bs=64)"
+                 "(输入128/输出256)")
+    ax.legend(loc="upper left", frameon=False, fontsize=9)
+    fig.text(0.01, 0.005, PROV, fontsize=6.5, color="#888888")
+    fig.tight_layout(rect=(0, 0.02, 1, 1))
+    fig.savefig(FIG / "d1_fig1_decode_scaling.png", dpi=160)
+    print("figure ->", FIG / "d1_fig1_decode_scaling.png")
+
+    print("\n| conc | MoE tok/s | dense tok/s | MoE/dense | MoE TPOT | dense TPOT |")
+    print("|---|---|---|---|---|---|")
+    tpot_m = {r["conc"]: r["tpot_p50_ms"] for r in all_rows
+              if r["model"] == "moe_tp2ep"}
+    tpot_d = {r["conc"]: r["tpot_p50_ms"] for r in all_rows
+              if r["model"] == "dense_tp2"}
+    for c in CONCS:
+        if c in moe and c in den:
+            print(f"| {c} | {moe[c]:.0f} | {den[c]:.0f} | {moe[c]/den[c]:.2f}× "
+                  f"| {tpot_m[c]:.2f} | {tpot_d[c]:.2f} |")
+
+
+if __name__ == "__main__":
+    main()

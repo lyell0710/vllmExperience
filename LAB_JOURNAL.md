@@ -425,3 +425,23 @@
   §3 B3 完整版两维度表述、§4 动态复现三路径、§5 三重互证方法论）。
 - **下一步**：M1 交付物已成稿（8/31 前富余）。转 P4 九月 D 阶段前置：D1 nsys
   MoE 分解（baseline EXP-009/010 在案）→ D2 config 调优 + PR 六件套准备。
+
+## §18 D1 收官:MoE decode 反转点 + kernel 分解(2026-08-23,EXP-014)
+
+- **做了什么**:①同轴扫描 MoE(A2.7B TP2+EP)vs dense(7B TP2)decode 吞吐
+  (输入128/输出256,并发 1→128 八档);②nsys kernel 级分解(cudaProfilerApi
+  控窗 + `--cuda-graph-trace=node`),bs=1/32 两窗;③分析工装 3 件 + 报告图。
+- **关键数字**:**MoE 优势在 bs≈8 反转**——2.03×(bs=1)→0.97×(bs=8)→
+  0.74–0.82×(bs≥16);机理=top-4/60 命中并集随 batch 趋全量,28.6GB/step 读
+  放大 > dense 14.2GB。kernel 占比:bs=32 时 **fused_moe grouped GEMM 56.4%**
+  (bs=1 时 dense GEMV 40.9%,lm_head 0.31GB/token/rank 是隐性大头);
+  AllReduce 恒 ~15%(TP2 固定税)。D2/D3 目标由数据锁定:fused_moe 路径。
+- **方法学收获(面试弹药)**:nsys 默认 graph-level trace 下 CUDA graphs 内
+  kernel 不单列,首采的"分解表"实为 prefill 混样(fused_moe 仅 4 step 实例);
+  node 级重采后 other 桶从 77%→1.2%。graphlevel 采集文件保留作对照证据。
+- **产物**:EXP-014、moe_perf/{d1_sweep.sh,d1_nsys.sh,d1_analyze.py,d1_kernels.py}、
+  figures/d1_fig1_decode_scaling.png、derived/d1_{scaling,kernel_share_bs1,bs32}.csv、
+  raw/EXP-014/(16 bench JSON + 4 nsys rep + 遥测)。
+- **下一步**:D2 调优已后台开跑(EP → 非 EP);FP8 checkpoint(D4)已下载就位;
+  D5 预研完成(qwen3_moe 支持 EPLB/qwen2_moe 不支持 → 用 30B-A3B-GPTQ,
+  rearrange 证据锚点 eplb_state.py:748)。

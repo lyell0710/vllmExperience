@@ -1,0 +1,1 @@
+# provenance: env=ENV-B sha=752a3a5044 version=0.25.1 cmd="d1_sweep.sh (moe_tp2ep + dense_tp2, in128/out256, conc 1..128)" date=2026-08-23T08:04:43+00:00 gpu="2 NVIDIA GeForce RTX 4090" driver=610.57.04 
