@@ -89,8 +89,19 @@
   GEMM 占 GPU 时间 **56.4%**（bs=32 serving batch）；MoE/dense decode 反转点
   2.03×（bs=1）→0.97×（bs=8）→0.82×（bs=128）——"为什么调这个 config"的
   数据答案 + 报告第一页图（d1_fig1_decode_scaling.png）。
-- **缺口**：D2 benchmark_moe.py 调优+六件套 PR（跑批中）、（可选）D3
-- **面试防御**：AGENTS.md 六件套（DCO/查重说明/AI 声明/测试命令+数据/e2e bench）。
+- **✅ D2 完成（EXP-015，8/23）**，S3 成稿候选：
+  > 以 nsys kernel 级分解定位 fused MoE grouped GEMM 占 serving batch GPU
+  > 时间 56%，据此为社区空缺的 RTX 4090 BF16 config（E=30,N=1408 EP /
+  > E=60,N=704 TP，本地+远端+运行时告警三重查重确认空缺）完成上游标准调优
+  > （benchmark_moe.py，1920 配置×19 M 档×2 tuple）：kernel 延迟两端改善
+  > （decode M=1 -8.5%，prefill M≥128 -3.3~-3.9%），e2e TPOT +0.8~1.2%，
+  > 经 correctness（120 passed）/kernel A/B/e2e bench 三级验证，PR 材料
+  > 按仓库六件套标准备齐。
+  （PR 提交后把"材料备齐"升级为"已提交(附链接)";merge 后再升级。）
+- **D3 判定**：依数据转结论句——中段 M 与默认启发式打平证明 config 即最优
+  杠杆，不做无数据支撑的 kernel 改动（面试口径：知道什么时候不做优化）。
+- **面试防御**：AGENTS.md 六件套（DCO/查重说明/AI 声明/测试命令+数据/e2e
+  bench）；Triton 首跑 JIT 伪影的识别与 warmup 复测（EXP-015 §7）。
 
 ## S4 · 量化对比（✅ D4 完成 8/23，可上简历）
 

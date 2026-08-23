@@ -1,4 +1,9 @@
-# D2 PR 草稿(六件套对照)· 状态:待调优数字回填
+# D2 PR 草稿(六件套对照)· 状态:数字已回填(2026-08-23),待用户 review + 签名提交
+
+> **分支已就绪**:`/root/projects/vllm` 的 `moe-config-4090-qwen15moe` 分支,
+> 两个 JSON 已 `git add` 暂存。你 review 后执行:
+> `cd /root/projects/vllm && git commit -s -m "<下方标题>"`(-s 生成你的
+> Signed-off-by),然后 fork/push/开 PR。**不要用 agent 身份提交。**
 
 > 目标分支:vllm-project/vllm main;本地分支 `moe-config-4090-qwen15moe`。
 > **提交人必须是本人**(AGENTS.md:pure code-agent PR 不允许;需人工逐行
@@ -31,10 +36,29 @@ Currently both shapes fall back to the default config with the runtime warning
 3. e2e serving: `vllm bench serve`(in128/out256 + in512/out128,attribution
    + saturation)main 默认 vs 加 config,同 seed。
 
-### Test Result(待回填)
-- Kernel A/B 表:[TUNE 后回填:各 batch 档 us 对比 + 提升 %]
-- e2e:[回填:TPOT/吞吐 before→after]
-- correctness:[回填:pytest 输出]
+### Test Result(2026-08-23 实测,2×RTX 4090,vLLM main@7aa248fc)
+
+Kernel A/B(`benchmark_moe.py` 非 tune 模式,default config vs tuned JSON):
+
+| M | EP default→tuned (us) | Δ | 非EP default→tuned (us) | Δ |
+|---|---|---|---|---|
+| 1 | 38.2→34.9 | **-8.5%** | 24.4→23.4 | **-3.8%** |
+| 8 | 389.4→389.0 | ~0 | 250.9→252.7 | ~0 |
+| 32 | 563.4→564.1 | ~0 | 506.1→507.2 | ~0 |
+| 64 | 578.2→573.1 | -0.9% | 568.2→566.9 | ~0 |
+| 128 | 609.8→585.9 | **-3.9%** | 601.8→579.4 | **-3.7%** |
+| 256 | 621.4→597.9 | **-3.8%** | 609.2→589.0 | **-3.3%** |
+
+(收益集中在 M=1 与 M≥128 两端;默认启发式在中段 M 已接近最优——如实陈述。)
+
+e2e serving(`vllm bench serve`,Qwen1.5-MoE-A2.7B TP2+EP,in128/out256):
+TPOT p50 一致改善 +1.1–1.2%(c1: 4.40→4.34ms;c32: 17.91→17.70;
+c128: 28.78→28.47);吞吐与 TTFT 在会话噪声内持平
+(warmup 复测:c32 1596→1616 tok/s、c128 4233→4178,均噪声内;TPOT 终判 +0.8~1.2%)。
+注:首次带新 config 的流量会触发 Triton JIT 编译新 tile 形状(一次性,
+秒级)——冷启 bench 若不预热会把首波 TTFT 计入编译时间。
+
+correctness:`pytest tests/kernels/moe/test_moe.py::test_fused_moe` → 120 passed, 120 skipped, 0 failed (139.7s)
 
 ### AI assistance(六件套 #5)
 AI assistance (Claude) was used to run the tuning harness, prepare benchmarks,

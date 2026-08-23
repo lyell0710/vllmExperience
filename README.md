@@ -69,6 +69,7 @@ experiments/
 | [EXP-014](records/EXP-014_d1_moe_kernel_decomposition.md) | D1 MoE decode 分解(曲线+nsys) | D1 | 完成 |
 | [EXP-016](records/EXP-016_d4_fp8_vs_w4a16.md) | D4 FP8 vs W4A16(30B-A3B, Ada) | D4 | 完成 |
 | [EXP-017](records/EXP-017_d5_eplb_gate.md) | D5 EPLB gate(W4A16拒/FP8重排+对照) | D5 | 完成 |
+| [EXP-015](records/EXP-015_d2_moe_config_tuning.md) | D2 MoE config 调优+六件套验证 | D2/P1 | 完成 |
 
 ## 证据台账（勾一项 = 数据落盘 + 本表登记产物路径）
 
@@ -93,7 +94,8 @@ experiments/
 | D1 MoE 分解 | ✅ 8/23 | **反转点发现**:MoE/dense 2.03×(bs=1)→0.97×(bs=8)→0.82×(bs=128);nsys node 级分解:fused_moe grouped GEMM 占 56.4%(bs=32)/ dense GEMV 40.9%(bs=1);D2/D3 目标由数据锁定 fused_moe | EXP-014、`moe_perf/`(figures+derived+raw) |
 | D4 FP8 vs W4A16 | ✅ 8/23 | **W4A16(Marlin)decode 全 regime 胜 23–48%**(TPOT 4.91 vs 7.10ms@bs1),FP8 仅 c128 TTFT 反超(497 vs 613ms,prefill 计算受限)+ PPL 优 3.3% 相对(7.663 vs 7.922,同 31212 token);Ada 落地解释:oracle/fp8.py:103-122 capability 提升跳过 SM89 → TRITON block-scaled | EXP-016、`moe_perf/raw/EXP-016/` |
 | D5 EPLB gate | ✅ 8/23 判定完成 | **W4A16 拒**(`routed_experts.py:151` NotImplementedError,上游 TODO 指认工程缺口);**FP8 臂 2 次真实重排**(balancedness 0.53–0.74 实测)+ **对照组**(无 EPLB 同负载逐字节一致)→ 输出分歧因果归属 EPLB(数值性定性);按清单 gate 规则**不上简历,白板级保留** | EXP-017、`moe_perf/raw/EXP-017/` |
-| D2/D3 | 进行中 | D2 调优+AB 链上最终长跑(EXP-015);D3 依 D2 A/B 定 | — |
+| D2 config 调优 | ✅ 8/23 | **两个空缺 tuple JSON 交付**(E=30,N=1408 / E=60,N=704,各 19 M 档);kernel A/B 两端改善(M=1 **-8.5%/-3.8%**,M≥128 -3.3~-3.9%,中段持平);e2e TPOT **+0.8~1.2%** 一致(吞吐噪声内);correctness 120 passed;**PR 分支+六件套齐备,提交留用户** | EXP-015、`moe_perf/raw/EXP-015/`、PR_DRAFT.md、分支 `moe-config-4090-qwen15moe` |
+| D3 kernel 优化 | ✅ 8/23 判定 | 依 D2 数据**转结论句**:tuned 与 default 在中段 M 打平 → Triton tile 空间已被启发式覆盖,config 即最优杠杆;不另做 kernel 改动(避免无数据支撑的"优化") | EXP-015 §6 |
 | EXT-1 request 级关联 | ✅ 8/23 | 本地 patch（16 行，可还原）；KV 占 TTFT 54.2/62.5/64.2%；上游不投（#52859 在途，见 `ext1/DEDUP.md`） | EXP-013、`pd_disagg/ext1/` |
 | EXT-2 NixlPush | ✅ 8/22 | 推方向 8K TTFT -6.7%、吞吐 +10–13%，量级不变（方向救不了 PD） | EXP-011 |
 

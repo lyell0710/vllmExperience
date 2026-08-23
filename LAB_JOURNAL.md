@@ -473,3 +473,26 @@
 - **下一步**:链 5 长跑中(D2 全量调优 EP→非EP→AB,预计 10–14h)→ 出数后
   EXP-015 + PR 分支 + PR_DRAFT 回填(提交必须由用户本人);推送队列在途
   (大文件 ~13KB/s 慢爬,本地 commit 为锚)。
+
+## §20 D2 收官:两个空缺 config 交付 + 六件套齐备(2026-08-23 傍晚,EXP-015)
+
+- **做了什么**:①全量调优两 tuple(EP 8916s / 非 EP 4097s,1920 配置×19 M 档,
+  ray 双卡);②kernel A/B + e2e A/B(default→装 JSON→tuned);③correctness
+  (main venv 补 pytest/tblib 后 120 passed);④识别并消除 Triton 首跑 JIT
+  伪影(c32 TTFT 1021ms→warmup 复测 225ms);⑤PR 分支 moe-config-4090-
+  qwen15moe 建好、两 JSON 暂存、PR_DRAFT 六件套数字全回填。
+- **关键数字**:kernel 两端改善(M=1:EP **-8.5%**/非EP -3.8%;M≥128:
+  -3.3~-3.9%;中段持平——如实陈述,不吹"全面提升");e2e TPOT
+  **+0.8~1.2%** 三档一致(≈kernel 增益×fused_moe 占比 56.4%,机理自洽);
+  吞吐/TTFT 会话噪声内持平(D1 参照证明会话间漂移 ±5~8% > 效应)。
+- **D3 依数据判定**:中段 M 打平 → config 即最优杠杆,不做无数据支撑的
+  kernel 改动(这本身是结论,也是面试口径)。
+- **推送风波(已根治)**:GitHub 100MB pre-receive 拒收 + 管道 tail 吞返回码
+  导致两次"假成功";plumbing 重写 9 commit 移除超限 blob 时又因真实 index
+  未同步把大文件带回(git commit 提交的是整个 index!)——二次全量重写 +
+  git reset 后干净落地(c8663cd)。三条教训全部入 README/HANDOFF。
+- **产物**:EXP-015、configs_{ep,noep} JSON、kernel/e2e 全套 raw、
+  correctness_tail、PR_DRAFT 终稿、d2_e2e_rerun.sh。
+- **状态**:清单 D1–D5、EXT-1/2、持续项 P1(材料层)/P2/P3 全部完成;
+  M1/M2 提前达成,M3 达成至"材料齐备待用户提交"。唯余用户侧:R0-6 线上
+  简历排雷、PR 本人 review+签名+提交。
