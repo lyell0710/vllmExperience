@@ -111,5 +111,8 @@ experiments/
 
 ## 备份
 
-- 本仓库 commit 即产物锚点；**远程备份待配置**（需一个私有 repo 地址）。
-- 大文件（trace、nsys-rep）也入 git——本仓库就是证据箱，体积换可信度。
+- 本仓库 commit 即产物锚点；远程 = github.com/lyell0710/vllmExperience（private）。
+- 大文件（trace、nsys-rep）入 git——本仓库就是证据箱，体积换可信度。
+  **例外（8/23 起）**：单文件 >100MB 触 GitHub pre-receive 硬限，仅本地保存并在
+  同目录 `LARGEFILES.md` 登记 sha256；`*.sqlite`（nsys 可再生衍生品）全局忽略。
+  教训：push 成败必须看 `git status -sb`，管道 `| tail` 会吞掉真实返回码。
