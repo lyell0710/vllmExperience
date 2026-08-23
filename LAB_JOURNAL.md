@@ -378,3 +378,26 @@
 - **下一步（交接给下个 agent）**：见 HANDOFF.md §5——P1 跑完 R0-4 动态复现
   （bash launch_1p1d.sh 后发请求看 D 挂死）→ EXP-012 + B3 完整版；P2 EXT-1；
   P3 B4 v2；P4 九月 D 阶段。
+
+## §16 R0-4 动态复现收官：两 bug 实机坐实（2026-08-23，EXP-012）
+
+- **做了什么**：接手上会话搭好的 `p2pnccl_repro/` 栈，实机 1P1D（0.17.1 P2pNccl，
+  Qwen2-7B 双卡）动态复现两个缺陷并落原始崩溃/挂死日志。
+  - **bug2**（分叉挂死）：经 proxy 发正常请求 → 客户端挂死、D 端零 decode 日志、
+    D 全线程 wchan=futex_wait_queue、GPU util 0、连发两请求均挂、P /health 恒 200
+    → "单边 D 挂死不自愈" 签名完整。
+  - **bug1**（:433 assert）：先试裸直连 P，**意外**先崩于 `connector:518`
+    parse_request_id ValueError（裸 id 无地址串）——早于预期的 :433；遂用手工
+    `X-Request-Id` 注入 `___prefill_addr..._decode_addr...___` 地址串 + max_tokens=16，
+    **精确命中 `connector:433` AssertionError**，P EngineCore 崩溃、HTTP 500、/health 503。
+- **关键数字/证据**：4 份 raw（bug2_evidence + bug1_Pdirect_crash + bug1_L433_assert +
+  live_preflight）均在 `p2pnccl_repro/raw/EXP-012/`，bug1 两条有 EngineCore 原生 traceback。
+- **为什么/意义**：把静态 file:line 升级为动态崩溃现场；**实证修正**静态分析——缺陷1 触发
+  需"地址串 id + max_tokens>1"两条件齐备，裸直连会先崩 :518。措辞红线"复现/定位/验证"
+  三词现全有实测背书（仍禁"发现/修复"）。
+- **取证限制（诚实）**：py-spy 精确 Python 栈帧未取——容器 ptrace_scope=1 且 /proc 只读、
+  无 CAP_SYS_PTRACE、gdb 未装；bug2 的 :317 定位以 wchan+行为学+静态 file:line 三方闭环。
+- **产物**：EXP-012 记录、raw/EXP-012/（4 文件+服务端日志）、analysis 文档加"⚑实测修正"、
+  README 台账 R0-4 转 ✅ + EXP 索引补 010/011/012 + 措辞红线更新。
+- **下一步**：B3 完整版表述据此定（0.17.1 PD 默认配置正常请求即触发 D 挂死→不可用对照臂，
+  vs 0.25.1 NIXL 可用）；再往后 P2 EXT-1（解锁 KV 占比红线）、P3 B4 v2 定稿（8/31）。

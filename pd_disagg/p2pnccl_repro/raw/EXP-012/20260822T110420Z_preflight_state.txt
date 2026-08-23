@@ -1,0 +1,28 @@
+provenance: EXP-012 preflight, captured 2026-08-22T11:04:20Z on monthlyrent_4090_2, vllmExperience HEAD 30b4df03700d16af2681dd8c1f8aae2706575f49
+
+git
+  branch: main...origin/main
+  local HEAD:  30b4df03700d16af2681dd8c1f8aae2706575f49
+  origin/main: 30b4df03700d16af2681dd8c1f8aae2706575f49
+  worktree: clean
+
+GPU snapshot
+  0, NVIDIA GeForce RTX 4090, 1 MiB, 0 %, P8
+  1, NVIDIA GeForce RTX 4090, 1 MiB, 0 %, P8
+
+stale process found before cleanup
+  PID: 236573
+  PPID: 1
+  STARTED: Sat Aug 22 10:43:42 2026
+  STAT: Sl
+  CMD: /root/venvs/v0.17.1/bin/python /root/projects/vllm/experiments/pd_disagg/p2pnccl_repro/disagg_proxy_p2p_nccl_xpyd.py
+
+port snapshot before cleanup
+  LISTEN 0 100 0.0.0.0:30001 0.0.0.0:* users:(("python",pid=236573,fd=9))
+  HTTP 10001 was not listening; 20003, 20005, 21001 and 22001 were free.
+
+tracked log state before cleanup
+  repro_proxy.log: 0 bytes (stdout buffering)
+  repro_prefill.log: 12643 bytes
+  repro_decode.log: 12045 bytes
+  The tracked P/D logs show prior readiness and NCCL handshake, followed by clean API shutdown at 10:47:50Z. They remain recoverable from commit 30b4df0.

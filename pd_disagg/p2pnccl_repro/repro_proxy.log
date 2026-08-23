@@ -1,0 +1,11 @@
+Traceback (most recent call last):
+  File "/root/projects/vllm/experiments/pd_disagg/p2pnccl_repro/disagg_proxy_p2p_nccl_xpyd.py", line 188, in <module>
+    t = start_service_discovery("0.0.0.0", 30001)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/projects/vllm/experiments/pd_disagg/p2pnccl_repro/disagg_proxy_p2p_nccl_xpyd.py", line 86, in start_service_discovery
+    router_socket.bind(f"tcp://{hostname}:{port}")
+  File "/root/venvs/v0.17.1/lib/python3.12/site-packages/zmq/sugar/socket.py", line 322, in bind
+    super().bind(addr)
+  File "zmq/backend/cython/_zmq.py", line 1009, in zmq.backend.cython._zmq.Socket.bind
+  File "zmq/backend/cython/_zmq.py", line 190, in zmq.backend.cython._zmq._check_rc
+zmq.error.ZMQError: Address already in use (addr='tcp://0.0.0.0:30001')

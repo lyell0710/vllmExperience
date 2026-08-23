@@ -2,8 +2,10 @@
 
 > provenance: 2026-08-21 静态源码分析（AI 辅助，全部 file:line 已在本机两个 venv 核对）。
 > 依据：V17=/root/venvs/v0.17.1/.../vllm（0.17.1, g95c0f928c），V25=/root/venvs/v0.25.1/.../vllm。
-> 性质：R0-4 降级路径（课程脚本不在本机）——**复现级机理定位**，措辞红线：复现/定位/验证，
-> 非"发现/修复"。运行时崩溃现场复现待课程脚本（若到位则升级为动态复现）。
+> 性质：R0-4 路径——**复现级机理定位**，措辞红线：复现/定位/验证，非"发现/修复"。
+> **动态复现已完成（2026-08-23，EXP-012）**：实机 1P1D 坐实——bug1 精确命中 `connector:433`
+> AssertionError、bug2 D 整实例挂死（全线程 futex_wait + P /health 恒 200）；并**实证修正**了
+> 缺陷1 的触发条件（见下"⚑实测修正"）。原始崩溃/挂死日志见 `p2pnccl_repro/raw/EXP-012/`。
 > 关联：S2 简历句、B4 报告第 2/3 段、records/EXP-012。
 
 **KV 发送粒度（两缺陷共同的设计根源）**：P2pNccl 的传输单元是 **"一个请求 × 一个
@@ -49,6 +51,13 @@ tensor_id 无 chunk 维度、KV 只能整请求一次发，作者在 scheduler �
 `req_id not in self.chunked_prefill` → AssertionError。0.17.1 中 chunked prefill
 **默认开启**（`V17/config/scheduler.py:83`），长 prompt 自动分块，producer 分支必然
 走进这段脆弱代码。dict 是纯内存状态，抢占恢复等非预期调度序同样命中 L433/L439。
+
+**⚑实测修正（EXP-012 动态复现）**：静态推断的"直接压测 P + max_tokens>1 → :433"**不完整**。
+实机发现：裸直连 P（request_id 为普通 `cmpl-...`，无 proxy 注入的地址串）会在 **prefill 首步**
+`save_kv_layer`→`parse_request_id`（connector:518）先抛 `ValueError: ... does not contain
+hostname and port`，**早于任何 decode 步**，根本走不到 L433。要精确命中 L433 assert 必须同时满足：
+①request_id 内嵌 `___prefill_addr..._decode_addr...___` 地址串（否则 :518 先崩）②max_tokens>1
+（制造 decode 步）。二者齐备时实机稳定命中 L433 AssertionError（EXP-012 路径B，raw 有原生 traceback）。
 
 **崩溃链**：`--kv-transfer-config {...kv_producer...}` 启动 P → 每调度步
 `Scheduler.schedule()` 调 `build_connector_meta`（`V17/v1/core/sched/scheduler.py:898`）

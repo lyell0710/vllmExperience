@@ -1,0 +1,45 @@
+provenance: EXP-012 bug1 :433 assert LIVE evidence, 20260823T062538Z, HEAD 30b4df03700d16af2681dd8c1f8aae2706575f49, venv v0.17.1
+trigger: 直打 P(20003), X-Request-Id=___prefill_addr_10.42.91.42:21001___decode_addr_10.42.91.42:22001_bug1craft001, max_tokens=16, prompt 9 tokens(单步prefill)
+结果: EngineCore(268654) fatal, HTTP 500, /health 503 — 整实例崩溃
+
+== 精确崩溃点(符合静态分析缺陷1) ==
+AssertionError at p2p_nccl_connector.py:433 (build_connector_meta producer 分支): assert req_id in self.chunked_prefill
+机理: 9-token prompt 单步prefill 走 add_request(L408) 发送, 不入 chunked_prefill dict;
+      max_tokens=16 使下一步该 req 以 decode 身份进 scheduled_cached_reqs -> L433 assert 失败.
+
+== 两触发路径对照(动态复现的完整图景) ==
+路径A 裸直连(无addr串): 先崩于 connector:518 parse_request_id ValueError (prefill首步 save_kv_layer), 早于:433
+路径B addr串id+max_tokens>1: 精确崩于 connector:433 assert (decode步) — 本文件
+路径C 经proxy正常请求: proxy clamp max_tokens=1, P不崩; 触发的是D侧bug2挂死
+
+== :433 崩溃 traceback ==
+EngineCore encountered a fatal error.
+Traceback (most recent call last):
+  File "/root/venvs/v0.17.1/lib/python3.12/site-packages/vllm/v1/engine/core.py", line 1093, in run_engine_core
+    engine_core.run_busy_loop()
+  File "/root/venvs/v0.17.1/lib/python3.12/site-packages/vllm/v1/engine/core.py", line 1128, in run_busy_loop
+    self._process_engine_step()
+  File "/root/venvs/v0.17.1/lib/python3.12/site-packages/vllm/v1/engine/core.py", line 1165, in _process_engine_step
+    outputs, model_executed = self.step_fn()
+                              ^^^^^^^^^^^^^^
+  File "/root/venvs/v0.17.1/lib/python3.12/site-packages/vllm/v1/engine/core.py", line 448, in step_with_batch_queue
+    scheduler_output = self.scheduler.schedule()
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/venvs/v0.17.1/lib/python3.12/site-packages/vllm/v1/core/sched/scheduler.py", line 898, in schedule
+    meta: KVConnectorMetadata = self.connector.build_connector_meta(
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/venvs/v0.17.1/lib/python3.12/site-packages/vllm/distributed/kv_transfer/kv_connector/v1/p2p/p2p_nccl_connector.py", line 433, in build_connector_meta
+    assert req_id in self.chunked_prefill
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError
+(EngineCore_DP0 pid=268654)   File "/usr/local/miniconda3/envs/py312/lib/python3.12/multiprocessing/process.py", line 314, in _bootstrap
+(EngineCore_DP0 pid=268654)   File "/usr/local/miniconda3/envs/py312/lib/python3.12/multiprocessing/process.py", line 108, in run
+(EngineCore_DP0 pid=268654)   File "/root/venvs/v0.17.1/lib/python3.12/site-packages/vllm/v1/engine/core.py", line 1104, in run_engine_core
+(EngineCore_DP0 pid=268654)   File "/root/venvs/v0.17.1/lib/python3.12/site-packages/vllm/v1/engine/core.py", line 1093, in run_engine_core
+(EngineCore_DP0 pid=268654)   File "/root/venvs/v0.17.1/lib/python3.12/site-packages/vllm/v1/engine/core.py", line 1128, in run_busy_loop
+(EngineCore_DP0 pid=268654)   File "/root/venvs/v0.17.1/lib/python3.12/site-packages/vllm/v1/engine/core.py", line 1165, in _process_engine_step
+(EngineCore_DP0 pid=268654)   File "/root/venvs/v0.17.1/lib/python3.12/site-packages/vllm/v1/engine/core.py", line 448, in step_with_batch_queue
+(EngineCore_DP0 pid=268654)   File "/root/venvs/v0.17.1/lib/python3.12/site-packages/vllm/v1/core/sched/scheduler.py", line 898, in schedule
+(EngineCore_DP0 pid=268654)   File "/root/venvs/v0.17.1/lib/python3.12/site-packages/vllm/distributed/kv_transfer/kv_connector/v1/p2p/p2p_nccl_connector.py", line 433, in build_connector_meta
+(EngineCore_DP0 pid=268654)     assert req_id in self.chunked_prefill
+(EngineCore_DP0 pid=268654) AssertionError
