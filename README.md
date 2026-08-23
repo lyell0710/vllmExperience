@@ -79,14 +79,12 @@ experiments/
 | R0-5 profiling 工装 | ✅ 8/21 | torch profiler 直控 P/D 端口跑通（trace 落盘）；nsys 容器内可用 | `pd_disagg/profiling/r0_5_torch_profiler_check.txt`、`traces_smoke/`、`scripts/profile_ctl.sh` |
 | R0-6 简历措辞排雷 | ◐ | 本地 tex 无违规表述（已核）；线上稿待改 | 仅用户可操作 |
 | B1 四臂矩阵 | ✅ 8/21 | **全套完成（协议 v2，84 有效行）**。饱和 req/s（512/2K/8K）：colocate 10.36/3.63/0.90（单卡）· replica2 15.58/7.00/1.78 · tp2 12.31/4.16/1.02 · pd1p1d 7.84/2.12/0.54；goodput 峰值 replica2 全场最高；PD 全负载段被传输延迟压垮（512 桶 66% 饱和度 goodput 仅 1.59） | `results/b1_matrix/runs.jsonl` + `derived/sweep_summary.csv` + `figures/fig1-6` + EXP-007 |
-| B2 归因层 | ✅ 8/23 | **收官**：EXT-1 request 级三段关联落地——KV 等待占 TTFT **54.2/62.5/64.2%**（512/2K/8K，p50，因果占比），闭环误差 ≤0.08%，bytes 与 Prometheus 分毫不差；此前的分量对账（54–64%）被追认 | `figures/fig4,fig5`、`analysis/nixl_token_accounting.md`、EXP-013、`ext1/` |
-| B3 版本对照 | ◐ 有限版完成 | 无负载延迟 Δ<1%；**512 桶饱和 +45%**（7.14→10.36）；计算受限桶零差异；启动 308→58s。PD-vs-PD 待课程脚本 | EXP-008 |
+| B2 归因层 | ✅ 8/23 | **收官**：EXT-1 request 级三段关联落地——KV 等待占 TTFT **54.2/62.5/64.2%**（512/2K/8K，p50，因果占比），闭环误差 p50 <0.1%（最差桶 0.084%，逐请求最大 0.11%），bytes 与 Prometheus 分毫不差；此前的分量对账（54–64%）被追认 | `figures/fig4,fig5`、`analysis/nixl_token_accounting.md`、EXP-013、`ext1/` |
+| B3 版本对照 | ✅ 8/23 两维度定稿 | ①单实例 system-version：无负载延迟 Δ<1%、**512 桶饱和 +45%**（7.14→10.36）、计算受限桶零差异、启动 308→58s；②PD 可用性对照（EXP-012 闭环）：0.17.1 PD 默认配置正常请求即触发 D 挂死→不构成可用对照臂，结论即"不可用 vs 可用"，无吞吐对比可做。另录版本差异一例：profiler 接口 env var→CLI | EXP-008、EXP-012、REPORT v2 §3 |
 | R0-4（降级路径） | ✅ 8/21 | 双 bug 源码机理分析完成（assert connector:433 / 分叉 input_processor.py:212 / 无超时 wait engine:317 / GET 静默乱码 / 四层 ID 链 / NIXL 身份拆分对照），全 file:line 核对 | `analysis/p2pnccl_bugs_id_chain.md` |
 | R0-4 动态复现 | ✅ 8/23 | **实机 1P1D 坐实两 bug**：bug1 精确命中 `connector:433` AssertionError（addr串id+max_tokens>1）；bug2 D 整实例挂死（双请求 hang + 全线程 futex_wait + P /health 恒 200）；**实证修正**：裸直连先崩于 `connector:518` parse_request_id 早于 :433。py-spy 因容器 ptrace 限制未取栈帧（已诚实标注） | EXP-012；`pd_disagg/p2pnccl_repro/raw/EXP-012/` |
 | B1 附带发现 | ✅ 8/21 | ① 功率帽节流：持续 prefill 降频 2820→2475MHz（SW Power Cap，非热），TTFT +30%；② NIXL 有效吞吐 0.26–0.27GB/s 恒定（descriptor ~16KB 碎片化）；③ TP2 decode 提速 42%（带宽分摊）但 prefill 零加速（allreduce 撞 1.78GB/s 墙） | runs.jsonl gpu_telemetry / gates 字段；`DECISION.md` 硬件基线 |
-| B2 归因层 | ⬜ | — | — |
-| B3 版本对照 | ⬜ | 已知差异一例：profiler 接口 env var→CLI（见 profiling 检查文件 note） | — |
-| B4 报告 | ⬜ | — | — |
+| B4 报告 | ✅ 8/23 v2 定稿 | 一页结论 + 四章 + 附录；v2 吸收 EXT-1 因果占比 / EXT-2 推拉对照 / EXP-012 动态复现与 B3 定稿 | `pd_disagg/REPORT.md` |
 | C1 Qwen1.5-MoE 上卡 | ✅ 8/21 | TP2+EP 可用；未调优基线 TPOT 4.62ms（dense 7B TP2 的 2.0×）、饱和 11.50 req/s@512——D2 的 before 数字 | EXP-009 |
 | C2 config 查重 | ✅ 8/21 | 三重闭环：本地判定 + 远端查重 + **运行时告警原文**（fused_moe.py:1106 点名 E=30,N=1408 缺失） | `moe_configs/DEDUP.md`、EXP-009 §5 |
 | C3 W4A16 上卡 | ✅ 8/21 | **Qwen/Qwen3-30B-A3B-GPTQ-Int4**（W4A16，Marlin 路径确认）TP2+EP 上卡；TPOT 4.93ms / 饱和 10.02 req/s@512——与 2.7B BF16 相当（D1/D4 切入点） | EXP-010 |

@@ -23,7 +23,7 @@
 | 追单位 GPU 成本 | **单卡混部（colocate）** | per-GPU 峰值 goodput 最高或与 replica2 打平（fig3） |
 | 需要最低 decode 延迟 | TP=2（谨慎） | TPOT 9.3 vs 16ms（-42%）；但吞吐仅 +13-19%，性价比差 |
 | 模型单卡放不下 | TP=2（被迫） | 唯一选项 |
-| PD 分离 | **不可取** | 有效传输带宽 0.27GB/s；全负载段 goodput 溃败（fig1） |
+| PD 分离 | **不可取** | KV 通路有效吞吐仅 0.27GB/s（telemetry-derived）；全负载段 goodput 溃败（fig1） |
 
 **三个机理级发现**（均为异常→拆解→实证的完整链条）：
 1. **TP2 收益不对称**：decode -42%（权重带宽分摊），prefill 零加速——28 层 ×
@@ -72,10 +72,10 @@ failed/expired=0、GPU 遥测同行存储。SLO 预注册锁定（328/891/4626ms
 - PD 的 TTFT 溢价全部来自传输——**request 级因果占比（EXT-1，EXP-013）**：
   本地最小 patch 使 P / D / NIXL 三段在同一 request 身份 + 同一时钟域下逐请求
   关联，测得 **D 等待远端 KV 占 TTFT 54.2% / 62.5% / 64.2%**（512/2K/8K，p50，
-  p10–p90 带宽 ±2% 内），六段分解闭环误差 ≤0.08%；占比随输入长饱和于 ~64%
+  p10–p90 带宽 ±2% 内），六段分解闭环误差 p50 <0.1%（最差桶 0.084%）；占比随输入长饱和于 ~64%
   （P 段与传输同为 O(输入长)，比值趋常数；短输入被 ~40ms 固定开销稀释）。
   v1 的分量对账（fig4，54–64%）被逐请求数据追认。kv_wait 与 NIXL
-  xferDuration 仅差 0.3–1.2ms——等待窗口就是传输本身，不在调度轮询。
+  xferDuration 仅差 0.3–1.9ms——等待窗口就是传输本身，不在调度轮询。
 
 ### 2.3 负载扫描（headline，fig1/fig2）
 | 桶 | 饱和 req/s：colo/repl/tp2/pd | goodput 峰值 rps |
@@ -163,8 +163,8 @@ file:line）：`analysis/p2pnccl_bugs_id_chain.md`。
 - NIXL 数字只称 telemetry-derived effective throughput；xferDuration 含 posting，
   不与 postDuration 相加。**"KV 传输占 TTFT X%"为因果占比声明（EXT-1 解锁）**，
   依据三重互证：① 逐请求 bytes 求和与 Prometheus 计数器分毫不差；
-  ② kv_wait（墙钟）≈ xferDuration（telemetry，差 0.3–1.2ms）；③ 六段全链分解
-  vs client TTFT 闭环误差 ≤0.08%。观测无扰动：打 patch 后 TTFT 218/727/2738
+  ② kv_wait（墙钟）≈ xferDuration（telemetry，差 0.3–1.9ms）；③ 六段全链分解
+  vs client TTFT 闭环误差 p50 <0.1%（最差桶 0.084%）。观测无扰动：打 patch 后 TTFT 218/727/2738
   vs 矩阵 219/719/2719（噪声内）。patch 上游化已查重放弃（#52859 在途，
   `ext1/DEDUP.md`）。
 - token 记账双计数器互证（bytes vs prompt_tokens_by_source）分毫不差；
@@ -176,9 +176,9 @@ file:line）：`analysis/p2pnccl_bugs_id_chain.md`。
 ## 附录
 - A. SLO 敏感性：fig6（0.5–4× 排序稳定）
 - B. 全量数据表：results/b1_matrix/derived/sweep_summary.csv
-- C. 实验记录索引：../records/（EXP-001~013）
-- E. request 级 KV 归因全数据：ext1/derived/ext1_per_request.csv（EXP-013）
-- D. MoE 前瞻（第 2 阶段，EXP-009/014）：Qwen1.5-MoE-A2.7B TP2+EP 未调优基线
+- C. 实验记录索引：../records/（EXP-001~014）
+- D. request 级 KV 归因全数据：ext1/derived/ext1_per_request.csv（EXP-013）
+- E. MoE 前瞻（第 2 阶段，EXP-009/014）：Qwen1.5-MoE-A2.7B TP2+EP 未调优基线
   TPOT 4.62ms（dense 7B TP2 的 2.0×）；**decode 优势在 bs≈8 反转**
   （2.03×@bs1 → 0.82×@bs128，top-4/60 命中并集随 batch 趋全量的读放大）；
   nsys node 级分解：serving batch 下 fused_moe grouped GEMM 占 GPU 时间

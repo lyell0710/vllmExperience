@@ -19,7 +19,7 @@ run_arm() {  # $1 label, $2 model
     --gpu-memory-utilization 0.88 > "$RAW/${LABEL}_server.log" 2>&1 &
   local SRV=$!
   local UP=0
-  for i in $(seq 1 300); do
+  for i in $(seq 1 540); do
     curl -sf http://127.0.0.1:8100/health >/dev/null 2>&1 && { UP=1; break; }
     kill -0 $SRV 2>/dev/null || break
     sleep 2
@@ -56,6 +56,11 @@ run_arm() {  # $1 label, $2 model
   echo "=== $LABEL: done"
 }
 
-run_arm fp8 Qwen/Qwen3-30B-A3B-FP8
-run_arm w4a16 Qwen/Qwen3-30B-A3B-GPTQ-Int4
+ARMS=${1:-"fp8 w4a16"}
+for a in $ARMS; do
+  case $a in
+    fp8) run_arm fp8 Qwen/Qwen3-30B-A3B-FP8 ;;
+    w4a16) run_arm w4a16 Qwen/Qwen3-30B-A3B-GPTQ-Int4 ;;
+  esac
+done
 echo "D4_BENCH_DONE"

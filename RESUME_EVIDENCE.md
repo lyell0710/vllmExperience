@@ -20,8 +20,9 @@
 - **当前可填**：
   - "消费级/互联受限"定语：P2P 驱动级禁用（GNS）、单向 D2D 0.60–0.91 GB/s、
     NCCL bus bw 1.78 GB/s → `pd_disagg/hw/`
-  - attribution 层四臂对比（并发 1，8K）：TTFT 925/715/694/2685ms、
-    TPOT 16 vs tp2 9.3ms、GPU·s/req 2.95–9.24 → `results/b1_matrix/runs.jsonl`
+  - attribution 层四臂对比（并发 1，8K，协议 v2 同热工况）：TTFT
+    925.2/902.6/881.3/2718.7ms（非 PD 三臂无实质差异，功率帽整平）、
+    TPOT 16 vs tp2 9.3ms、GPU·s/req 2.94–9.59 → REPORT §2.2 / runs.jsonl v2 行
   - 归因子结论三条（可各自成半句）：① TP2 decode -42%（带宽分摊）但 prefill
     零加速（大消息 allreduce 撞 1.78GB/s collective 墙）；② NIXL KV 通路有效
     吞吐 0.26–0.27GB/s 恒定（~16KB/descriptor 碎片化小拷贝）；③ 消费卡 450W
@@ -34,17 +35,18 @@
   > ——双副本取得近线性 2× 吞吐扩展（2K 输入 7.00 vs 3.63 req/s）与全场最高
   > goodput；TP=2 的 decode 提速 42% 被 1.78GB/s allreduce 带宽墙抵消（吞吐仅
   > +13–19%）；以 request 级三段关联（同请求身份+同时钟域，本地 telemetry
-  > patch）测得 KV 等待占 TTFT 54–64%（因果占比，闭环误差 ≤0.08%），定量证明
-  > PD 分离在 0.27GB/s 有效 KV 带宽下全负载段不可取；推/拉两方向实测同贴
-  > 互联墙（push 仅 -6.7% TTFT）。
-- **支撑文件**：`pd_disagg/REPORT.md`（B4 v1）、`figures/fig1–6`、
-  `derived/sweep_summary.csv`、runs.jsonl（109 行）、EXP-007；
+  > patch）测得 KV 等待占 TTFT 54–64%（因果占比，闭环误差 p50 <0.1%（最差桶 0.084%）），定量证明
+  > PD 分离在 0.27GB/s KV 有效吞吐（telemetry-derived）下全负载段不可取；
+  > 推/拉两方向实测同贴互联墙（push 仅 -6.7% TTFT）。
+- **支撑文件**：`pd_disagg/REPORT.md`（B4 v2 定稿，2026-08-23）、`figures/fig1–6`、
+  `derived/sweep_summary.csv`、runs.jsonl（124 行，前 109 行为 8/21 B1 sweep
+  快照）、EXP-007/013；
   面试叙事线：LAB_JOURNAL §9–§12（功率帽/污染修正/传输墙三个完整探案）
 - **面试防御**："凭什么说传输真的发生了" → 每测量点 gate 字段
   （nixl bytes 增量、成功传输数=预期远端请求数、failed=0、expired=0、
   failure_policy=fail、/metrics 直抓引擎端口）随数据同行存于 runs.jsonl。
   "54–64% 怎么来的" → EXP-013 三重互证：逐请求 bytes 和=Prometheus 分毫不差、
-  kv_wait≈xferDuration（差 0.3–1.2ms）、六段分解闭环误差 ≤0.08%；观测无扰动
+  kv_wait≈xferDuration（差 0.3–1.9ms）、六段分解闭环误差 p50 <0.1%（最差桶 0.084%）；观测无扰动
   （patch 前后 TTFT 噪声内）；36/36 请求身份双端匹配。
 
 ## S2 · 架构演化与 bug 链路——面试深挖主力，不做头号成果
@@ -83,7 +85,11 @@
   原文点名 E=30,N=1408 缺失，EXP-009）；C1 上卡完成，**未调优基线在案**：
   TP2+EP TPOT 4.62ms（dense 7B TP2 的 2.0×）、饱和 11.50 req/s@512
   ——D2 调优 A/B 的 before 数字。
-- **缺口**：D1 nsys 分解、D2 benchmark_moe.py 调优+六件套 PR、（可选）D3
+  **✅ D1 分解完成（EXP-014，8/23）**：nsys node 级分解定位 fused_moe grouped
+  GEMM 占 GPU 时间 **56.4%**（bs=32 serving batch）；MoE/dense decode 反转点
+  2.03×（bs=1）→0.97×（bs=8）→0.82×（bs=128）——"为什么调这个 config"的
+  数据答案 + 报告第一页图（d1_fig1_decode_scaling.png）。
+- **缺口**：D2 benchmark_moe.py 调优+六件套 PR（跑批中）、（可选）D3
 - **面试防御**：AGENTS.md 六件套（DCO/查重说明/AI 声明/测试命令+数据/e2e bench）。
 
 ## S4 · 量化对比（可选句，D4 做完才上）

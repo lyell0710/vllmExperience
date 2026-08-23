@@ -1,5 +1,9 @@
 # 项目汇总单（2026-08-21 · Day 0 全量收官）
 
+> ⚠ **本文为 2026-08-21 Day 0 冻结快照**,其"任务完成度总表"与"还欠的事"均已过时。
+> 最新状态以 [HANDOFF.md](HANDOFF.md) 与 [README.md](README.md) 证据台账为准
+> (8/23 已闭环:R0-4 动态复现/EXT-1/EXT-2/B2/B3/B4 v2/D1;课程脚本已证非必需)。
+
 > 一天内从环境体检到 M1 报告草稿的全部产出。阅读顺序：本文 →
 > [STUDY_GUIDE.md](STUDY_GUIDE.md)（零基础教学）→ [REPORT](pd_disagg/REPORT.md) →
 > [LAB_JOURNAL](LAB_JOURNAL.md)（过程叙事）→ [records/](records/)（逐实验细节）。

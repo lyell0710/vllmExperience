@@ -414,7 +414,7 @@
 - **关键数字**：**KV 等待占 TTFT 54.2% / 62.5% / 64.2%**（512/2K/8K，p50，
   p10–p90 ±2% 内）——红线"KV 占 TTFT X%"正式解锁为因果占比声明。三重互证：
   逐请求 bytes 和 = Prometheus 计数器**分毫不差**（7398752256）；kv_wait −
-  xferDuration = 0.3–1.2ms（等待≈传输本身）；六段分解闭环误差 ≤0.08%。
+  xferDuration = 0.3–1.9ms（等待≈传输本身）；六段分解闭环误差 p50 <0.1%（最差桶 0.084%）。
   无扰动：patch 后 TTFT 218/727/2738 vs 矩阵 219/719/2719。36/36 身份匹配；
   idx=0 首请求显式观测到 handshake 一次性成本（512 桶 +292ms）。
 - **为什么**：这是 B2 归因层最后一块——之前只能"分量对账"，现在 P/D/NIXL 三段
@@ -435,7 +435,7 @@
   0.74–0.82×(bs≥16);机理=top-4/60 命中并集随 batch 趋全量,28.6GB/step 读
   放大 > dense 14.2GB。kernel 占比:bs=32 时 **fused_moe grouped GEMM 56.4%**
   (bs=1 时 dense GEMV 40.9%,lm_head 0.31GB/token/rank 是隐性大头);
-  AllReduce 恒 ~15%(TP2 固定税)。D2/D3 目标由数据锁定:fused_moe 路径。
+  AllReduce 恒 ~14–15%(TP2 固定税)。D2/D3 目标由数据锁定:fused_moe 路径。
 - **方法学收获(面试弹药)**:nsys 默认 graph-level trace 下 CUDA graphs 内
   kernel 不单列,首采的"分解表"实为 prefill 混样(fused_moe 仅 4 step 实例);
   node 级重采后 other 桶从 77%→1.2%。graphlevel 采集文件保留作对照证据。

@@ -62,10 +62,10 @@ failed transfers / failed notifications / expired = 0;metrics 直抓引擎端口
 **互证三条**:
 1. EXT1_KV 逐请求 bytes 求和 = 7398752256 = Prometheus
    `nixl_bytes_transferred_sum` **分毫不差**;
-2. kv_wait(墙钟)− xferDuration(NIXL telemetry)= 0.3–1.2ms
+2. kv_wait(墙钟)− xferDuration(NIXL telemetry)= 0.3–1.9ms
    → 等待窗口≈传输本身,step 轮询开销可忽略;
 3. 六段分解(pre_proxy + P 段 + P→D gap + D pre-KV + kv_wait + post-KV)
-   求和 vs client TTFT,闭环误差 p50 ≤ 0.08%。
+   求和 vs client TTFT,闭环误差 p50 <0.1%（最差桶 0.084%,逐请求最大 0.11%）。
 
 **无扰动证明**:本次 TTFT p50 218/727/2738 vs 未打 patch 的矩阵数据
 219/719/2719(EXP-006/007)——观测开销在噪声内。

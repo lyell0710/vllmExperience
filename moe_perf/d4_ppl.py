@@ -15,8 +15,8 @@ import time
 from datasets import load_dataset
 from vllm import LLM, SamplingParams
 
-WINDOW = 3584
-STRIDE = 3072  # 每窗新计分 token 数;前 512 作条件不计分
+WINDOW = 2048
+STRIDE = 1536  # 每窗新计分 token 数;前 512 作条件不计分
 
 
 def main():
@@ -26,12 +26,12 @@ def main():
     ap.add_argument("--tokens", type=int, default=40000)
     args = ap.parse_args()
 
-    ds = load_dataset("wikitext", "wikitext-2-raw-v1", split="test")
+    ds = load_dataset("Salesforce/wikitext", "wikitext-2-raw-v1", split="test")
     text = "\n\n".join(r["text"] for r in ds if r["text"].strip())
 
     llm = LLM(model=args.model, tensor_parallel_size=2,
-              enable_expert_parallel=True, max_model_len=WINDOW + 8,
-              gpu_memory_utilization=0.88, enforce_eager=True)
+              enable_expert_parallel=True, max_model_len=WINDOW + 8, max_num_batched_tokens=2048,
+              gpu_memory_utilization=0.80, enforce_eager=True)
     tok = llm.get_tokenizer()
     ids = tok.encode(text)
     print(f"total corpus tokens: {len(ids)}")
@@ -43,20 +43,20 @@ def main():
     while count < args.tokens and pos + WINDOW <= len(ids):
         window = ids[pos:pos + WINDOW]
         (out,) = llm.generate(
-            prompts=None,
-            prompt_token_ids=[window],
+            {"prompt_token_ids": window},
             sampling_params=sp,
             use_tqdm=False,
         )
         score_from = 0 if pos == 0 else WINDOW - STRIDE
-        for lp in out.prompt_logprobs[score_from + 1:]:
-            if lp is None:
+        for i, lp in enumerate(out.prompt_logprobs):
+            if lp is None or i <= score_from:
                 continue
-            tid, obj = next(iter(lp.items()))
-            entry = obj if not isinstance(obj, dict) else obj[tid]
-            nll -= entry.logprob if hasattr(entry, "logprob") else entry
+            obj = lp.get(window[i])
+            if obj is None:
+                continue
+            nll -= obj.logprob
             count += 1
-        pos += STRIDE if pos else STRIDE
+        pos += STRIDE
         print(f"scored {count} tokens, ppl so far {math.exp(nll / count):.4f}",
               flush=True)
     ppl = math.exp(nll / count)
