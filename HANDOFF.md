@@ -57,7 +57,9 @@ R0-1~R0-5、B1、**B2(EXT-1 收官,KV 占 TTFT 54.2/62.5/64.2%)**、B3(两维度
 **D1(EXP-014:MoE decode 反转点 2.03×→0.82×,fused_moe 56.4%@bs32)**、
 **D4(EXP-016:W4A16 decode 胜 23–48%,FP8 PPL 优 3.3%,Ada 路径 file:line)**、
 **D5(EXP-017:gate 判定完成,不上简历,白板素材)**、交付物对抗校验(20 条
-修复,commit cc473de)。记录 EXP-001~014+016+017。M1/M2 均提前达成。
+修复,commit cc473de)、**D2(EXP-015:两空缺 config 交付,kernel 两端
+-3.3~-8.5%,e2e TPOT +0.8~1.2%,120 passed;D3 依数据转结论句)**。
+记录 EXP-001~017 全齐。M1/M2 提前达成,M3 材料齐备。
 
 ## 5. 状态:清单全线完成(2026-08-23 傍晚)
 
@@ -83,12 +85,9 @@ D0 地基、B1–B4、C1–C3、D1–D5、EXT-1/2、P1(材料层)/P2/P3 全部�
 - 功率帽:持续 prefill 降频 ~12%,同热工况才可比。
 - 大文件 push 慢(nsys rep 上百 MB),push 放后台跑。
 
-## 7. 当前状态快照(2026-08-23 ~10:45Z)
+## 7. 当前状态快照(2026-08-23 ~16:00Z,收官)
 
-- 后台:**链 5**(任务 b6l7lff67)= d2 全量调优(EP→非EP)→ d2_ab,不再
-  抢占;Monitor bdl4ab1ps 盯阶段标记。git push 慢爬中(大文件 ~13KB/s,
-  落后若干 commit,本地为锚,勿并发第二个 push)。
-- 本地 commit 到 07c8c94(EXP-016/017 + 对抗校验修复 + 台账全同步)。
-- 下一步第一动作:收 STAGE_D2_TUNE_DONE / STAGE_D2_AB_DONE → 读
-  raw/EXP-015(configs_{ep,noep} JSON + kernel_*.log + e2e_*.json +
-  correctness_pytest.log)→ 写 EXP-015 → PR 分支 + PR_DRAFT 回填。
+- 所有 GPU 实验结束,双卡空闲;无在跑后台链。
+- 本地与远程同步(git push 完成后核对 `git status -sb` 必须无 ahead)。
+- PR 分支 `moe-config-4090-qwen15moe` 暂存两 JSON,等用户 review+签名提交。
+- ENV-B 仍带 EXT-1 本地 patch(如需还原:ext1/orig/ 两文件拷回即可)。
