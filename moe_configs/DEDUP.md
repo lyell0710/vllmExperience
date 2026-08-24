@@ -26,3 +26,15 @@ PR 正文将引用 #48309 作为"相邻先例",并说明以上区别。
 - #48309（4090D fp8 config）仍 **OPEN 未合并**，继续作相邻先例引用
 
 **最终结论：无重复，"社区空缺"措辞解锁（引用本节日期）。**
+
+## SGLang 侧同构空缺(2026-08-24 侦察,未动工)
+
+- SGLang 全库 363 个 fused MoE config(按 Triton 版本分目录),
+  `NVIDIA_GeForce_RTX_4090` 仅 2 个旧 fp8 文件(与 vLLM 同源搬运);
+  **E=30,N=1408 与 E=60,N=704 全 Triton 版本目录均缺失**。
+- 远端查重(gh api,三组关键词):无 NVIDIA 4090 BF16 MoE config 类
+  PR/issue(仅 AMD 消费卡请求 #30245/#30599,不冲突)。
+- 判定:**第二 PR 机会开放**。其 fused_moe_triton 与 vLLM 同源,
+  EXP-015 已调优的两个 JSON 大概率直接可用(须在 sglang 运行时 A/B 验证
+  后再提)。源码已 clone 至 /root/repos/sglang(shallow);
+  sglang venv 未安装(用户暂停,待指示)。
