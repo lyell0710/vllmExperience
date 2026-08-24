@@ -1,5 +1,13 @@
 # D2 PR 草稿(六件套对照)· 状态:数字已回填(2026-08-23),待用户 review + 签名提交
 
+> **提交前 hardening 清单(2026-08-24 增补,做完再提)**:
+> 1. 核对 JSON:18 个 M 档 + triton_version 元键与上游既有 config 惯例一致;
+> 2. correctness 重跑并保留**完整**日志(现仅存 tail 3 行);
+> 3. kernel A/B 补 ≥3 轮交叉(不同次序)取 mean±std;
+> 4. `git fetch upstream && rebase` 到最新 main 后重验(7aa248fc 已滞后);
+> 5. e2e 数字在 PR 里只作 supporting(+0.8~1.2% < 会话漂移),
+>    headline 用 kernel A/B 两端(M=1 -8.5%/-3.8%,M≥128 -3.3~-3.9%)。
+>
 > **分支已就绪**:`/root/projects/vllm` 的 `moe-config-4090-qwen15moe` 分支,
 > 两个 JSON 已 `git add` 暂存。你 review 后执行:
 > `cd /root/projects/vllm && git commit -s -m "<下方标题>"`(-s 生成你的

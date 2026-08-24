@@ -35,8 +35,8 @@
   > 负载 60+ 测量点，以 TTFT/TPOT/SLO goodput/GPU·s-per-request 建立选型边界
   > ——双副本取得近线性 2× 吞吐扩展（2K 输入 7.00 vs 3.63 req/s）与全场最高
   > goodput；TP=2 的 decode 提速 42% 被 1.78GB/s allreduce 带宽墙抵消（吞吐仅
-  > +13–19%）；以 request 级三段关联（同请求身份+同时钟域，本地 telemetry
-  > patch）测得 KV 等待占 TTFT 54–64%（因果占比，闭环误差 p50 <0.1%（最差桶 0.084%）），定量证明
+  > +13–19%）；以 request 级三段关联（同请求身份+同时钟域，~16 行本地可观测性
+  > patch——非 connector 核心改造，如实定性）测得 KV 等待占 TTFT 54–64%（因果占比，闭环误差 p50 <0.1%（最差桶 0.084%）），定量证明
   > PD 分离在 0.27GB/s KV 有效吞吐（telemetry-derived）下全负载段不可取；
   > 推/拉两方向实测同贴互联墙（push 仅 -6.7% TTFT）。
 - **支撑文件**：`pd_disagg/REPORT.md`（B4 v2 定稿，2026-08-23）、`figures/fig1–6`、
@@ -97,9 +97,9 @@
   > E=60,N=704 TP，本地+远端+运行时告警三重查重确认空缺）完成上游标准调优
   > （benchmark_moe.py，1920 配置×19 M 档×2 tuple）：kernel 延迟两端改善
   > （decode M=1 -8.5%[EP 臂;非 EP -3.8%]，prefill M≥128 -3.3~-3.9%），
-  > e2e TPOT +0.8~1.2%，
   > 经 correctness（120 passed）/kernel A/B/e2e bench 三级验证，PR 材料
-  > 按仓库六件套标准备齐。
+  > 按仓库六件套标准备齐。（e2e TPOT +0.8~1.2% 仅作防御层数字——
+  > 低于跨会话漂移，不进简历句，8/24 定档修正。）
   （PR 提交后把"材料备齐"升级为"已提交(附链接)";merge 后再升级。）
 - **D3 判定**：依数据转结论句——中段 M 与默认启发式打平证明 config 即最优
   杠杆，不做无数据支撑的 kernel 改动（面试口径：知道什么时候不做优化）。

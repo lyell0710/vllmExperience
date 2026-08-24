@@ -15,7 +15,7 @@ config 调优应有可测收益。
 
 ## 2. 环境与配置
 - 调优:`d2_tune.sh`——EP(E=30, shard N=2816→文件名 N=1408)与非 EP
-  (E=60, N=704),搜索空间 1920 配置 × 19 个 M 档,ray 双卡分摊。
+  (E=60, N=704),搜索空间 1920 配置 × 18 个 M 档,ray 双卡分摊。
 - A/B:`d2_ab.sh`——次序 default kernel → default e2e → 装 JSON → tuned
   kernel → tuned e2e → correctness;e2e 为 TP2+EP serving,c1/c32/c128。
 - 补测:`d2_e2e_rerun.sh`——tuned e2e 带 warmup 复测(见 §7 JIT 伪影)。
@@ -25,7 +25,7 @@ tune EP(8916s)→ tune 非 EP(4097s)→ kernel/e2e A/B → correctness
 (main venv 补 pytest/tblib)→ warm 复测。全程一条自驱动链(gpu_chain5.sh)。
 
 ## 4. 原始数据
-`moe_perf/raw/EXP-015/`:configs_{ep,noep}/ 两个 JSON(19 M 档全网格)、
+`moe_perf/raw/EXP-015/`:configs_{ep,noep}/ 两个 JSON(18 M 档全网格 + triton_version 元键;此前误报 19 档系把元键计入,8/24 勘正)、
 tune_{ep,noep}.log、kernel_{ep,noep}_{default,tuned}.log、
 e2e_{default,tuned}_c{1,32,128}.json+log、e2e_tuned_warm_c{32,128}.json、
 correctness_tail.txt、manifest(provenance)。
@@ -54,7 +54,8 @@ c32 17.91→17.70、c128 28.78→28.47——**一致 +1.1~1.2%**,与
 warm 复测(warmup 后,c32 JIT 伪影消除:TTFT 1021→225ms):
 c32 吞吐 1616 vs default 1596(+1.2%)、TPOT 17.76 vs 17.91;
 c128 吞吐 4178 vs 4233(-1.3%,噪声内)、TPOT 28.52 vs 28.78。
-**终判:TPOT +0.8~1.2% 一致成立;吞吐/TTFT 噪声内持平。**
+**终判:TPOT +0.8~1.2% 方向一致,但幅度低于跨会话漂移(D1 对照点 ±2~8%),
+不作 headline;PR 与简历的主证据 = kernel A/B 两端数字。**
 
 **correctness**:`pytest tests/kernels/moe/test_moe.py::test_fused_moe` → **120 passed, 120 skipped, 0 failed**(139.7s,GPU0;skipped 为异平台/异 dtype 参数化)
 
