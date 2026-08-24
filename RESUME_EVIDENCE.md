@@ -95,7 +95,7 @@
   > 以 nsys kernel 级分解定位 fused MoE grouped GEMM 占 serving batch GPU
   > 时间 56%，据此为社区空缺的 RTX 4090 BF16 config（E=30,N=1408 EP /
   > E=60,N=704 TP，本地+远端+运行时告警三重查重确认空缺）完成上游标准调优
-  > （benchmark_moe.py，1920 配置×19 M 档×2 tuple）：kernel 延迟两端改善
+  > （benchmark_moe.py，1920 配置×18 M 档×2 tuple，M 档数 8/24 勘正）：kernel 延迟两端改善
   > （decode M=1 -8.5%[EP 臂;非 EP -3.8%]，prefill M≥128 -3.3~-3.9%），
   > 经 correctness（120 passed）/kernel A/B/e2e bench 三级验证，PR 材料
   > 按仓库六件套标准备齐。（e2e TPOT +0.8~1.2% 仅作防御层数字——

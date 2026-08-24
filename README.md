@@ -24,6 +24,9 @@ experiments/
 │   ├── matrix/                # B1 工装（rr_proxy.py 等）
 │   ├── results/               # B1+ 基准数据（schema 见 results/README.md）
 │   └── figures/               # 报告图（源数据必须可溯到 results/）
+├── docs/
+│   ├── talk/TALK.md           # 现行面试讲稿（只留一份现行版，2026-08-24 建）
+│   └── theory/                # 原理笔记（五节制式，实证节指向自家 EXP 数字）
 └── moe_configs/
     └── DEDUP.md               # C2：config 查重判定
 ```
@@ -51,25 +54,28 @@ experiments/
 
 ## 实验记录索引
 
-| 编号 | 标题 | 关联项 | 状态 |
-|---|---|---|---|
-| [EXP-001](records/EXP-001_nixl_smoke_version_verdict.md) | NIXL 1P1D smoke 与版本裁决 | R0-3 | 完成 |
-| [EXP-002](records/EXP-002_hardware_baseline.md) | 硬件三数 | R0-1 | 完成 |
-| [EXP-003](records/EXP-003_profiling_tooling.md) | profiling 工装验证 | R0-5 | 完成 |
-| [EXP-004](records/EXP-004_b1_colocate_attribution_slo.md) | colocate 归因基线 + SLO 锁定 | B1 | 完成 |
-| [EXP-005](records/EXP-005_replica2_tp2_powercap.md) | replica2/tp2 归因 + 功率帽调查 | B1 | 完成 |
-| [EXP-006](records/EXP-006_pd1p1d_probe_attribution.md) | pd1p1d 探针 + 归因 + NIXL 大传输 | B1/R0-1 | 完成 |
-| [EXP-007](records/EXP-007_b1_sweep_campaign.md) | B1 四臂 sweep 战役（协议 v2） | B1 | 完成 |
-| [EXP-008](records/EXP-008_b3_version_compare.md) | B3 有限版本对照 | B3 | 完成 |
-| [EXP-009](records/EXP-009_c1_moe_bringup.md) | C1 MoE 上卡 + C2 运行时证据 | C1/C2 | 完成 |
-| [EXP-010](records/EXP-010_c3_w4a16_bringup.md) | C3 W4A16 Qwen3-30B-A3B 上卡 | C3 | 完成 |
-| [EXP-011](records/EXP-011_ext2_nixl_push.md) | EXT-2 NixlPush 推方向单点对照 | EXT-2 | 完成 |
-| [EXP-012](records/EXP-012_p2pnccl_dynamic_repro.md) | R0-4 P2pNccl 两 bug 动态复现 | R0-4 | 完成 |
-| [EXP-013](records/EXP-013_ext1_request_level_kv_attribution.md) | EXT-1 request 级 KV-wait 关联 | EXT-1/B2 | 完成 |
-| [EXP-014](records/EXP-014_d1_moe_kernel_decomposition.md) | D1 MoE decode 分解(曲线+nsys) | D1 | 完成 |
-| [EXP-015](records/EXP-015_d2_moe_config_tuning.md) | D2 MoE config 调优+六件套验证 | D2/P1 | 完成 |
-| [EXP-016](records/EXP-016_d4_fp8_vs_w4a16.md) | D4 FP8 vs W4A16(30B-A3B, Ada) | D4 | 完成 |
-| [EXP-017](records/EXP-017_d5_eplb_gate.md) | D5 EPLB gate(W4A16拒/FP8重排+对照) | D5 | 完成 |
+> 表头声明（8/24，依 CORE 规范核对）：本表不重复登记关键数字——单一事实源，
+> 关键数字（带指针）统一见下方「证据台账」表。
+
+| 编号 | 标题 | 日期 | 关联项 | 状态 |
+|---|---|---|---|---|
+| [EXP-001](records/EXP-001_nixl_smoke_version_verdict.md) | NIXL 1P1D smoke 与版本裁决 | 8/21 | R0-3 | 完成 |
+| [EXP-002](records/EXP-002_hardware_baseline.md) | 硬件三数 | 8/21 | R0-1 | 完成 |
+| [EXP-003](records/EXP-003_profiling_tooling.md) | profiling 工装验证 | 8/21 | R0-5 | 完成 |
+| [EXP-004](records/EXP-004_b1_colocate_attribution_slo.md) | colocate 归因基线 + SLO 锁定 | 8/21 | B1 | 完成 |
+| [EXP-005](records/EXP-005_replica2_tp2_powercap.md) | replica2/tp2 归因 + 功率帽调查 | 8/21 | B1 | 完成 |
+| [EXP-006](records/EXP-006_pd1p1d_probe_attribution.md) | pd1p1d 探针 + 归因 + NIXL 大传输 | 8/21 | B1/R0-1 | 完成 |
+| [EXP-007](records/EXP-007_b1_sweep_campaign.md) | B1 四臂 sweep 战役（协议 v2） | 8/21 | B1 | 完成 |
+| [EXP-008](records/EXP-008_b3_version_compare.md) | B3 有限版本对照 | 8/21 | B3 | 完成 |
+| [EXP-009](records/EXP-009_c1_moe_bringup.md) | C1 MoE 上卡 + C2 运行时证据 | 8/21 | C1/C2 | 完成 |
+| [EXP-010](records/EXP-010_c3_w4a16_bringup.md) | C3 W4A16 Qwen3-30B-A3B 上卡 | 8/21 | C3 | 完成 |
+| [EXP-011](records/EXP-011_ext2_nixl_push.md) | EXT-2 NixlPush 推方向单点对照 | 8/22 | EXT-2 | 完成 |
+| [EXP-012](records/EXP-012_p2pnccl_dynamic_repro.md) | R0-4 P2pNccl 两 bug 动态复现 | 8/23 | R0-4 | 完成 |
+| [EXP-013](records/EXP-013_ext1_request_level_kv_attribution.md) | EXT-1 request 级 KV-wait 关联 | 8/23 | EXT-1/B2 | 完成 |
+| [EXP-014](records/EXP-014_d1_moe_kernel_decomposition.md) | D1 MoE decode 分解(曲线+nsys) | 8/23 | D1 | 完成 |
+| [EXP-015](records/EXP-015_d2_moe_config_tuning.md) | D2 MoE config 调优+六件套验证 | 8/23 | D2/P1 | 完成 |
+| [EXP-016](records/EXP-016_d4_fp8_vs_w4a16.md) | D4 FP8 vs W4A16(30B-A3B, Ada) | 8/23 | D4 | 完成 |
+| [EXP-017](records/EXP-017_d5_eplb_gate.md) | D5 EPLB gate(W4A16拒/FP8重排+对照) | 8/23 | D5 | 完成 |
 
 ## 证据台账（勾一项 = 数据落盘 + 本表登记产物路径）
 
@@ -94,7 +100,7 @@ experiments/
 | D1 MoE 分解 | ✅ 8/23 | **反转点发现**:MoE/dense 2.03×(bs=1)→0.97×(bs=8)→0.82×(bs=128);nsys node 级分解:fused_moe grouped GEMM 占 56.4%(bs=32)/ dense GEMV 40.9%(bs=1);D2/D3 目标由数据锁定 fused_moe | EXP-014、`moe_perf/`(figures+derived+raw) |
 | D4 FP8 vs W4A16 | ✅ 8/23 | **W4A16(Marlin)decode 全 regime 胜 23–48%**(TPOT 4.91 vs 7.10ms@bs1),FP8 仅 c128 TTFT 反超(497 vs 613ms,prefill 计算受限)+ PPL 优 3.3% 相对(7.663 vs 7.922,同 31212 token);Ada 落地解释:oracle/fp8.py:103-122 capability 提升跳过 SM89 → TRITON block-scaled | EXP-016、`moe_perf/raw/EXP-016/` |
 | D5 EPLB gate | ✅ 8/23 判定完成 | **W4A16 拒**(`routed_experts.py:151` NotImplementedError,上游 TODO 指认工程缺口);**FP8 臂 2 次真实重排**(balancedness 0.53–0.74 实测)+ **对照组**(无 EPLB 同负载逐字节一致)→ 输出分歧因果归属 EPLB(数值性定性);按清单 gate 规则**不上简历,白板级保留** | EXP-017、`moe_perf/raw/EXP-017/` |
-| D2 config 调优 | ✅ 8/23 | **两个空缺 tuple JSON 交付**(E=30,N=1408 / E=60,N=704,各 19 M 档);kernel A/B 两端改善(M=1 **-8.5%/-3.8%**,M≥128 -3.3~-3.9%,中段持平);e2e TPOT **+0.8~1.2%** 一致(吞吐噪声内);correctness 120 passed;**PR 分支+六件套齐备,提交留用户** | EXP-015、`moe_perf/raw/EXP-015/`、PR_DRAFT.md、分支 `moe-config-4090-qwen15moe` |
+| D2 config 调优 | ✅ 8/23 | **两个空缺 tuple JSON 交付**(E=30,N=1408 / E=60,N=704,各 18 M 档;8/24 勘正:曾误计 triton_version 元键为 19);kernel A/B 两端改善(M=1 **-8.5%/-3.8%**,M≥128 -3.3~-3.9%,中段持平);e2e TPOT **+0.8~1.2%** 一致(吞吐噪声内);correctness 120 passed;**PR 分支+六件套齐备,提交留用户** | EXP-015、`moe_perf/raw/EXP-015/`、PR_DRAFT.md、分支 `moe-config-4090-qwen15moe` |
 | D3 kernel 优化 | ✅ 8/23 判定 | 依 D2 数据**转结论句**:tuned 与 default 在中段 M 打平 → Triton tile 空间已被启发式覆盖,config 即最优杠杆;不另做 kernel 改动(避免无数据支撑的"优化") | EXP-015 §6 |
 | EXT-1 request 级关联 | ✅ 8/23 | 本地 patch（16 行，可还原）；KV 占 TTFT 54.2/62.5/64.2%；上游不投（#52859 在途，见 `ext1/DEDUP.md`） | EXP-013、`pd_disagg/ext1/` |
 | EXT-2 NixlPush | ✅ 8/22 | 推方向 8K TTFT -6.7%、吞吐 +10–13%，量级不变（方向救不了 PD） | EXP-011 |

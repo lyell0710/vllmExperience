@@ -85,9 +85,8 @@ D0 地基、B1–B4、C1–C3、D1–D5、EXT-1/2、P1(材料层)/P2/P3 全部�
 - 功率帽:持续 prefill 降频 ~12%,同热工况才可比。
 - 大文件 push 慢(nsys rep 上百 MB),push 放后台跑。
 
-## 7. 当前状态快照(2026-08-23 ~16:00Z,收官)
+## 7. 当前状态快照(2026-08-24,审计收尾批次)
 
-- 所有 GPU 实验结束,双卡空闲;无在跑后台链。
-- 本地与远程同步(git push 完成后核对 `git status -sb` 必须无 ahead)。
-- PR 分支 `moe-config-4090-qwen15moe` 暂存两 JSON,等用户 review+签名提交。
-- ENV-B 仍带 EXT-1 本地 patch(如需还原:ext1/orig/ 两文件拷回即可)。
+- git HEAD:main 与 origin/main 同步(以 `git status -sb` / `git log -1` 实时核对为准;本批次 = 2026-08-24 审计收尾 commit)。
+- 硬件占用:双卡正被另一实验占用——本仓一切 GPU 运行(bench/复测/profile)暂停。
+- 下一步第一动作:用户本人执行 R0-6 线上简历排雷 + D2 PR review/`git commit -s`/提交(见 §5)。

@@ -1,0 +1,15 @@
+# manifest: pd_disagg/p2pnccl_repro/raw/EXP-012/ 目录级 provenance 登记
+# 建于 2026-08-24(审计收尾批次)。raw 不可变:本文件只登记,不改任何既有文件。
+# 公共环境: 1P1D P2pNccl PUT_ASYNC(vLLM 0.17.1, venv v0.17.1), 2x RTX 4090,
+#   仓 HEAD 30b4df03700d16af2681dd8c1f8aae2706575f49, 主机 monthlyrent_4090_2
+#
+# 文件 | 首行 provenance | 说明
+20260822T110420Z_preflight_state.txt | 有(自带首行) | 复现环境搭建期 preflight 快照(2026-08-22T11:04:20Z)
+20260823T023833Z_live_preflight.txt | 有(自带首行) | LIVE 复现前 GPU/端口状态(2026-08-23T02:38:33Z)
+20260823T024038Z_bug2_curl.txt | 无 -> 以本行为准: env=ENV-A(v0.17.1) date=2026-08-23T02:40:38Z cmd="curl 经 proxy 触发 bug2 双请求复现的退出码捕获" | 内容仅 CURL_EXIT=0;首次 bug2 复现尝试的旁证,主证据见 062037Z_bug2_evidence.txt
+20260823T062037Z_bug2_evidence.txt | 有(自带首行) | bug2 症状链 + wchan 全线程 futex_wait 快照 + 取证限制
+20260823T062224Z_bug1_Pdirect_crash.txt | 有(自带首行) | bug1 路径A 完整 traceback(connector:518 ValueError)
+20260823T062538Z_bug1_L433_assert.txt | 有(自带首行) | bug1 路径B 完整 traceback(connector:433 AssertionError)
+#
+# 服务端全量日志 repro_prefill.log / repro_decode.log / repro_proxy.log 在上级
+# pd_disagg/p2pnccl_repro/(历史落位,不移动);关联记录 records/EXP-012 §4。

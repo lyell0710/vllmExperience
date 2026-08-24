@@ -476,7 +476,7 @@
 
 ## §20 D2 收官:两个空缺 config 交付 + 六件套齐备(2026-08-23 傍晚,EXP-015)
 
-- **做了什么**:①全量调优两 tuple(EP 8916s / 非 EP 4097s,1920 配置×19 M 档,
+- **做了什么**:①全量调优两 tuple(EP 8916s / 非 EP 4097s,1920 配置×19 M 档[8/24 勘正:实为 18 档,曾误计元键,见 §21],
   ray 双卡);②kernel A/B + e2e A/B(default→装 JSON→tuned);③correctness
   (main venv 补 pytest/tblib 后 120 passed);④识别并消除 Triton 首跑 JIT
   伪影(c32 TTFT 1021ms→warmup 复测 225ms);⑤PR 分支 moe-config-4090-
@@ -496,3 +496,50 @@
 - **状态**:清单 D1–D5、EXT-1/2、持续项 P1(材料层)/P2/P3 全部完成;
   M1/M2 提前达成,M3 达成至"材料齐备待用户提交"。唯余用户侧:R0-6 线上
   简历排雷、PR 本人 review+签名+提交。
+
+## §21 SGLang config 侦察 + 19→18 定档修正(2026-08-24 上午)
+
+- **做了什么**:①SGLang 侧同构空缺侦察(只查重记档,未动工):全库 363 个
+  fused MoE config 中 4090 仅 2 个旧 fp8 文件,E=30,N=1408 与 E=60,N=704 在
+  全部 Triton 版本目录均缺;gh 远端三组关键词查重无冲突 → 判定第二 PR 机会
+  开放(须 sglang 运行时 A/B 验证后再提;源码已 shallow clone,venv 未装,
+  用户暂停待指示)。②定档修正批次(commit 4bb075f):D2 交付 JSON 的 M 档数
+  19→18 勘正(triton_version 元键曾被计入档数)、e2e +0.8~1.2% 降级出
+  headline(低于跨会话漂移)、红线表 +2 行(D2 e2e / EXT-1 patch 定性)、
+  PR hardening 清单。
+- **为什么**:第二 PR 机会作 9 月池备选需先查重留痕;简历句/PR 材料引用前,
+  数字必须与 raw JSON 键数定档一致(铁律 6 主张有据)。
+- **关键数字**:tuned JSON 实际 M 档 = **18**(数值键 1–4096;第 19 键为
+  triton_version 元键)——`moe_perf/raw/EXP-015/configs_ep/E=30,N=1408,
+  device_name=NVIDIA_GeForce_RTX_4090.json` 直接可数;SGLang 4090 config
+  存量 = 2(旧 fp8,与 vLLM 同源)。
+- **产物**:`moe_configs/DEDUP.md`(SGLang 节)、commit 205c654 / 4bb075f、
+  README 红线表新行、EXP-015 §4 勘注。
+- **下一步**:全仓"19 M 档"残留清扫与审计 findings 收尾(→ §22)。
+
+## §22 审计收尾批次(2026-08-24)
+
+- **做了什么**:应用外部审计已确认 findings(GPU 被另一实验占用,本批次全程
+  无 GPU 运行):①"19 M 档"残留清扫——README 台账 97 行、RESUME_EVIDENCE
+  98 行、EXP-015 §7 改 18 并附 8/24 勘正;§20 史料原文加勘注留痕不改叙事。
+  ②moe_perf/derived 与 ext1/derived 共 4 个 CSV 补 `# source` 注释行:改三个
+  生成脚本(d1_analyze.py / d1_kernels.py / analyze_ext1.py)后纯 CPU 重算
+  生成(nsys stats 从本地 .nsys-rep 重导出属 CPU 操作),重算值与既有版本
+  逐行 diff 一致。③EXP-012 raw 补目录级 manifest.txt——bug2_curl.txt 无首行
+  provenance 由 manifest 统一登记,raw 本体一字未动;EXP-012 §4 表述改如实
+  (含 repro 日志实际落位)。④b1_matrix/raw 补 manifest.txt,声明 provenance
+  权威 = runs.jsonl 行内字段按文件名前缀关联。⑤EXP-007 §7 登记 3 个 0 字节
+  tp2 1911 前缀空快照(疑 8100 端口未起抓空;runs.jsonl 无行引用,数据侧无
+  影响)。⑥README EXP 索引补日期列 + 表前声明(关键数字统一见证据台账)。
+  ⑦新建 `docs/talk/TALK.md` 现行讲稿(整合 RESUME_EVIDENCE 防御 + analysis
+  口径,数字全带 EXP 锚)与 `docs/theory/` 两篇五节笔记(01 MoE dispatch
+  链路 / 02 PD KV 通路,实证节指 EXP-013/014/015 数字)。⑧HANDOFF §7 重写
+  三行制式(HEAD/硬件占用/下一步)。
+- **为什么**:审计闭环——数字与 raw 一致、provenance 全覆盖(铁律 4)、
+  单一事实源(铁律 1)、面试材料按 STANDARDS §7 制式落位;raw 不可变与
+  禁 GPU 两条硬约束全程遵守。
+- **关键数字**:M 档定档 18(raw JSON 数值键直数);4 个 derived CSV 重算与
+  committed 版本逐行一致(56.44% / 40.89% / 54.2-64.2% 等零漂移)。
+- **产物**:本节所列文件 + 本 commit(审计收尾批次)。
+- **下一步**:唯余用户侧动作——R0-6 线上简历排雷、D2 PR 本人 review +
+  `git commit -s` + 提交;本批次无 GPU 补测欠账。

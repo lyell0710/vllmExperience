@@ -35,12 +35,16 @@
    + max_tokens=16 + 9-token prompt（单步 prefill）。
 
 ## 4. 原始数据
-均在 `pd_disagg/p2pnccl_repro/raw/EXP-012/`（每文件首行 provenance）：
+raw 主体在 `pd_disagg/p2pnccl_repro/raw/EXP-012/`；provenance 登记以目录级
+`raw/EXP-012/manifest.txt` 为权威（8/24 补建；6 文件中 5 个自带首行 provenance，
+`20260823T024038Z_bug2_curl.txt` 无首行 provenance——由 manifest 统一登记，raw 本体不改）：
+- `20260822T110420Z_preflight_state.txt` — 8/22 复现环境搭建期 preflight 快照。
 - `20260823T023833Z_live_preflight.txt` — 复现前 GPU/端口状态。
+- `20260823T024038Z_bug2_curl.txt` — 首次 bug2 复现尝试的 curl 退出码记录（内容仅 CURL_EXIT=0；provenance 见 manifest）。
 - `20260823T062037Z_bug2_evidence.txt` — bug2 症状链 + wchan 全线程 futex_wait 快照 + 取证限制。
 - `20260823T062224Z_bug1_Pdirect_crash.txt` — 路径A 完整 traceback（connector:518 ValueError）。
 - `20260823T062538Z_bug1_L433_assert.txt` — 路径B 完整 traceback（connector:433 AssertionError）。
-- 服务端全量日志 `repro_prefill.log` / `repro_decode.log`（NCCL 握手、崩溃/挂起原文）。
+- 服务端全量日志 `repro_prefill.log` / `repro_decode.log`（在 `pd_disagg/p2pnccl_repro/` 根目录，非 raw/ 内——历史落位如实登记；NCCL 握手、崩溃/挂起原文）。
 - **证据等级说明**：bug1 两条均有 EngineCore 原生 traceback（一级证据）；bug2 为
   行为学（双请求挂死、零 decode 日志、D 存活 util 0）+ 内核 wchan（全线程 futex_wait_queue）；
   py-spy 精确 Python 栈帧**未取**——容器 `ptrace_scope=1` 且 `/proc` 只读、无 CAP_SYS_PTRACE，
