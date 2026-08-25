@@ -85,7 +85,7 @@ epoch 天然同域——这是方法成立的前提,也是它的边界(§6)。
 ### 3.3 ~16 行改动的设计:为什么恰好是这几个落点
 
 改动打在 v0.25.1 的 NIXL connector(D 端),逐行带 `# EXT1` 标记、原件备份可还原
-(`ext1/orig/`);口径上是**本地可观测性改动,不是 NIXL/Connector 核心改造**(LEDGER 红线)。三个
+(`ext1/orig/`);口径上是**本地可观测性改动,不是 NIXL/Connector 核心改造**(措辞约定)。三个
 落点各解决一个不可替代的问题:①**起点在 connector 首见请求处**(`pull_worker.start_load_kv`)而非
 scheduler,因为 kv_wait 要**含握手**(首次与远端 P 建 NIXL agent 连接的一次性成本),放在 scheduler
 会把握手甩到窗口外,首请求 +292 ms(512 桶,EXP-013 §5)就观测不到;②**聚合按 req_id 逐 handle
@@ -147,7 +147,7 @@ $7{,}398{,}752{,}256 / 57{,}344 = 129{,}024$ token $= 12 \times (512+2048+8192)$
 
 **链 2 · 归因边界对不对(kv_wait ≈ xferDuration)**。kv_wait 是**墙钟**等待窗口,xferDuration 是
 NIXL **自报**的纯传输时间,来源完全独立;实测差 0.3–1.9 ms(各桶 p50 = 0.33/0.71/1.78 ms,
-EXP-013 §6)。它排除"kv_wait 里混了大量调度轮询/握手/块分配"。**红线**:xferDuration 已含
+EXP-013 §6)。它排除"kv_wait 里混了大量调度轮询/握手/块分配"。**注意**:xferDuration 已含
 posting,**不与 postDuration 相加**。**链 3 · 分解完不完整(六段闭环)**。§3.4 已证:误差
 p50 <0.1%(最差桶 0.084%,逐请求最大 0.11%),且残差被指认到 proxy 内部解析段;它排除"某段被
 重复计入或漏掉"。
@@ -181,7 +181,7 @@ descriptor 计数线性,而不是"带宽×时间"**。这就是碎片化的定�
 这也解释了 fig5 上那条 ~12 ms 的"小传输延迟地板"(smoke 0.188 MB / 14.1 ms,EXP-001)。
 **工程推论(可证伪)**:要提速必须**合并 descriptor**(层维度批量成更大连续块),而不是
 换方向——方向已被实测排除:NixlPush 8K TTFT −6.7%、吞吐 +10–13%,**量级不变**
-(EXP-011)。**口径红线**:0.26–0.27 GB/s 只能称 telemetry-derived effective throughput,
+(EXP-011)。**口径约定**:0.26–0.27 GB/s 只能称 telemetry-derived effective throughput,
 不能讲成链路物理带宽。
 
 ### 3.7 同一套方法搬到 MoE:先分解、再归因、后验证
@@ -198,7 +198,7 @@ Triton config 在上游**社区空缺**(运行时告警在案,EXP-009 §5),moe_a
 (≤0.5%)不值得动;④**三级验证**——correctness(没算错)/ kernel A/B(主证据)/ e2e(验证
 机理自洽);⑤**折算式** $\Delta_\mathrm{e2e} \approx \Delta_\mathrm{kernel} \times$ 该 kernel
 时间占比——kernel 端 M≥128 改善 3.3–3.9%,乘 56.4% 得 e2e 约 2% 的上限,实测 TPOT
-**+0.8~1.2%**,同量级、方向一致,机理自洽;但该幅度**低于跨会话漂移**(±5~8%),按仓内红线
+**+0.8~1.2%**,同量级、方向一致,机理自洽;但该幅度**低于跨会话漂移**(±5~8%),按仓内措辞约定
 **不作 headline**,主证据是 kernel A/B 两端数字。**折算对上了,不等于可以拿它当卖点**——判据
 是"效应量 vs 噪声量",不是"方向对不对"。
 
@@ -469,7 +469,7 @@ M 恰落在启发式调得较准的区间,搜索结果与它撞车(打平);M=1 �
 **e2e(辅助证据)**:TPOT p50 c1 4.40→4.34 ms、c32 17.91→17.70、c128 28.78→28.47,**一致
 +0.8~1.2%**;吞吐与 TTFT 在会话噪声内持平。**为什么只能当辅助**:跨会话漂移 ±5~8%
 (EXP-015 §5 以 D1 同点为对照:本轮 default c32 1596 / c128 4233 tok/s vs D1 的 1691 /
-3975),**效应量小于噪声量**,仓内红线因此明确 **D2 的 e2e 不作 headline**;另外 e2e 未采
+3975),**效应量小于噪声量**,仓内措辞约定因此明确 **D2 的 e2e 不作 headline**;另外 e2e 未采
 GPU 遥测(热工况不可证),吞吐只写"噪声内持平"、不作方向声明,TPOT p50 对热态不敏感予以
 保留(EXP-015 §7)。
 
@@ -503,7 +503,7 @@ GPU 遥测(热工况不可证),吞吐只写"噪声内持平"、不作方向声�
 4. **"0.27 GB/s 就是这条链路的带宽。"** 它是 **telemetry-derived effective throughput**:分子是
    NIXL 自报 totalBytes,分母是 NIXL 自报 xferDuration,里面含着 descriptor 碎片化的固定开销
    (每 16 KiB 花 ~62 µs,约为裸延迟 14.5–15.9 µs 的 4 倍)。它衡量的是**这套软件栈在这种访问模式
-   下的有效速率,不是链路能力**;相关红线:xferDuration 已含 posting,**不与 postDuration 相加**。
+   下的有效速率,不是链路能力**;相关措辞约定:xferDuration 已含 posting,**不与 postDuration 相加**。
 5. **"tuned config 全面胜出。"** 真实形状是两端显著、中段打平。把"M=1 −8.5%"讲成"MoE kernel 提速
    8.5%",既丢了 M 档定语也丢了 EP/非 EP 双口径(−8.5% / −3.8%);e2e 的 +0.8~1.2% 更不能当
    headline,它低于跨会话漂移。
@@ -541,7 +541,7 @@ Qwen1.5-MoE-A2.7B-Chat、TP2+EP。可外推的是**方法**,不是数字。
 6. **Q:MoE 的 fused_moe 占 56.4%,为什么调完 config 只快 1%?**
    折算式 $\Delta_\mathrm{e2e} \approx \Delta_\mathrm{kernel} \times$ 占比:kernel 端 serving 相关
    M 档改善 3.3–3.9%,乘 56.4% 得约 2% 的上限,实测 TPOT +0.8~1.2%,同量级。**但该幅度低于跨会话
-   漂移(±5~8%),按红线不作 headline,主证据是 kernel A/B。**
+   漂移(±5~8%),按措辞约定不作 headline,主证据是 kernel A/B。**
 7. **Q:为什么 M=1 反而是收益最大的一档(−8.5%)?**
    M=1 是最极端的形状:每个专家只分到极少 token,默认启发式的粗阶梯
    (fused_moe.py:1371-1395:`block_m` 四档、`group_m` 只在 `tokens_per_expert > 128` 时才开)
