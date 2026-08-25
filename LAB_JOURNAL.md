@@ -543,3 +543,27 @@
 - **产物**:本节所列文件 + 本 commit(审计收尾批次)。
 - **下一步**:唯余用户侧动作——R0-6 线上简历排雷、D2 PR 本人 review +
   `git commit -s` + 提交;本批次无 GPU 补测欠账。
+
+## §23 README 门面化批次（2026-08-25）
+
+- **做了什么**：README 升级为 GitHub 门面级：顶部新增一句话定位、Headline 结果表
+  （6 行，数字全部取自证据台账既有条目并带 EXP/文件指针）、图表区（复用
+  fig1/fig4/d1_fig1，新增 fig7 四臂饱和吞吐总览）、EXT-1 patch 代码导览
+  （patch 原文节选 + 三段关联思路）、复现 Quickstart、目录树更新（补
+  moe_perf/ext1/p2pnccl_repro/analysis）、相关仓链接、红线表下新增
+  「方法论：诚实度文化」三条。实验记录索引/证据台账/措辞红线表/硬约定/备份
+  逐字保留，RESUME_EVIDENCE 指向红线表的锚点未破坏。新增
+  `pd_disagg/scripts/make_fig7_overview.py`：从 runs.jsonl 重算饱和吞吐
+  （completed/wall_time_s，协议 v2 行 + gates.pass），输出
+  `figures/fig7_saturation_overview.png`（dpi 220，四臂固定配色沿用
+  make_figures.py，脚注 provenance）。全程无 GPU 运行，data/raw 未动。
+- **为什么**：面试官 30 秒扫读需要数据/图/代码/方法论前置；同时守住
+  CORE 铁律 1（README 台账仍是唯一状态源，未删改）、铁律 6（每句量化主张
+  带指针）与仓内硬约定 6（四臂一色到底，fig7 沿用 fig1-6 色序）。
+- **关键数字**：fig7 从 runs.jsonl 重算的饱和 req/s 与台账 B1 行逐位一致
+  （colocate 10.36/3.63/0.90 · replica2 15.58/7.00/1.78 · tp2 12.31/4.16/1.02
+  · pd1p1d 7.84/2.12/0.54）；README 无新造数字，D2 e2e 未上 headline（红线）。
+- **产物**：README.md、pd_disagg/scripts/make_fig7_overview.py、
+  pd_disagg/figures/fig7_saturation_overview.png、本 commit。
+- **下一步**：不变——用户侧 R0-6 线上简历排雷 + D2 PR 本人 review 与提交
+  （见 HANDOFF §5）。

@@ -1,34 +1,140 @@
-# 实验证据仓库（vLLM 秋招项目）
+# vLLM 推理部署选型与 MoE 优化 · 实验证据仓库
 
-独立嵌套 git 仓库（外层 vllm 仓库通过 `.git/info/exclude` 忽略本目录，互不干扰）。
-**所有能进简历/报告的数字、图表、trace 的唯一权威存放地。**
-简历句与证据的对应关系见 [RESUME_EVIDENCE.md](RESUME_EVIDENCE.md)。
+在 **2×RTX 4090（无 NVLink、P2P 驱动禁用）** 上回答两个工程问题：**① 多出一张卡该怎么用**
+（colocate / 双实例数据并行 / TP2 / PD 分离四臂选型，含瓶颈归因）；**② MoE 推理慢在哪、
+还能快多少**（kernel 级分解 → config 调优 → 上游 PR 材料）。
+B1 矩阵 84 个有效测量点（协议 v2，每点唯一 seed）、17 份八节实验记录、
+全部数字首行 provenance 可溯源。
+
+> 独立嵌套 git 仓库（外层 vllm 仓库通过 `.git/info/exclude` 忽略本目录，互不干扰）。
+> **所有能进简历/报告的数字、图表、trace 的唯一权威存放地。**
+> 简历句与证据的对应关系见 [RESUME_EVIDENCE.md](RESUME_EVIDENCE.md)；
+> 接手/交接从 [HANDOFF.md](HANDOFF.md) 读起。
+
+## 🎯 Headline 结果
+
+| 结论 | 关键数字 | 证据 |
+|---|---|---|
+| **两卡选型：数据并行完胜 TP2 与 PD 分离** | 饱和吞吐（req/s，2K 输入桶）：replica2 **7.00** · tp2 4.16 · pd1p1d 2.12 · colocate 单卡基线 3.63 | EXP-007 · `pd_disagg/results/b1_matrix/runs.jsonl` |
+| **TP2 只赢 decode**：decode 提速 42%（权重带宽分摊），prefill 零加速 | allreduce 撞 NCCL bus bw **1.78 GB/s** 墙（P2P 禁用） | EXP-005 / EXP-002 · `pd_disagg/hw/all_reduce_perf.txt` |
+| **PD 分离瓶颈定量**：KV 等待占 TTFT **54.2 / 62.5 / 64.2%**（512/2K/8K，p50，request 级因果占比） | 六段分解闭环误差 p50 <0.1%；bytes 与 Prometheus 对账分毫不差 | EXP-013 · `pd_disagg/ext1/derived/ext1_per_request.csv` |
+| **MoE 的 decode 优势在 bs≈8 反转** | MoE/dense **2.03×**(bs=1) → 0.97×(bs=8) → **0.82×**(bs=128)；nsys node 级归因：fused_moe grouped GEMM 占 GPU 时间 **56.4%**(bs=32) | EXP-014 · `moe_perf/derived/d1_scaling.csv`、`moe_perf/derived/d1_kernel_share_bs32.csv` |
+| **补齐两个社区空缺 MoE tuning config** | E=30,N=1408 / E=60,N=704（各 18 M 档）；kernel A/B：M=1 **-8.5% / -3.8%**，M≥128 -3.3~-3.9%；correctness 120 passed；PR 材料齐备（提交留用户） | EXP-015 · `moe_perf/PR_DRAFT.md` |
+| **版本升级实测**（system-version comparison，v0.17.1→v0.25.1） | 512 桶饱和吞吐 **+45%**（7.14→10.36 req/s）；启动 308→58s；计算受限桶零差异 | EXP-008 |
+
+## 📊 图表
+
+![四臂饱和吞吐总览](pd_disagg/figures/fig7_saturation_overview.png)
+
+> 两张卡怎么用：数据并行（replica2）饱和吞吐三个输入桶全部最高，PD 分离垫底。
+> source: `pd_disagg/results/b1_matrix/runs.jsonl`（2026-08-21）· 脚本 `pd_disagg/scripts/make_fig7_overview.py`
+
+![四臂 goodput 曲线](pd_disagg/figures/fig1_goodput_curves.png)
+
+> SLO goodput 随 offered load：replica2 全场最高；PD 分离在全部负载段被传输延迟压垮。
+> source: `pd_disagg/results/b1_matrix/runs.jsonl`（2026-08-21）· 脚本 `pd_disagg/scripts/make_figures.py`
+
+![PD TTFT 分解](pd_disagg/figures/fig4_pd_ttft_decompose.png)
+
+> PD 的 TTFT 分解：KV 传输占 54–64%，各分量与独立遥测对账吻合（request 级因果版见 EXP-013）。
+> source: `pd_disagg/results/b1_matrix/runs.jsonl`（2026-08-21）
+
+![MoE decode 反转点](moe_perf/figures/d1_fig1_decode_scaling.png)
+
+> MoE 的 decode 优势在 bs≈8 反转：2.03×(bs=1) → 0.82×(bs=128)——小 batch 是激活参数量的胜利，大 batch 输给专家权重搬运。
+> source: `moe_perf/raw/EXP-014/`（2026-08-23）· 脚本 `moe_perf/d1_analyze.py`
+
+## 🔬 代码导览：~16 行把「KV 传输占 TTFT」从对账推断变成因果测量
+
+四臂矩阵显示 PD 分离垫底，但"KV 传输占 TTFT 多少"最初只能靠分量对账（拿 colocate
+无负载 TTFT 近似 P 段）间接推断。EXT-1 用 **~16 行本地可观测性改动**（打在 vLLM 0.25.1
+NIXL connector，逐行 `# EXT1` 标记、原件备份可还原）把它升级为逐请求因果测量——核心节选：
+
+```python
+# pull_worker.start_load_kv —— D 端 connector 首见请求：记双时钟起点
+for req_id, meta in metadata.reqs_to_recv.items():
+    self._ext1_t0[req_id] = (time.perf_counter(), time.time())  # EXT1
+
+# base_worker._pop_done_transfers —— 逐 handle 累加 NIXL telemetry
+res = self.nixl_wrapper.get_xfer_telemetry(handle)
+agg = self._ext1_agg.setdefault(req_id, [0, 0, 0, 0, 0])  # EXT1
+agg[0] += res.totalBytes     # 与 Prometheus 计数器对账的 bytes
+agg[1] += res.xferDuration   # 纯传输时间：与 kv_wait 仅差 0.3–1.9ms → 轮询开销可忽略
+
+# 该请求全部 handle DONE 时——一行日志把三段身份与两段时钟钉在一起
+logger.info(
+    "EXT1_KV req_id=%s remote_request_id=%s kv_wait_ms=%.3f "
+    "t0_epoch=%.6f done_epoch=%.6f bytes=%d ...",
+    req_id,      # D 端 id（内嵌 client 自定的 X-Request-Id）
+    remote_req,  # P 端 id —— PD 身份拆分的显式映射
+    (time.perf_counter() - t0[0]) * 1e3,  # kv_wait：含 handshake 的完整等待窗口
+    ...)
+```
+
+完整 patch：`pd_disagg/ext1/nixl_req_telemetry_v0251.patch`（原件备份 `ext1/orig/`）。
+**三段关联思路**（EXP-013）：
+
+1. **身份**：client 自定 `X-Request-Id` 原样贯穿 proxy→P→D，36/36 请求在 D 端
+   req_id 与 remote_request_id 中均可见——跨进程 join 键；
+2. **时钟**：同机 1P1D——时长用单调 perf_counter，跨进程对齐用同 host epoch；
+3. **互证**：逐请求 bytes 求和与 Prometheus `nixl_bytes_transferred_sum` 分毫不差；
+   六段分解闭环误差 p50 <0.1%；打 patch 前后 TTFT p50 218/727/2738 vs
+   219/719/2719 ms——观测零扰动。
+
+上游已有同方向 draft PR #52859，按 fail-closed 规则本 patch 定位为本地测量工具、
+不投上游（查重记录 `pd_disagg/ext1/DEDUP.md`）。
+
+## 🚀 复现 Quickstart
+
+```bash
+# 环境：vLLM 0.25.1（/root/venvs/v0.25.1）+ 2×RTX 4090；绘图 venv /root/venvs/kernel-opt
+
+# 1) 不碰 GPU：从 raw 重算全部 B1 图表与 derived 表
+cd pd_disagg
+/root/venvs/kernel-opt/bin/python scripts/make_figures.py
+/root/venvs/kernel-opt/bin/python scripts/make_fig7_overview.py
+
+# 2) 复现 B1 单测量点（先起对应臂的 server；快照→bench→快照→追加 runs.jsonl）
+scripts/run_point.sh colocate sweep 2048 128 2.7 8100 8100
+
+# 3) EXT-1 全流程：1P1D 起栈 → 36 请求 → client×proxy×D 三方 join（需先打 ext1 patch）
+bash pd_disagg/ext1/run_ext1.sh
+
+# 4) MoE D1 曲线：MoE(TP2+EP) vs dense(TP2)，并发 1..128
+bash moe_perf/d1_sweep.sh
+```
 
 ## 目录结构
 
 ```
 experiments/
-├── README.md                  # 本文件：约定 + 证据台账 + 红线状态
+├── README.md                  # 本文件：门面 + 约定 + 证据台账 + 红线状态
+├── HANDOFF.md                 # 接手唯一入口（多 agent 接力）
 ├── LAB_JOURNAL.md             # 实验日记：每个工作段落的过程/决策/数字/产物（时间正序）
 ├── RESUME_EVIDENCE.md         # 简历句 ↔ 证据映射（最终写简历/面试用）
 ├── records/                   # 实验记录：每个实验一份 EXP-NNN（模板 TEMPLATE.md）
 │   └── data/                  # 记录直属的小型原始数据（如节流采样 CSV）
-├── pd_disagg/
+├── pd_disagg/                 # B 线：推理部署选型战役
 │   ├── DECISION.md            # 版本裁决（锁定 v0.25.1）+ 硬件基线数字
 │   ├── EXPERIMENT_PLAN.md     # 计划 v2 + 17 条代码级核验表（面试深挖素材）
 │   │                          #   ⚠ 其中"main=交付"段已被 DECISION.md 取代
+│   ├── REPORT.md              # B4 报告 v2（一页结论 + 四章 + 附录）
 │   ├── smoke/                 # R0-3：NIXL 1P1D smoke 双版本 PASS 证据
 │   ├── hw/                    # R0-1：硬件三数（p2p / nccl / 拓扑）
 │   ├── profiling/             # R0-5：torch profiler + nsys 验证与 trace
-│   ├── scripts/               # provenance.sh / profile_ctl.sh / metrics_snapshot.sh
+│   ├── scripts/               # run_point / collect_point / make_figures / provenance 等
 │   ├── matrix/                # B1 工装（rr_proxy.py 等）
 │   ├── results/               # B1+ 基准数据（schema 见 results/README.md）
-│   └── figures/               # 报告图（源数据必须可溯到 results/）
-├── docs/
-│   ├── talk/TALK.md           # 现行面试讲稿（只留一份现行版，2026-08-24 建）
-│   └── theory/                # 原理笔记（五节制式，实证节指向自家 EXP 数字）
-└── moe_configs/
-    └── DEDUP.md               # C2：config 查重判定
+│   ├── figures/               # 报告图 fig1-7（源数据必须可溯到 results/）
+│   ├── ext1/                  # EXT-1：request 级 KV-wait 关联（patch + 工装 + 数据）
+│   ├── p2pnccl_repro/         # R0-4：0.17.1 两 bug 动态复现栈
+│   └── analysis/              # 源码机理分析（bug 链 / token 对账）
+├── moe_perf/                  # D 线：MoE 性能战役（d1–d5 脚本 + raw/derived/figures + PR_DRAFT.md）
+├── moe_configs/
+│   └── DEDUP.md               # C2：config 查重判定
+└── docs/
+    ├── talk/TALK.md           # 现行面试讲稿（只留一份现行版，2026-08-24 建）
+    └── theory/                # 原理笔记（五节制式，实证节指向自家 EXP 数字）
 ```
 
 ## 硬约定（所有新数据必须遵守）
@@ -118,6 +224,22 @@ experiments/
 | PR 状态 | 限定 | 未提交不写"提交"，未合并不写"合入" |
 | D2 e2e +0.8~1.2% | 🚫 不作 headline | 低于跨会话漂移；主证据=kernel A/B（8/24 定档修正） |
 | EXT-1 patch 定性 | 限定 | "~16 行本地可观测性改动"，不得表述为 NIXL/Connector 核心改造 |
+
+### 方法论：诚实度文化
+
+- **可溯源**：每个结果文件首行 provenance（env/sha/完整命令/GPU/驱动）；raw 不可变，
+  表图一律由脚本从 raw 重算，坏数据移 archive 留痕而非原地改。
+- **互证与对照**：关键数字带分布不带单点（p50/p90；EXP-013 每桶 n=11，
+  六段闭环误差 p50 <0.1%，bytes 与 Prometheus 独立对账）；因果归属必设对照臂
+  （D5 专设无 EPLB 对照组，输出逐字节一致才把分歧归因 EPLB）。
+- **负结论与勘误留痕**：D3 依数据放弃 kernel 改动、D5 判"不上简历"、8/24 M 档
+  19→18 勘正与 D2 e2e 降级出 headline，全部在台账原位标注，不删不藏。
+
+## 相关仓库
+
+- [vllmExperience](https://github.com/lyell0710/vllmExperience) —— 本仓（private）
+- [Kernel_Optimazation](https://github.com/lyell0710/Kernel_Optimazation) —— CUDA kernel 优化实验仓
+- [llm-engine](https://github.com/lyell0710/llm-engine) —— LLM 推理引擎仓
 
 ## 备份
 
