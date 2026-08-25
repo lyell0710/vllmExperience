@@ -182,7 +182,7 @@ fi
 则 goodput 无法计算;seed 写死 42 会踩前缀缓存污染(仓内实测 2048 桶 25% 命中虚高,
 `pd_disagg/analysis/nixl_token_accounting.md`)。
 
-**段 3:精确指标名取增量(`pd_disagg/scripts/collect_point.py:97-109`)**
+**段 3:精确指标名取增量(`pd_disagg/scripts/collect_point.py:29-41`)**
 
 ```python
 def exact_delta(deltas, metric_name, label_sub=None):
@@ -206,7 +206,7 @@ def exact_delta(deltas, metric_name, label_sub=None):
 D 端(pull 语义,READ 发起方),跨端口求和才对。改错会怎样:早期版本用子串猜名,遇上
 `pd1p1d_push` 臂(计数器移到 P 端)与 `_created` 就会算出错账。
 
-**段 4:gate——数字与它的合格证同行(`collect_point.py:141-172`)**
+**段 4:gate——数字与它的合格证同行(`collect_point.py:73-104`)**
 
 ```python
     is_pd = args.arm.startswith("pd1p1d")   # 含 pd1p1d_push（EXT-2 修正）
@@ -250,7 +250,7 @@ D 端(pull 语义,READ 发起方),跨端口求和才对。改错会怎样:早期
 精确匹配漏掉,导致该臂两行的结构化 gate 字段为 None(原始计数幸存于 kv_deltas_raw,
 EXP-011 §4 如实登记)。改错会怎样:没有 gate,PD 臂的"好看数字"可能根本没走传输路径。
 
-**段 5:goodput 的定义(`collect_point.py:174-184`)**
+**段 5:goodput 的定义(`collect_point.py:106-116`)**
 
 ```python
     goodput = None
@@ -273,7 +273,7 @@ EXP-011 §4 如实登记)。改错会怎样:没有 gate,PD 臂的"好看数字"�
 TPOT ≤ 50 ms,基线来自 EXP-004 并预注册锁定。改错会怎样:用均值 TTFT 判定会把"半数
 请求超时"的点算成满分——goodput 曲线在过载段的陡降(fig1)正是逐请求判定才画得出来。
 
-**段 6:遥测汇总——工况证据入行(`collect_point.py:206-217`)**
+**段 6:遥测汇总——工况证据入行(`collect_point.py:138-149`)**
 
 ```python
         gpu_telemetry = {}
