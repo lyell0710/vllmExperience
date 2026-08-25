@@ -1,7 +1,7 @@
 # 主线实验计划（修订版 v2 · 2026-08-31 报告）
 
 > ⚠ 本文为计划文档(v2 锚点);执行进展与最终结论见 REPORT.md(v2 定稿)、
-> HANDOFF.md 与 README 台账;其中"main=交付"段已被 DECISION.md 取代。
+> HANDOFF.md 与 LEDGER.md 台账;其中"main=交付"段已被 DECISION.md 取代。
 
 > 本版按评审意见逐条修订；所有引用均针对当前 checkout `main@7aa248fcfe` 核验。
 > 结论：主线判断成立。定位为：**0.17.1 = 两小时历史基线；main（当前 checkout）= 新版交付；失败分析（带 trace）= 兜底。**

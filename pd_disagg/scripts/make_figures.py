@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""B1/B2 报告图 + derived 表。全部从 runs.jsonl 与 raw/ 重算（README 约定 #3）。
+"""B1/B2 报告图 + derived 表。全部从 runs.jsonl 与 raw/ 重算（LEDGER.md 硬约定 #3）。
 
 用法: python scripts/make_figures.py   （在 pd_disagg/ 目录下）
 输出: figures/*.png + results/b1_matrix/derived/*.csv
@@ -36,7 +36,7 @@ ARM_LABEL = {
 ARMS = list(ARM_COLOR)
 BUCKETS = [512, 2048, 8192]
 SLO_TTFT = {512: 328, 2048: 891, 8192: 4626}
-PROV = "source: runs.jsonl (protocol v2, seed-per-point) · 2×RTX4090 · vLLM 0.25.1 · 2026-08-21"
+PROV = "source: runs.jsonl (protocol v2, seed-per-point, 84 gated points) · 2×RTX4090 · vLLM 0.25.1"
 
 plt.rcParams.update({
     "font.sans-serif": ["Noto Sans CJK SC", "DejaVu Sans"],

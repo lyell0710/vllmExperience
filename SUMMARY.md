@@ -1,7 +1,7 @@
 # 项目汇总单（2026-08-21 · Day 0 全量收官）
 
 > ⚠ **本文为 2026-08-21 Day 0 冻结快照**,其"任务完成度总表"与"还欠的事"均已过时。
-> 最新状态以 [HANDOFF.md](HANDOFF.md) 与 [README.md](README.md) 证据台账为准
+> 最新状态以 [HANDOFF.md](HANDOFF.md) 与 [LEDGER.md](LEDGER.md) 证据台账为准
 > (8/23 已闭环:R0-4 动态复现/EXT-1/EXT-2/B2/B3/B4 v2/D1;课程脚本已证非必需)。
 
 > 一天内从环境体检到 M1 报告草稿的全部产出。阅读顺序：本文 →
@@ -52,7 +52,7 @@ NCCL allreduce 1.78 GB/s · NIXL KV 有效 0.26–0.27 GB/s · 卡内 ~924 GB/s 
 ```
 experiments/（github.com/lyell0710/vllmExperience, private）
 ├── SUMMARY.md / STUDY_GUIDE.md      ← 你现在读的 + 明天的教材
-├── README.md                        ← 台账 + 红线 + 约定（8条）+ 记录索引
+├── README.md                        ← 对外门面（台账/红线/约定移至 LEDGER.md）
 ├── LAB_JOURNAL.md                   ← 复现级日记（Day 0 全程 §0–§13+）
 ├── RESUME_EVIDENCE.md               ← 简历句成稿候选（数字已填）
 ├── records/EXP-001~009 + TEMPLATE   ← 逐实验八节记录

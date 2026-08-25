@@ -1,7 +1,7 @@
 # 面试讲稿(现行版 · 2026-08-24)
 
 > 现行只留一份;被取代版本移 docs/archive/ 并标 superseded。数字全部带 EXP
-> 锚点,与 README 证据台账一致;开讲前先过 README「措辞红线状态」表。
+> 锚点,与 LEDGER.md 证据台账一致;开讲前先过 LEDGER.md「措辞红线状态」表。
 > 整合来源:RESUME_EVIDENCE.md 各节面试防御 + `pd_disagg/analysis/` 两篇口径草稿
 > (p2pnccl_bugs_id_chain.md / nixl_token_accounting.md)。
 
@@ -117,6 +117,6 @@ oracle/fp8.py:103-122 capability 90/100 检查跳过 SM89 → TRITON block-scale
 
 ## 6. 讲前红线自查
 
-README「措辞红线状态」表逐行过:两 bug 只"复现/定位/验证";PR 未提交不说
+LEDGER.md「措辞红线状态」表逐行过:两 bug 只"复现/定位/验证";PR 未提交不说
 "提交";带宽只说 telemetry-derived;e2e +0.8~1.2% 不作 headline;EXT-1 patch
 只说"~16 行本地可观测性改动"。

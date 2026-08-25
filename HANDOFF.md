@@ -1,7 +1,7 @@
 # 交接文档(给接手的 agent)· 2026-08-23(第二次全面更新)
 
 > 本文件是**唯一入口**。项目全貌读 [SUMMARY.md](SUMMARY.md)(注:其"还欠的事"
-> 已过时,以本文 §5 为准);状态速查读 [README.md](README.md) 证据台账;
+> 已过时,以本文 §5 为准);状态/措辞速查读 [LEDGER.md](LEDGER.md)(README 已改为对外门面);
 > 过程叙事读 [LAB_JOURNAL.md](LAB_JOURNAL.md)(§17/§18 是最新);
 > 简历句读 [RESUME_EVIDENCE.md](RESUME_EVIDENCE.md);周核对读 [WEEKLY.md](WEEKLY.md)。
 
@@ -18,7 +18,7 @@ P2P 驱动禁用)上做推理部署选型 + MoE 性能优化,产出简历/面试
 2. 每个实验一份 `records/EXP-NNN_<slug>.md`(八节模板),当场写。
 3. 任何 GPU 跑一律存 raw(bench 加 `--save-result`);没存的降级"终端级证据"。
 4. 结果文件首行 provenance;数据里程碑 commit + push。
-5. 措辞红线查 README 表。**"KV 占 TTFT X%" 已解锁(EXP-013)**;0.17 两 bug
+5. 措辞红线查 LEDGER.md 表。**"KV 占 TTFT X%" 已解锁(EXP-013)**;0.17 两 bug
    仍只写"复现/定位/验证";PR 未提交不写"提交"。
 6. **杀进程用方括号技巧**(`pkill -f '[v]llm serve'`)——复合命令里普通 pattern
    会匹配自身 shell 导致 exit 144(本会话又验证了两次)。
@@ -50,7 +50,7 @@ P2P 驱动禁用)上做推理部署选型 + MoE 性能优化,产出简历/面试
   `--capture-range=cudaProfilerApi --capture-range-end=stop-shutdown`,
   HTTP /start_profile /stop_profile 触发。
 
-## 4. 已完成(✅ = 数据落盘 + 记录 + 推送;详见 README 台账)
+## 4. 已完成(✅ = 数据落盘 + 记录 + 推送;详见 LEDGER.md 台账)
 
 R0-1~R0-5、B1、**B2(EXT-1 收官,KV 占 TTFT 54.2/62.5/64.2%)**、B3(两维度
 定稿)、**B4 报告 v2 定稿**、C1/C2/C3、EXT-2、R0-4 动态复现(EXP-012)、
@@ -64,7 +64,7 @@ R0-1~R0-5、B1、**B2(EXT-1 收官,KV 占 TTFT 54.2/62.5/64.2%)**、B3(两维度
 ## 5. 状态:清单全线完成(2026-08-23 傍晚)
 
 D0 地基、B1–B4、C1–C3、D1–D5、EXT-1/2、P1(材料层)/P2/P3 全部收官,
-记录 EXP-001~017 齐(见 README 索引)。M1/M2 提前达成;M3 = 材料齐备。
+记录 EXP-001~017 齐(见 LEDGER.md 索引)。M1/M2 提前达成;M3 = 材料齐备。
 
 ### 唯余两项,均只能由用户本人执行
 1. **R0-6**:线上简历稿"发现/修复"→"复现/定位/验证"。
