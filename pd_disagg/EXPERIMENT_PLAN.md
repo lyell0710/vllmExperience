@@ -1,10 +1,8 @@
 # 主线实验计划（修订版 v2 · 2026-08-31 报告）
 
-> ⚠ 本文为计划文档(v2 锚点);执行进展与最终结论见 REPORT.md(v2 定稿)、
-> HANDOFF.md 与 LEDGER.md 台账;其中"main=交付"段已被 DECISION.md 取代。
+> ⚠ 本文为计划文档（v2 锚点）；执行进展与最终结论见 REPORT.md（v2 定稿）、 HANDOFF.md 与 LEDGER.md 台账；其中"main=交付"段已被 DECISION.md 取代。
 
-> 本版按评审意见逐条修订；所有引用均针对当前 checkout `main@7aa248fcfe` 核验。
-> 结论：主线判断成立。定位为：**0.17.1 = 两小时历史基线；main（当前 checkout）= 新版交付；失败分析（带 trace）= 兜底。**
+> 本版按评审意见逐条修订；所有引用均针对当前 checkout `main@7aa248fcfe` 核验。结论：主线判断成立。定位为：**0.17.1 = 两小时历史基线；main（当前 checkout）= 新版交付；失败分析（带 trace）= 兜底。**
 
 ---
 
@@ -16,7 +14,7 @@
 | 2 | 仓库无 `.venv/bin/python`；规则禁止裸 `python` | ✅ 成立 | `.venv/bin/python` 不存在 |
 | 3 | 新版入口 = 官方 smoke test（同机双卡 NIXL 1P1D） | ✅ 成立 | `docs/features/nixl_connector_usage.md:66` 已写明 GPU0/GPU1、5600/5601 side-channel、toy proxy |
 | 4 | 默认 `NixlConnector` = Pull 兼容别名；Push 留扩展点 | ✅ 成立 | `connector.py:391` `NixlConnector = NixlPullConnector` |
-| 5 | 「NIXL 不通换 LMCache」不成立；LMCache 示例即 LMCache-over-NIXL | ✅ 成立 | `examples/disaggregated/lmcache/README.md:32`（"using NIXL on a single node"） |
+| 5 |「NIXL 不通换 LMCache」不成立；LMCache 示例即 LMCache-over-NIXL | ✅ 成立 | `examples/disaggregated/lmcache/README.md:32`（"using NIXL on a single node"） |
 | 6 | Mooncake 直连不需要独立 master | ✅ 成立 | `docs/features/mooncake_connector_usage.md:19` P/D 直接 `vllm serve`；需 master 的是 `MooncakeStoreConnector` |
 | 7 | P2pNccl 删除 = #44854（2026-06-08），v0.25.1 已包含；动机不是单一 bug | ✅ 成立 | 删除提交 `5add018beb` 时间为 2026-06-08，且是 `v0.25.1` 的祖先 |
 | 8 | 0.17.1 P2pNccl 用 `request_id#layer` 当跨实例 key | ✅ 成立 | `v0.17.1:vllm/.../p2p/p2p_nccl_connector.py:220` `request_id + "#" + layer_name` |
@@ -26,7 +24,7 @@
 | 12 | 代理不转发 profile 端点 | ✅ 成立 | `tests/v1/kv_connector/nixl_integration/toy_proxy_server.py` 无 `/start_profile`/`/stop_profile` |
 | 13 | all_reduce_perf 量 TP collective，非 UCX KV copy | ✅ 成立 | 需补 NIXL 实际 bytes/xfer time |
 | 14 | 已有两个 4090 FP8 config | ✅ 成立 | `fused_moe/configs/`：`E=8,N=3584` 与 `E=64,N=640`（均 `dtype=fp8_w8a8`） |
-| 15 | Qwen1.5 TP2+EP → E=30,N=1408；TP2 非 EP → E=60,N=704 | ✅ 成立 | 两 shape 在 `fused_moe/configs/` 缺失（`E=30` 无、`E=60` 仅 AMD）→ 调优生成 |
+| 15 | Qwen1.5 TP2+EP → E=30，N=1408；TP2 非 EP → E=60，N=704 | ✅ 成立 | 两 shape 在 `fused_moe/configs/` 缺失（`E=30` 无、`E=60` 仅 AMD）→ 调优生成 |
 | 16 | `benchmark_moe.py` 支持写 config | ✅ 成立 | `benchmarks/kernels/benchmark_moe.py:697` `def save_configs(...)` |
 | 17 | EPLB 默认约 3000 engine steps 才重排 | ✅ 成立 | `vllm/config/parallel.py:65` `step_interval=3000`（window=1000） |
 

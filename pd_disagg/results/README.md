@@ -8,8 +8,7 @@ results/b1_matrix/
 └── runs.jsonl   # 权威数据：每行 = 一个测量点
 ```
 
-前缀命名：`<UTCyyyymmddThhmm>_<arm>_<in>x<out>_<mode>[_rps<r>]`
-例：`20260823T0510_pd1p1d_2048x128_sweep_rps4`
+前缀命名：`<UTCyyyymmddThhmm>_<arm>_<in>x<out>_<mode>[_rps<r>]` 例：`20260823T0510_pd1p1d_2048x128_sweep_rps4`
 
 ## runs.jsonl 每行字段
 
@@ -55,8 +54,7 @@ results/b1_matrix/
 
 ## 规则
 
-1. `gates.pass=false` 的行**保留在 runs.jsonl**（诚实记录），但绝不进 derived/、
-   figures/ 与报告。
+1. `gates.pass=false` 的行**保留在 runs.jsonl**（诚实记录），但绝不进 derived/、 figures/ 与报告。
 2. **SLO 定义**（goodput 用）——方案 2026-08-21 锁定（DistServe 式相对 SLO）：
    - **TPOT ≤ 50 ms** 固定（=20 tok/s，约为人类阅读速度 3 倍，体验锚点，与硬件无关）
    - **TTFT ≤ 5 × 该输入桶的无负载基线**（基线 = colocate 臂 attribution 跑、并发 1 的 p50）
@@ -68,20 +66,13 @@ results/b1_matrix/
    | 2048 | 178.28 | **891**  |
    | 8192 | 925.18 | **4626** |
 
-   基线来源：colocate attribution 跑（2026-08-21，runs.jsonl 前三行，gate 全 PASS，
-   服务端配置 `--max-model-len 16384` 其余默认）。**本表自此 commit 起锁定。**
+   基线来源：colocate attribution 跑（2026-08-21，runs.jsonl 前三行，gate 全 PASS，服务端配置 `--max-model-len 16384` 其余默认）。**本表自此 commit 起锁定。**
 
-   - **附录必做**：goodput vs SLO-scale（1.25× / 2.5× / 5× / 10×）敏感性曲线，
-     由 raw 的每请求延迟数据重算（bench 必须带 --save-detailed）——回应"为什么是
-     5×/50ms"的完整防御。
-3. gate 增量由 `scripts/metrics_snapshot.sh diff before after` 计算，
-   人工誊入 runs.jsonl 或由跑批脚本自动写入。
+   - **附录必做**：goodput vs SLO-scale（1.25× / 2.5× / 5× / 10×）敏感性曲线，由 raw 的每请求延迟数据重算（bench 必须带 --save-detailed）——回应"为什么是 5×/50ms"的完整防御。
+3. gate 增量由 `scripts/metrics_snapshot.sh diff before after` 计算，人工誊入 runs.jsonl 或由跑批脚本自动写入。
 4. 每个测量点重复次数与 warmup 规则同样在首跑前定死，写入本文件。
-5. GPU-seconds/request 的 gpu_count 口径：按**部署占用的 GPU 数**计
-   （colocate=1；replica2/tp2/pd1p1d=2），不按利用率折算——报告中如实说明。
+5. GPU-seconds/request 的 gpu_count 口径：按**部署占用的 GPU 数**计（colocate=1；replica2/tp2/pd1p1d=2），不按利用率折算——报告中如实说明。
 
 ## B3 版本对照数据
 
-同 schema，`provenance.env=ENV-A`。**实际落点(8/23 勘正)**:数据并入
-`b1_matrix/`(arm=colocate_v0171),`b3_version_compare/` 目录未启用；
-结论只能称 **system-version comparison**（scheduler/kernel/默认配置/传输方向均不同）。
+同 schema，`provenance.env=ENV-A`。**实际落点（8/23 勘正）**：数据并入 `b1_matrix/`(arm=colocate_v0171)，`b3_version_compare/` 目录未启用；结论只能称 **system-version comparison**（scheduler/kernel/默认配置/传输方向均不同）。

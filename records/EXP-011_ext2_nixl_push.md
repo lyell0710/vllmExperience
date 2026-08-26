@@ -8,25 +8,17 @@
 | 关联清单项 | EXT-2（弹性）；B4 §2.4 补充 |
 
 ## 1. 目的与假设
-用 **NixlPushConnector 专用 push proxy**（清单红线：不得拿 Pull 的 toy proxy 换名跑）
-测推方向单点，回答"传输方向能否改变 PD 在本互联上的结论"。
+用 **NixlPushConnector 专用 push proxy**（清单红线：不得拿 Pull 的 toy proxy 换名跑）测推方向单点，回答"传输方向能否改变 PD 在本互联上的结论"。
 
 ## 2. 环境与配置
-- proxy：`examples/disaggregated/disaggregated_serving/disagg_proxy_pushconnector_demo.py`
-  （从 v0.25.1 tag 提取 → `matrix/`；机制：D 先经 NIXL 通知向 P 注册本地块，
-  P 用 NIXL **WRITE** 推送——与 pull 的 D 端 READ 相反）
-- P/D：`NixlPushConnector`，P 带 `engine_id=prefill-engine-001`（proxy 参数须匹配），
-  side channel 5600/5601，`kv_load_failure_policy=fail`，其余同 pd1p1d 臂。
+- proxy：`examples/disaggregated/disaggregated_serving/disagg_proxy_pushconnector_demo.py`（从 v0.25.1 tag 提取 → `matrix/`；机制：D 先经 NIXL 通知向 P 注册本地块， P 用 NIXL **WRITE** 推送——与 pull 的 D 端 READ 相反）
+- P/D：`NixlPushConnector`，P 带 `engine_id=prefill-engine-001`（proxy 参数须匹配）， side channel 5600/5601，`kv_load_failure_policy=fail`，其余同 pd1p1d 臂。
 
 ## 3. 步骤
-起 P/D → push proxy(8192) → smoke → attribution 512/8192（seed 1042/3042，
-与 pull 臂同 seed 直接可比）。
+起 P/D → push proxy(8192) → smoke → attribution 512/8192（seed 1042/3042，与 pull 臂同 seed 直接可比）。
 
 ## 4. 原始数据
-runs.jsonl arm=pd1p1d_push 两行 + raw/ext2_push_{P,D,proxy}.log。
-**注**：这两行的 gates 结构化字段为 None——collect_point 的 is_pd 判断当时用
-`== "pd1p1d"` 精确匹配未命中 push 臂名（已修为 startswith）；全部计数在
-`gates.kv_deltas_raw` 完整在案，本记录 §5 由 raw 对账，数据有效性不受影响。
+runs.jsonl arm=pd1p1d_push 两行 + raw/ext2_push_{P，D，proxy}.log。 **注**：这两行的 gates 结构化字段为 None——collect_point 的 is_pd 判断当时用 `== "pd1p1d"` 精确匹配未命中 push 臂名（已修为 startswith）；全部计数在 `gates.kv_deltas_raw` 完整在案，本记录 §5 由 raw 对账，数据有效性不受影响。
 
 ## 5. 结果（与 pull 同 seed 对照）
 | 指标 | Pull（EXP-007 v2） | Push（本实验） |
@@ -43,12 +35,9 @@ runs.jsonl arm=pd1p1d_push 两行 + raw/ext2_push_{P,D,proxy}.log。
 | D 端 by_source | N−本地命中 | **完整 N**（16384/262144 = 32×N 整） |
 
 ## 6. 分析与结论
-- 推方向略优（8K TTFT -6.7%，有效吞吐 +10–13%）：WRITE 免去 pull 的
-  请求-应答回合，且 P 端在 prefill 完成即推、与 D 端调度解耦。
-- **但量级不变**：0.305 vs 0.27 GB/s 同贴互联墙——**传输方向救不了 PD**，
-  B4 §2.4 的"形态与互联能力错配"结论对两个方向同时成立。
-- push 模式 D 不做前缀缓存扣减（注册全部本地块，P 全量推）——与 pull 的
-  尾对齐裁剪（base_worker._apply_prefix_caching）形成机制对照，面试素材。
+- 推方向略优（8K TTFT -6.7%，有效吞吐 +10–13%）：WRITE 免去 pull 的请求-应答回合，且 P 端在 prefill 完成即推、与 D 端调度解耦。
+- **但量级不变**：0.305 vs 0.27 GB/s 同贴互联墙——**传输方向救不了 PD**， B4 §2.4 的"形态与互联能力错配"结论对两个方向同时成立。
+- push 模式 D 不做前缀缓存扣减（注册全部本地块，P 全量推）——与 pull 的尾对齐裁剪（base_worker._apply_prefix_caching）形成机制对照，面试素材。
 
 ## 7. 异常、偏差与开放问题
 - 工装 bug（is_pd 精确匹配）——已修；教训：臂名匹配用前缀不用全等。

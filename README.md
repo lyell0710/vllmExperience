@@ -123,7 +123,7 @@ bash moe_perf/d1_sweep.sh
 
 ## 实验记录
 
-深度讲义(不跳步推导 + 代码逐段走读)见 [docs/lectures/](docs/lectures/)。
+深度讲义（不跳步推导 + 代码逐段走读）见 [docs/lectures/](docs/lectures/)。
 
 每个实验一份八节记录（目的、配置、步骤、原始数据、结果、分析、异常、下游影响）：
 
@@ -140,7 +140,7 @@ bash moe_perf/d1_sweep.sh
 | [EXP-009 C1 Qwen1.5-MoE-A2.7B 上卡（TP2+EP）+ C2 运行时证据](records/EXP-009_c1_moe_bringup.md) | Qwen1.5-MoE TP2+EP 部署成功，未调优基线 TPOT 4.62ms；运行时告警证实 config 空缺 |
 | [EXP-010 C3 Qwen3-30B-A3B W4A16 上卡](records/EXP-010_c3_w4a16_bringup.md) | Qwen3-30B-A3B GPTQ-Int4（Marlin）部署成功：TPOT 4.93ms，与 2.7B BF16 相当 |
 | [EXP-011 EXT-2 NixlPush 单点（推 vs 拉方向对照）](records/EXP-011_ext2_nixl_push.md) | 传输方向反转（push）仅挽回 6.7% TTFT——方向优化改变不了 PD 分离的量级 |
-| [EXP-012 vLLM 0.17.1 P2pNccl 两缺陷动态复现（1P1D 实机）](records/EXP-012_p2pnccl_dynamic_repro.md) | 实机复现 v0.17 P2pNccl 两 bug：connector:433 崩溃与 D 实例挂死，并实证修正静态分析 |
+| [EXP-012 vLLM 0.17.1 P2pNccl 两缺陷动态复现（1P1D 实机）](records/EXP-012_p2pnccl_dynamic_repro.md) | 实机复现 v0.17 P2pNccl 两 bug：connector：433 崩溃与 D 实例挂死，并实证修正静态分析 |
 | [EXP-013 EXT-1 request 级 KV-wait 关联(解锁"KV 占 TTFT%"红线)](records/EXP-013_ext1_request_level_kv_attribution.md) | request 级三段关联：KV 等待占 TTFT 54.2/62.5/64.2%，闭环误差 p50 <0.1% |
 | [EXP-014 D1 MoE decode 分解:吞吐-batch 曲线 + nsys kernel 占比](records/EXP-014_d1_moe_kernel_decomposition.md) | MoE decode 优势 2.03×(bs=1) -> 0.82×(bs=128) 反转；fused_moe 占 GPU 时间 56.4% |
 | [EXP-015 D2 MoE config 调优:4090 BF16 两个社区空缺 tuple + 六件套验证](records/EXP-015_d2_moe_config_tuning.md) | 两个空缺 config 交付：kernel M=1 -8.5%、correctness 120 passed、PR 材料齐备 |
