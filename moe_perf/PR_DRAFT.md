@@ -4,6 +4,50 @@
 
 > 目标分支：vllm-project/vllm main；本地分支 `moe-config-4090-qwen15moe`。 **提交人必须是本人**（AGENTS.md：pure code-agent PR 不允许；需人工逐行 review + 亲自开 PR）。agent 只准备分支、证据与本草稿。
 
+## 提交前复核(2026-08-26)
+
+三项独立复核，结论：**测量口径未失效，可按现有数字提交**。
+
+### 复核一：上游是否动过被测代码路径
+
+基点 `7aa248fcfe` 至今，上游 main 领先 550 个提交，但：
+
+| 路径 | 自 2026-08-21 起的提交数 | 含义 |
+|---|---|---|
+| `vllm/model_executor/layers/fused_moe/fused_moe.py` | **0** | config 查表逻辑与 Triton kernel 本体未变，A/B 数字仍成立 |
+| `vllm/model_executor/layers/fused_moe/configs/` | 1（L40S fp8，#53819） | 与本 PR 两个形状无交集 |
+
+结论：**不需要 rebase 后重测**。本 PR 只新增两个 JSON 数据文件，rebase 本身不可能产生冲突；重建 CUDA 扩展做重测没有信息增益。
+
+### 复核二：重复性（六件套 #6 复验）
+
+| 检查 | 结果 |
+|---|---|
+| 上游有无任何 `E=30,*` config | 无 |
+| 上游有无 `E=60,N=704` | 仅 `AMD_Instinct_MI300X`（不同设备，exact-match 查表不共用） |
+| 上游已有的 4090 config | `E=64,N=640` 与 `E=8,N=3584`，均为 `dtype=fp8_w8a8`（不同 dtype，文件名不同） |
+
+### 复核三：格式与先例
+
+| 项 | 本 PR | 上游惯例 |
+|---|---|---|
+| M 档数 | 18 | 18（抽样 200 份中 162 份为 18 档） |
+| 元键 | `triton_version` | 200 份中 50 份带此键 |
+| 字段名 | `BLOCK_SIZE_{M,N,K}` / `GROUP_SIZE_M` / `num_warps` / `num_stages` | 一致 |
+| 缩进 / 末尾换行 | 4 空格 / 有 | 与 `E=60,N=704,device_name=AMD_Instinct_MI300X.json` 一致 |
+
+**先例**：#53819「[Kernel][Perf] Tune fused_moe FP8 config for Qwen3.5 on L40S (+7%)」于 2026-08-26 合入，**无前置 issue、直接 PR**，与本 PR 同类。标题格式可对齐该 PR。
+
+### 复核四：correctness 证据链（已修）
+
+原 `raw/EXP-015/correctness_pytest.log` 内容仅一行 `No module named pytest`（那次调用失败），真实结果只留了 3 行 tail。按 CORE 铁律 6「主张有据」，PR 正文断言的 `120 passed` 当时缺完整日志支撑。已重跑并保留**带 provenance 首行的全量日志**，见 `raw/EXP-015/hardening_<UTC>/`。
+
+### 复核五：kernel A/B 轮次（已补）
+
+原数字为单轮。已按 hardening 清单 #3 补 **3 轮交叉次序**（奇数轮 default 先、偶数轮 tuned 先，排除热漂移与次序效应），取 mean±std。脚本 `d2_hardening.sh`，解析 `d2_hardening_analyze.py`。
+
+---
+
 ## PR 标题(候选)
 
 `[Kernel] Add fused MoE Triton configs for Qwen1.5-MoE on RTX 4090 (E=30,N=1408 EP / E=60,N=704 TP)`

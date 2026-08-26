@@ -1,0 +1,5 @@
+# provenance: env=venvs/main sha=7aa248fcfe cmd="pytest tests/kernels/moe/test_moe.py -q -k 'not deepseek and not fp8 and not int8 and not wna16' -x --no-header" date=2026-08-26T13:49:57Z gpu="1xRTX 4090" driver=610.57.04
+........................................................................ [  6%]
+................................................ssssssssssssssssssssssss [ 12%]
+ssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss [ 18%]
+ssssssssssssssssssssssss................
