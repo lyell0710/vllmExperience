@@ -101,11 +101,6 @@
 
 ## 第四部分 · 明天的学习路径（建议 4 小时）
 
-1.（30min）读本文第一部分，每读完一个概念，合上文档用自己的话讲一遍。
-2.（30min）读 [REPORT.md](pd_disagg/REPORT.md) 的一页结论 + 六张图，练习 "指着图讲故事"（每张图 30 秒）。
-3.（60min）读 [LAB_JOURNAL.md](LAB_JOURNAL.md) §9–§12 两个探案 + [analysis/](pd_disagg/analysis/) 双 bug 分析，把 2 分钟口径念熟。
-4.（30min）背数字卡（第二部分），用第三部分 Q1 做 3 遍自我陈述。
-5.（60min）把第三部分 15 题全部口头过一遍，卡壳的回到对应文档补。
-6.（30min）打开 RESUME_EVIDENCE.md，按你顾问的三条框架压缩简历句初稿。
+1.（30min）读本文第一部分，每读完一个概念，合上文档用自己的话讲一遍。 2.（30min）读 [REPORT.md](pd_disagg/REPORT.md) 的一页结论 + 六张图，练习 "指着图讲故事"（每张图 30 秒）。 3.（60min）读 [LAB_JOURNAL.md](LAB_JOURNAL.md) §9–§12 两个探案 + [analysis/](pd_disagg/analysis/) 双 bug 分析，把 2 分钟口径念熟。 4.（30min）背数字卡（第二部分），用第三部分 Q1 做 3 遍自我陈述。 5.（60min）把第三部分 15 题全部口头过一遍，卡壳的回到对应文档补。 6.（30min）打开 RESUME_EVIDENCE.md，按你顾问的三条框架压缩简历句初稿。
 
 有不懂的概念随时问我——我可以对着你的实验数据逐个拆解。

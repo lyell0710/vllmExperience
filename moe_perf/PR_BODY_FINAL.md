@@ -67,7 +67,7 @@ E=60,N=704 (TP=2):
 
 **Gains are concentrated at the two ends (M=1 decode and M≥128 batched prefill); in the mid range the default heuristic is already near-optimal and the tuned config is on par.** Reporting this honestly rather than quoting only the best bucket — the round-to-round std (≤0.5 us) confirms the mid-range nulls are real, not noise.
 
-Correctness: `pytest tests/kernels/moe/test_moe.py -k "not deepseek and not fp8 and not int8 and not wna16"` → CORRECTNESS_RESULT_PLACEHOLDER
+Correctness: `pytest tests/kernels/moe/test_moe.py -k "not deepseek and not fp8 and not int8 and not wna16"` → **1041 passed, 127 skipped, 0 failed** (877.9s). This covers the whole `test_moe.py` file minus the deepseek / fp8 / int8 / wna16 parametrizations, i.e. a strict superset of the `test_fused_moe`-only run.
 
 e2e serving (supporting only): TPOT p50 improves consistently by +0.8–1.2% across concurrency 1/32/128; throughput and TTFT stay within session noise, so no throughput claim is made. Note that the first request after adding a new config triggers a one-off Triton JIT compile for the new tile shapes — a cold benchmark without warm-up will attribute that compile time to the first TTFT samples.
 

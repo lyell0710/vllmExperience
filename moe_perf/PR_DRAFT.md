@@ -40,7 +40,9 @@
 
 ### 复核四：correctness 证据链（已修）
 
-原 `raw/EXP-015/correctness_pytest.log` 内容仅一行 `No module named pytest`（那次调用失败），真实结果只留了 3 行 tail。按 CORE 铁律 6「主张有据」，PR 正文断言的 `120 passed` 当时缺完整日志支撑。已重跑并保留**带 provenance 首行的全量日志**，见 `raw/EXP-015/hardening_<UTC>/`。
+原 `raw/EXP-015/correctness_pytest.log` 内容仅一行 `No module named pytest`（那次调用失败），真实结果只留了 3 行 tail。按 CORE 铁律 6「主张有据」，PR 正文断言的 `120 passed` 当时缺完整日志支撑。已重跑并保留**带 provenance 首行的全量日志**：`raw/EXP-015/hardening_20260826T1115/20260826T1115_correctness_pytest.log`。
+
+结果 **1041 passed / 127 skipped / 0 failed（877.9s）**。注意与旧 tail 的「120 passed / 120 skipped（139.7s）」不矛盾：旧数字来自 `test_moe.py::test_fused_moe` 单个函数（240 例），本次跑的是整个文件减去 deepseek / fp8 / int8 / wna16 参数化（1169 例），是严格超集。PR 正文按本次口径写。
 
 ### 复核五：kernel A/B 轮次（已补）
 

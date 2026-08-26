@@ -2,4 +2,42 @@
 ........................................................................ [  6%]
 ................................................ssssssssssssssssssssssss [ 12%]
 ssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss [ 18%]
-ssssssssssssssssssssssss................
+ssssssssssssssssssssssss................................................ [ 24%]
+........................................................................ [ 30%]
+........................................................................ [ 36%]
+........................................................................ [ 43%]
+........................................................................ [ 49%]
+........................................................................ [ 55%]
+........................................................................ [ 61%]
+........................................................................ [ 67%]
+........................................................................ [ 73%]
+........................................................................ [ 80%]
+........................................................................ [ 86%]
+........................................................................ [ 92%]
+..........................................s....................s..ss.... [ 98%]
+s.....s........s                                                         [100%]
+=============================== warnings summary ===============================
+../../venvs/main/lib/python3.12/site-packages/torch/jit/_script.py:365: 14 warnings
+  /root/venvs/main/lib/python3.12/site-packages/torch/jit/_script.py:365: DeprecationWarning: `torch.jit.script_method` is deprecated. Please switch to `torch.compile` or `torch.export`.
+    warnings.warn(
+
+tests/kernels/moe/test_moe.py:924
+  /root/projects/vllm/tests/kernels/moe/test_moe.py:924: PytestUnknownMarkWarning: Unknown pytest.mark.flaky - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.flaky(reruns=2)
+
+tests/kernels/moe/test_moe.py:1062
+  /root/projects/vllm/tests/kernels/moe/test_moe.py:1062: PytestUnknownMarkWarning: Unknown pytest.mark.flaky - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.flaky(reruns=2)
+
+tests/kernels/moe/test_moe.py:1135
+  /root/projects/vllm/tests/kernels/moe/test_moe.py:1135: PytestUnknownMarkWarning: Unknown pytest.mark.flaky - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.flaky(reruns=2)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+============================= slowest 5 durations ==============================
+5.33s call     tests/kernels/moe/test_moe.py::test_humming_gated_non_gated_shape_contract[gated]
+2.96s call     tests/kernels/moe/test_moe.py::test_fused_marlin_moe_with_bias[256]
+2.85s call     tests/kernels/moe/test_moe.py::test_fused_marlin_moe_with_bias[1]
+2.66s call     tests/kernels/moe/test_moe.py::test_humming_gated_non_gated_shape_contract[non_gated]
+1.63s call     tests/kernels/moe/test_moe.py::test_fused_moe[False-True-dtype0-1-2-8-1-128-128]
+1041 passed, 127 skipped, 1 deselected, 17 warnings in 877.94s (0:14:37)

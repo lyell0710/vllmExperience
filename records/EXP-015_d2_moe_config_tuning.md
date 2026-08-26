@@ -74,6 +74,8 @@ tune EP(8916s)→ tune 非 EP(4097s)→ kernel/e2e A/B → correctness（main ve
 - **中段的「打平」是真零不是噪声**：轮间 std ≤0.5 us，而中段差值同为 0.1–0.7 us 量级且方向不一致，说明默认启发式在该区间已接近最优。
 - **本轮抓到一处工装缺陷**：首次重测脚本用 `[ cond ] && f || g` 切换 A/B 臂，`f` 返回非零时 `g` 会把 tuned JSON 搬回去，导致两臂跑的是同一配置（default 臂测得 34.8 us ≈ tuned 的 34.9）。已改 if/else 并加双重断言（文件存在性 + 日志中 config 来源）。**这类 bug 不会报错，只会让 A/B 悄悄失效**——原单轮数据因是分阶段人工装载故未受影响。
 
+**correctness（全量日志，已修证据链）**：`pytest tests/kernels/moe/test_moe.py -k "not deepseek and not fp8 and not int8 and not wna16" -x` → **1041 passed / 127 skipped / 0 failed（877.9s）**。原 `raw/EXP-015/correctness_pytest.log` 内容仅一行 `No module named pytest`（那次调用失败），真实结果只留了 3 行 tail，按铁律 6 属证据不足；本次保留带 provenance 首行的全量日志。与旧 tail 的「120 passed / 120 skipped」不矛盾——旧数字来自 `test_moe.py::test_fused_moe` 单个函数（240 例），本次是整个文件的子集（1169 例），为严格超集。
+
 raw：`moe_perf/raw/EXP-015/hardening_20260826T1115/`（12 份 kernel 日志 + correctness 全量日志，各带 provenance 首行）；脚本 `moe_perf/d2_hardening.sh`，解析 `moe_perf/d2_hardening_analyze.py`。
 
 ## 6. 分析与结论
