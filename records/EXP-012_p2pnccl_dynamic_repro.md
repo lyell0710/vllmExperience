@@ -1,5 +1,7 @@
 # EXP-012 · vLLM 0.17.1 P2pNccl 两缺陷动态复现（1P1D 实机）
 
+> **一句话结论**：两个缺陷在 1P1D 实机上动态复现并与源码逐行对上：短 prompt 走 `add_request` 发送而不入 `chunked_prefill`；PUT_ASYNC 下握手成功但 D 侧 recv key 分叉，导致 D 引擎全线程 futex 停摆、util 归零。
+
 | 字段 | 值 |
 |---|---|
 | 日期 | 2026-08-23 |

@@ -1,5 +1,7 @@
 # EXP-014 · D1 MoE decode 分解:吞吐-batch 曲线 + nsys kernel 占比
 
+> **一句话结论**：MoE 的吞吐-batch 曲线会**反转**：top-4/60 下 batch 增大使每步命中的专家并集趋于全量（60 专家 ~28.6GB > dense 14.2GB），bs=1 的激活权重优势变成读放大劣势。serving batch（≥8）下 fused_moe grouped GEMM 是唯一大头（56.4%）——D2 的调优对象由数据锁定，不是预设。
+
 | 字段 | 值 |
 |---|---|
 | 日期 | 2026-08-23(08:00–08:40Z) |

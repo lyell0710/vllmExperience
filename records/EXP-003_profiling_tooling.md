@@ -1,5 +1,7 @@
 # EXP-003 · profiling 工装验证（torch profiler + nsys）
 
+> **一句话结论**：torch profiler 与容器内 nsys 全部验证可用；顺带挖出版本演化：v0.25.1 弃用 `VLLM_TORCH_PROFILER_DIR` 环境变量，改走 `--profiler-config.*` CLI。
+
 | 字段 | 值 |
 |---|---|
 | 日期 | 2026-08-21（15:08–15:16Z） |
