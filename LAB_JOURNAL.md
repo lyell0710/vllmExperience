@@ -208,7 +208,7 @@
   ——计算减半被通信吃光。
 - **工装事故记录**：pkill 模式含字面量两次误杀自身 shell（exit 144）→ 改
   `pkill -f '[v]llm serve'` 方括号技巧。诊断三连未存 raw（当时图快）→
-  数字为终端级证据，完整命令补录于 EXP-005 §4，并催生约定 #8。
+  数字为终端级证据，完整命令补录于 EXP-005《replica2/tp2 归因 + 功率帽节流调查》 §4，并催生约定 #8。
 - **产物**：runs.jsonl 4–9 行、`records/data/EXP-005_throttle_trace.csv`。
 
 ## §10 PD 探针 + pd1p1d 归因 + NIXL 大传输（~16:49–16:58，EXP-006）
@@ -297,7 +297,7 @@
   4. 0.17.1 双 bug 分析交付（assert 崩溃点 connector:433、随机后缀分叉点
      input_processor.py:212、D 端无超时 Condition.wait 挂死 engine:317、GET 模式
      静默乱码、四层 ID 链、NIXL 身份拆分对照）——R0-4 降级路径完成，S2 弹药齐。
-- **关键数字**（详表见 EXP-007 与 runs.jsonl）：
+- **关键数字**（详表见 EXP-007《B1 四臂 offered-load 扫描战役》与 runs.jsonl）：
   - 饱和 req/s（512/2K/8K）：colocate 10.36/3.63/0.90（单卡）、replica2
     15.58/7.00/1.78（2K/8K 近完美 2×）、tp2 12.31/4.16/1.02（双卡仅 +13-19%）、
     **pd1p1d 7.84/2.12/0.54（双卡全面低于单卡；8K=0.54 与 0.27GB/s 传输墙
@@ -365,7 +365,7 @@
 
 - **做了什么**：①磁盘清缓存（uv 37G + pip 4.5G，纯缓存）；②EXT-2：从 v0.25.1 tag
   提取 push 专用 proxy（disagg_proxy_pushconnector_demo.py），起 NixlPushConnector
-  1P1D，512/8192 归因跑通，与 pull 同 seed 对照（EXP-011）；③R0-4：从 v0.17.1 tag
+  1P1D，512/8192 归因跑通，与 pull 同 seed 对照（EXP-011《EXT-2 NixlPush 单点》）；③R0-4：从 v0.17.1 tag
   提取官方 xPyD proxy+脚本，精简为本机 launch_1p1d.sh（Qwen2-7B 双卡 P2pNccl），
   P/D 起成功、NCCL 握手 OK，装了 quart；一次经 proxy 的请求探测被额度中断未得结论。
 - **关键数字**：push 8K TTFT 2537ms（pull 2718，-6.7%）、有效吞吐 0.30GB/s
@@ -376,7 +376,7 @@
   p2pnccl_repro/（launch_1p1d.sh + proxy + 日志）、collect_point is_pd 修复、
   **HANDOFF.md（交接文档）**。
 - **下一步（交接给下个 agent）**：见 HANDOFF.md §5——P1 跑完 R0-4 动态复现
-  （bash launch_1p1d.sh 后发请求看 D 挂死）→ EXP-012 + B3 完整版；P2 EXT-1；
+  （bash launch_1p1d.sh 后发请求看 D 挂死）→ EXP-012《vLLM 0.17.1 P2pNccl 两缺陷动态复现》 + B3 完整版；P2 EXT-1；
   P3 B4 v2；P4 九月 D 阶段。
 
 ## §16 R0-4 动态复现收官：两 bug 实机坐实（2026-08-23，EXP-012）
@@ -410,7 +410,7 @@
   原件备份 ext1/orig/）——pull_worker 首见请求记时 + base_worker 传输 DONE 时按
   req_id 聚合 telemetry 并输出 `EXT1_KV` 行 + 失败路径清理。③测量栈：instrumented
   proxy（6 epoch 打点+透传 X-Request-Id）+ 流式 client（每请求唯一 id/seed）+
-  EXP-006 同配置 1P1D，3 桶×12 请求。④三方 join 分析 + B4 报告 v1→v2 全量升级。
+  EXP-006《pd1p1d 指标探针 + 归因 + NIXL 大传输实测》同配置 1P1D，3 桶×12 请求。④三方 join 分析 + B4 报告 v1→v2 全量升级。
 - **关键数字**：**KV 等待占 TTFT 54.2% / 62.5% / 64.2%**（512/2K/8K，p50，
   p10–p90 ±2% 内）——红线"KV 占 TTFT X%"正式解锁为因果占比声明。三重互证：
   逐请求 bytes 和 = Prometheus 计数器**分毫不差**（7398752256）；kv_wait −
@@ -471,7 +471,7 @@
   d5_control.sh、对抗校验修复批次(commit cc473de)、台账/简历证据/WEEKLY
   同步、SUMMARY 快照横幅。
 - **下一步**:链 5 长跑中(D2 全量调优 EP→非EP→AB,预计 10–14h)→ 出数后
-  EXP-015 + PR 分支 + PR_DRAFT 回填(提交必须由用户本人);推送队列在途
+  EXP-015《D2 MoE config 调优》 + PR 分支 + PR_DRAFT 回填(提交必须由用户本人);推送队列在途
   (大文件 ~13KB/s 慢爬,本地 commit 为锚)。
 
 ## §20 D2 收官:两个空缺 config 交付 + 六件套齐备(2026-08-23 傍晚,EXP-015)

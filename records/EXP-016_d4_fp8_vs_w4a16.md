@@ -11,7 +11,7 @@
 同模型(Qwen3-30B-A3B,激活 3B)两个官方量化 checkpoint 的吞吐-精度对比 +
 "Ada 为何走不了 Hopper FP8 路径"的落地解释。格式锁定(C3 红线:不混称):
 - **FP8**:`Qwen/Qwen3-30B-A3B-FP8`(fine-grained block FP8,31G)
-- **W4A16**:`Qwen/Qwen3-30B-A3B-GPTQ-Int4`(GPTQ,16G,Marlin 路径=EXP-010 确认)
+- **W4A16**:`Qwen/Qwen3-30B-A3B-GPTQ-Int4`(GPTQ,16G,Marlin 路径=EXP-010《C3 Qwen3-30B-A3B W4A16 上卡》确认)
 
 ## 2. 环境与配置
 `d4_fp8_w4a16.sh`:两臂同参数(TP2+EP、max-model-len 8192、util 0.88、
@@ -52,7 +52,7 @@ ppl_{fp8,w4a16}.{json,log}、kernel path 摘录、manifest(provenance)。
 
 ## 6. 分析与结论
 - **decode 全 regime W4A16 胜(23–48%)**:decode 是权重带宽受限
-  (D1/EXP-014 机理),4-bit 权重读取量是 8-bit 的一半——GDDR6X 上直接换算
+  (D1/EXP-014《D1 MoE decode 分解》机理),4-bit 权重读取量是 8-bit 的一半——GDDR6X 上直接换算
   成吞吐;30B-A3B 激活 3B 的小激活形态放大了权重读取占比,收益比 dense 更陡。
 - **TTFT 在高并发反转(c128:FP8 497 vs 613ms)**:prefill 计算受限,
   FP8 的 Triton block-scaled GEMM 用 FP8 张量核吞吐,而 Marlin 需先反量化到

@@ -9,8 +9,8 @@ date: 2026-08-24
 ## 1. 一句话结论
 
 NIXL pull 的 KV 通路 = 控制面显式身份三元组交接 + 数据面 descriptor RDMA READ;
-在无 P2P 的 4090×2 上有效吞吐恒 0.26–0.27GB/s(EXP-007,telemetry-derived),
-D 端等待远端 KV 占 TTFT 54–64%(EXP-013 因果占比)——该互联下 PD 全负载段不可取。
+在无 P2P 的 4090×2 上有效吞吐恒 0.26–0.27GB/s(EXP-007《B1 四臂 offered-load 扫描战役》,telemetry-derived),
+D 端等待远端 KV 占 TTFT 54–64%(EXP-013《EXT-1 request 级 KV-wait 关联》因果占比)——该互联下 PD 全负载段不可取。
 
 ## 2. 机制(自己的话)
 
@@ -34,7 +34,7 @@ request_id#layer key"的隐式契约——InputProcessor 随机后缀
 (input_processor.py:212)即 key 分叉:PUT 模式 D 无超时死等(engine:317),
 GET 模式静默乱码;chunked prefill 靠 connector:433 assert 焊死。NIXL 的
 remote_request_id 是 P randomize 之后亲口告知的真实 id,对分叉天然免疫
-(EXP-012 实机坐实两 bug)。
+(EXP-012《vLLM 0.17.1 P2pNccl 两缺陷动态复现》实机坐实两 bug)。
 
 ## 3. 本项目实证(必须指自家 EXP 数字)
 
@@ -46,9 +46,9 @@ remote_request_id 是 P randomize 之后亲口告知的真实 id,对分叉天然
 - **EXP-007**:NIXL 有效吞吐 0.26–0.27GB/s 恒定(~16KB/descriptor 碎片化);
   pd1p1d 饱和 req/s 仅为单卡 colocate 的 0.58–0.76 倍(7.84/2.12/0.54 vs
   10.36/3.63/0.90)。
-- **EXP-011**(推方向对照):NixlPush 8K TTFT -6.7%、吞吐 +10–13%——方向
-  改变不了量级,墙在互联(EXP-002:单向 D2D 0.60–0.91GB/s,P2P 驱动级禁用)。
-- **EXP-006 / analysis**(记账溯源):bytes 反解 245,344 token 与 ext_kv 计数器
+- **EXP-011《EXT-2 NixlPush 单点》**(推方向对照):NixlPush 8K TTFT -6.7%、吞吐 +10–13%——方向
+  改变不了量级,墙在互联(EXP-002《硬件三数》:单向 D2D 0.60–0.91GB/s,P2P 驱动级禁用)。
+- **EXP-006《pd1p1d 指标探针 + 归因 + NIXL 大传输实测》 / analysis**(记账溯源):bytes 反解 245,344 token 与 ext_kv 计数器
   分毫不差;缺口 16,800 token 全为 D 端本地 prefix cache 命中,其中 511 块源码
   定罪于 bench 的 test 请求——触发 sweep 协议 v2(每点唯一 seed)。
 - **EXP-012**:0.17.1 两 bug 实机复现(bug1 connector:433 原生 traceback,

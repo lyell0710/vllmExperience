@@ -1,5 +1,5 @@
 #!/bin/bash
-# D1 · decode 吞吐-batch 曲线:MoE(TP2+EP) vs dense(TP2),同负载轴(EXP-014)
+# D1 · decode 吞吐-batch 曲线:MoE(TP2+EP) vs dense(TP2),同负载轴(EXP-014（D1 MoE decode 分解）)
 # 输入 128 / 输出 256(decode 主导),并发 1..128,每点唯一 seed(协议 v2)
 set -u
 DIR=$(cd "$(dirname "$0")" && pwd)

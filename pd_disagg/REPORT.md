@@ -1,8 +1,8 @@
 # 消费级双卡上的 vLLM 部署形态实验：四臂矩阵、PD 成本结构与架构演化
 
 > **B4 报告 · v2 定稿**（2026-08-23。v1 → v2 变更：吸收 EXT-1 request 级
-> KV 归因（EXP-013，§2.2/§5 升级为因果占比声明）、EXT-2 推/拉对照
-> （EXP-011，§2.4）、R0-4 动态复现（EXP-012，§3/§4，B3 完整版表述定稿））
+> KV 归因（EXP-013《EXT-1 request 级 KV-wait 关联》，§2.2/§5 升级为因果占比声明）、EXT-2 推/拉对照
+> （EXP-011《EXT-2 NixlPush 单点》，§2.4）、R0-4 动态复现（EXP-012《vLLM 0.17.1 P2pNccl 两缺陷动态复现》，§3/§4，B3 完整版表述定稿））
 > 数据与图表全部可由 `results/b1_matrix/runs.jsonl` + `raw/` 重算
 > （`scripts/make_figures.py`）；每个测量点带 provenance 与 gate 字段。
 > 环境：2×RTX 4090 24GB · driver 610.57.04 · vLLM v0.25.1（752a3a5044）·
@@ -129,7 +129,7 @@ WRITE 的 posting 成本在 P 端显著更高（71–149ms vs pull 的 ~4ms）�
 完整机理（含 chunked_prefill assert 崩溃链 connector:433、四层 ID 传播表、全部
 file:line）：`analysis/p2pnccl_bugs_id_chain.md`。
 
-**版本对照的完整表述（B3 定稿，EXP-008 + EXP-012）**，分两个正交维度：
+**版本对照的完整表述（B3 定稿，EXP-008《B3 有限版本对照》 + EXP-012）**，分两个正交维度：
 1. **单实例 system-version comparison**（EXP-008）：无负载延迟 8 个月未变
    （物理约束未动），512 桶饱和 +45%（每请求开销路径的收益），启动 308s→58s。
 2. **PD 可用性对照**（EXP-012 实机坐实）：0.17.1 P2pNccl 1P1D 在**默认配置下

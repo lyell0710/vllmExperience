@@ -81,7 +81,7 @@ arXiv:2305.13245,§2.2)。
 ## 2. 直觉与第一性原理
 
 **先想没有这个问题的世界。** 如果模型能塞进一张卡、且一张卡吞吐够用,部署没有选型问题:
-一个进程,prefill 和 decode 混跑,这就是本仓的 colocate 基线(EXP-004)。选型问题诞生于
+一个进程,prefill 和 decode 混跑,这就是本仓的 colocate 基线(EXP-004《B1 colocate 归因基线 + SLO 锁定》)。选型问题诞生于
 "多出一张卡"——多出来的算力、显存、带宽要通过某种**组织方式**变成吞吐或延迟,而每种
 组织方式都要付一种代价。
 
@@ -105,7 +105,7 @@ arXiv:2305.13245,§2.2)。
 | pd1p1d | 2 卡 × 全量(P、D 各一份) | 阶段专业化(P 计算受限/D 带宽受限) | 每请求整份 KV |
 
 一眼可见:四臂中只有 tp2 和 pd1p1d 把跨卡通信放进了关键路径。所以在互联受限的平台上,
-**先测互联,再谈形态**——这就是本仓把 EXP-002(硬件三数)放在一切实验之前的原因。
+**先测互联,再谈形态**——这就是本仓把 EXP-002《硬件三数》放在一切实验之前的原因。
 
 ### 2.1 把四臂写成同一个三元组
 
@@ -249,7 +249,7 @@ and the transfer operation (read or write), a transfer handle can be created";
 regions"),于是每 block 每层每个 K/V 各一个 descriptor,28 层 × 2 = 56 个/块。
 Qwen2-7B 的一个 16-token 块里每层每个 K 或 V 恰好是
 $16\times4\times128\times2 = 16{,}384$ B,所以 **descriptor 恒为 16 KiB**
-——这个数字与实测 desc 计数逐字吻合(EXP-006 的 1792 desc/xfer @512 桶),
+——这个数字与实测 desc 计数逐字吻合(EXP-006《pd1p1d 指标探针 + 归因 + NIXL 大传输实测》的 1792 desc/xfer @512 桶),
 完整的定量指纹在讲义 02 §3.6。
 
 **结论**:三条路径测的是三件事——链路能不能直连(路径一)、集合通信库怎么用这条链路
@@ -412,7 +412,7 @@ decode 跑在权重带宽 roofline 的 95% 上。
 
 **decode 侧(收益成立)**:每卡只持一半权重,步骤 3 的 $W$ 减半:
 $7.1/0.924 \approx 7.7\,\mathrm{ms}$;再加每 token 的小消息 allreduce 实测代价
-~1.3 ms(EXP-005 §6),合计 ≈ 9.0 ms;实测 9.26–9.48 ms(EXP-005/007)。账能闭合:
+~1.3 ms(EXP-005《replica2/tp2 归因 + 功率帽节流调查》 §6),合计 ≈ 9.0 ms;实测 9.26–9.48 ms(EXP-005/007)。账能闭合:
 **-42% 的 decode 提速 = 权重带宽分摊 − 通信税**。
 
 **prefill 侧(收益归零)**:prefill 是计算受限(8192 token 一批,GEMM 算术强度高),
@@ -426,7 +426,7 @@ tp2 8K TTFT 693.7 ms ≈ 单卡冷态 ~700 ms(EXP-005),**零加速**。另注:Me
 (EXP-005 §6 "28 层 × 58.7MB"),取哪个计数不改变量级结论。
 
 **汇总到吞吐**:饱和吞吐 tp2 相对 colocate 只有 +13~19%(512/2K/8K 桶:12.31/10.36、
-4.16/3.63、1.02/0.90,EXP-007)——decode 的 -42% 在批量化后被稀释(大 batch 下 decode
+4.16/3.63、1.02/0.90,EXP-007《B1 四臂 offered-load 扫描战役》)——decode 的 -42% 在批量化后被稀释(大 batch 下 decode
 逐渐转向计算/调度约束),prefill 的 allreduce 墙成为主导。
 
 #### 3.3.1 Megatron 切法:为什么每层前向恰好两次 allreduce
@@ -585,7 +585,7 @@ goodput 是带 SLO 的口径,吃排队延迟的红利。
 Qwen2-7B 的 KV 每 token 字节数:
 $28\,\text{层} \times 2\,(\mathrm{K,V}) \times 4\,\text{KV头} \times 128\,\text{维}
 \times 2\,\mathrm{B} = 57344\,\mathrm{B}$——与 EXP-006 单请求探针 bytes=917504
-= 16 token × 57344 B 完全吻合(block=16 取整)。8K 请求全量 KV ≈ 469.8 MB(EXP-011
+= 16 token × 57344 B 完全吻合(block=16 取整)。8K 请求全量 KV ≈ 469.8 MB(EXP-011《EXT-2 NixlPush 单点》
 push 臂实测全量);pull 臂经前缀缓存裁剪实拉 439.7 MB(EXP-006)。在 0.27 GB/s 的
 有效吞吐下:$439.7\,\mathrm{MB} / 0.27\,\mathrm{GB/s} \approx 1.63\,\mathrm{s}$,
 与实测 avg xfer 1602.7 ms(EXP-006)对上。容量上限:
@@ -1496,7 +1496,7 @@ Ada 白皮书 Appendix A Table 2 给 RTX 4090 的 TGP(Total Graphics Power)为 *
 17. **Q(压力):84 个点看起来多,但每点只有一次 bench,多轮呢?**
     A:诚实回答:sweep 每点单次(n=32~320 请求内含分布,报 p50/p99),跨点趋势由 12–18
     点的曲线形状互相约束;瞬断点做过同 seed 重跑(3/~90 次)。但"同点跨会话重复"只在
-    MoE 线做过(那里暴露出 ±5~8% 会话漂移,EXP-015)。若要引用单点绝对值到 ±5% 精度,
+    MoE 线做过(那里暴露出 ±5~8% 会话漂移,EXP-015《D2 MoE config 调优》)。若要引用单点绝对值到 ±5% 精度,
     应按仓内规范补 3 轮取 mean/std;引用排序与量级结论则现有数据足够。
 18. **Q(压力):decode 下界算式里 14.2 GB 除以 924 GB/s,这两个数的口径配套吗?**
     A:不配套,而且我把它算清楚了(§3.2.4):14.2 是 GiB(真实值 14.185 GiB =
@@ -1584,7 +1584,7 @@ Ada 白皮书 Appendix A Table 2 给 RTX 4090 的 TGP(Total Graphics Power)为 *
   从"请求"降到"迭代",解决"早完成的请求不能提前返回、新到的必须等整批跑完";
   selective batching 把 Attention 之外的算子按 token 拉平成 $[\sum L, H]$、
   Attention 逐请求单算。本仓所有臂都跑在这套范式之后的 vLLM 上,**享受它但不研究它**
-  ——EXP-008 的版本对照(+45%@512 桶)测的是范式之上的工程演进。
+  ——EXP-008《B3 有限版本对照》的版本对照(+45%@512 桶)测的是范式之上的工程演进。
 - **KV 管理层**:PagedAttention 的块表(arXiv:2309.06180,§4.2)让 KV 不必连续,
   代价是 attention kernel 慢 20–26%(§7.1),收益是消除 60–80% 的显存浪费(§1)。
   本仓的 PD 传输账(16 token/块)完全建立在这套机制之上。

@@ -9,8 +9,8 @@ date: 2026-08-24
 ## 1. 一句话结论
 
 MoE decode 的成本重心随 batch 从非 routed 部分(bs=1:dense GEMV 40.9%)迁移到
-routed experts 的 grouped GEMM(bs=32:56.4%,EXP-014),因此 4090 上这条链路的
-第一优化杠杆是 fused_moe 的 Triton tile config 而非 kernel 重写——EXP-015 用
+routed experts 的 grouped GEMM(bs=32:56.4%,EXP-014《D1 MoE decode 分解》),因此 4090 上这条链路的
+第一优化杠杆是 fused_moe 的 Triton tile config 而非 kernel 重写——EXP-015《D2 MoE config 调优》用
 "中段 M 与默认启发式打平"实证了这一点。
 
 ## 2. 机制(自己的话)
@@ -44,9 +44,9 @@ GEMM 形状不同,tile 最优解不同,所以是两个独立 tuple。
   改善——M=1:EP **-8.5%** / 非 EP -3.8%;M=128/256:-3.3~-3.9%;M=8–64
   与默认持平;e2e TPOT +0.8~1.2% ≈ kernel 增益 × 56.4% 占比折算(自洽,但低于
   跨会话漂移,不作 headline)。
-- **EXP-009**(缺档告警原文):fused_moe.py:1106 运行时点名 E=30,N=1408 缺失
+- **EXP-009《C1 Qwen1.5-MoE-A2.7B 上卡（TP2+EP）+ C2 运行时证据》**(缺档告警原文):fused_moe.py:1106 运行时点名 E=30,N=1408 缺失
   ——"社区空缺"的三重闭环之一。
-- **EXP-016**(相邻链路):同为 MoE,quant 分派不同路径——W4A16 走 Marlin,
+- **EXP-016《D4 FP8 vs W4A16 同卡对比》**(相邻链路):同为 MoE,quant 分派不同路径——W4A16 走 Marlin,
   FP8 在 Ada 只能走 Triton block-scaled,decode 全 regime W4A16 胜 23–48%。
 
 ## 4. 面试追问 Q&A
@@ -64,7 +64,7 @@ GEMM 形状不同,tile 最优解不同,所以是两个独立 tuple。
 - **Q:EPLB 在这条链路的哪里?**
   A:routing 之上的专家重排层。实测 FP8 臂 2 次真实重排(balancedness
   0.53–0.74),W4A16 被上游显式拒(routed_experts.py:151);重排改变 grouped
-  GEMM 的专家分段与浮点归约顺序 → 数值性输出分歧(EXP-017 对照组归因)。
+  GEMM 的专家分段与浮点归约顺序 → 数值性输出分歧(EXP-017《D5 EPLB gate》对照组归因)。
 
 ## 5. 延伸(源码/数据,file:line)
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""D1 kernel 分解:nsys stats cuda_gpu_kern_sum → 分类占比表(EXP-014)。
+"""D1 kernel 分解:nsys stats cuda_gpu_kern_sum → 分类占比表(EXP-014（D1 MoE decode 分解）)。
 
 用法: python d1_kernels.py <bs> [...]  # 对 raw/EXP-014/d1_nsys_moe_bs<bs>.nsys-rep
 分类按 kernel 名正则,未命中的全部落 other 并打印 top 未识别项(不静默)。

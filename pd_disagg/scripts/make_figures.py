@@ -193,7 +193,7 @@ def fig5_nixl(rows):
             pts.append((g["nixl_bytes_delta"] / n / 1e6,
                         g["nixl_xfer_time_delta_s"] / n * 1000,
                         r["input_len"]))
-    pts.append((0.188, 14.128, "smoke 0.5B"))   # EXP-001 小传输
+    pts.append((0.188, 14.128, "smoke 0.5B"))   # EXP-001（NIXL 1P1D smoke 与版本裁决）小传输
     fig, ax = plt.subplots(figsize=(7.2, 4.4))
     for mb, ms, tag in pts:
         ax.plot(mb, ms, "o", color="#eda100", markersize=7,

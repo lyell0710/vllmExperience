@@ -46,7 +46,7 @@ raw/ 内同前缀 bench json/log/gpu csv 18 件 + snapshots 12 件。
 ## 7. 异常、偏差与开放问题
 - 本对照非 PD-vs-PD（0.17.1 P2pNccl 1P1D 需课程 proxy 脚本，R0-4 到位后可补）；
   P2pNccl 机理层面对照见 analysis/p2pnccl_bugs_id_chain.md（静态）。
-- profiler 接口差异（env var→CLI）已在 EXP-003 记录，为本对照的接口演化补充实例。
+- profiler 接口差异（env var→CLI）已在 EXP-003《profiling 工装验证》记录，为本对照的接口演化补充实例。
 
 ## 8. 下游影响
 B4 报告第 2 段素材（演化叙事的性能维度）；S2 支撑。

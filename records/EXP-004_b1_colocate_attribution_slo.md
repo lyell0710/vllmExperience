@@ -26,7 +26,7 @@
 `results/b1_matrix/runs.jsonl` 第 1–3 行；
 `raw/20260821T15{48,49,51}_colocate_*_bench.{json,log}`；`snapshots/` 同前缀；
 服务日志 `raw/colocate_server.log`。
-注：本臂三点跑在 GPU 遥测工装加入之前（遥测自 EXP-005 起），无 gpu.csv。
+注：本臂三点跑在 GPU 遥测工装加入之前（遥测自 EXP-005《replica2/tp2 归因 + 功率帽节流调查》起），无 gpu.csv。
 
 ## 5. 结果
 | 输入桶 | TTFT p50/p90/p99 (ms) | TPOT p50 (ms) | GPU·s/req | → TTFT SLO(5×) |

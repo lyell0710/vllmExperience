@@ -31,33 +31,33 @@
 - [x] **R0-1 硬件三数**:`p2pBandwidthLatencyTest` + nccl-tests `all_reduce_perf`(结果标注:仅代表 TP collective 路径)+ NIXL 实测 bytes / xferDuration(代表 KV 通路)。三个数进所有报告的"硬件画像"段。
 - [x] **R0-2 三 venv 落位**:独立目录 + `.venv`;写一个输出 provenance 行的 shell 函数,所有实验脚本引用它。
 - [x] **R0-3 NIXL 1P1D smoke @ ENV-B**(Gate 全过,锁定 v0.25.1)
-- [x] **R0-4 0.17.1 课程基线**(降级完成 + 8/23 动态复现补齐,EXP-012)
+- [x] **R0-4 0.17.1 课程基线**(降级完成 + 8/23 动态复现补齐,EXP-012《vLLM 0.17.1 P2pNccl 两缺陷动态复现》)
 - [x] **R0-5 profiling 工装 @ ENV-B**
 - [ ] **R0-6 简历措辞排雷(只有你能做)**:线上稿"发现/修复"改"复现/定位/验证"。**← 唯一未闭环项,仅用户可操作**
 
 ## 第 1 块 · 主线一 PD(8/22–8/31)
 
 - [x] **B1 四臂矩阵**(EXP-004~007)
-- [x] **B2 归因层**(EXP-006 + EXP-013 收官)
+- [x] **B2 归因层**(EXP-006《pd1p1d 指标探针 + 归因 + NIXL 大传输实测》 + EXP-013《EXT-1 request 级 KV-wait 关联》收官)
 - [x] ⚑ **EXT-1 telemetry 补 identity 最小 patch**(EXP-013;上游查重后定位本地,#52859 在途)
-- [x] **B3 版本对照**(EXP-008 + EXP-012 两维度定稿)
-- [x] ⚑ **EXT-2 NixlPush 单点**(EXP-011,专用 push proxy)
+- [x] **B3 版本对照**(EXP-008《B3 有限版本对照》 + EXP-012 两维度定稿)
+- [x] ⚑ **EXT-2 NixlPush 单点**(EXP-011《EXT-2 NixlPush 单点》,专用 push proxy)
 - [x] **B4 报告成稿**(v2 定稿 2026-08-23)
 - [—] **B-alt 失败分析分支**:未触发(1P1D 通,无需回退)
 
 ## 第 2 块 · MoE 环境
 
-- [x] **C1 Qwen1.5-MoE-A2.7B 上卡**(EXP-009)
+- [x] **C1 Qwen1.5-MoE-A2.7B 上卡**(EXP-009《C1 Qwen1.5-MoE-A2.7B 上卡（TP2+EP）+ C2 运行时证据》)
 - [x] **C2 config gate**(三重闭环,含远端查重)
-- [x] **C3 Qwen3-30B-A3B W4A16 上卡**(EXP-010,GPTQ-Int4 锁定)
+- [x] **C3 Qwen3-30B-A3B W4A16 上卡**(EXP-010《C3 Qwen3-30B-A3B W4A16 上卡》,GPTQ-Int4 锁定)
 
 ## 第 3 块 · MoE 主攻
 
-- [x] **D1 nsys MoE 分解**(EXP-014,含反转点发现)
-- [x] **D2 config 调优 + PR**(EXP-015;JSON 交付 + 六件套材料齐,**提交动作留用户**)
+- [x] **D1 nsys MoE 分解**(EXP-014《D1 MoE decode 分解》,含反转点发现)
+- [x] **D2 config 调优 + PR**(EXP-015《D2 MoE config 调优》;JSON 交付 + 六件套材料齐,**提交动作留用户**)
 - [x] **D3 kernel 优化一处**(依 D2 数据转结论:config 即最优杠杆,不做无数据支撑的改动——判定记录于 EXP-015 §6)
-- [x] **D4 FP8 vs W4A16 对比**(EXP-016)
-- [x] **D5 EPLB gate**(EXP-017;gate 判定完成,按规则砍掉不上简历,白板级保留)
+- [x] **D4 FP8 vs W4A16 对比**(EXP-016《D4 FP8 vs W4A16 同卡对比》)
+- [x] **D5 EPLB gate**(EXP-017《D5 EPLB gate》;gate 判定完成,按规则砍掉不上简历,白板级保留)
 
 ## 持续项
 

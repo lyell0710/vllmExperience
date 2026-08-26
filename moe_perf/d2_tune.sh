@@ -1,5 +1,5 @@
 #!/bin/bash
-# D2 · benchmark_moe.py 调优:4090 BF16 两个空缺 tuple(EXP-015)
+# D2 · benchmark_moe.py 调优:4090 BF16 两个空缺 tuple(EXP-015（D2 MoE config 调优）)
 #   EP:  E=30,N=1408 (TP2+EP)     非EP: E=60,N=704 (TP2)
 # ENV-C(main),ray 双卡分摊 batch 档;JSON 落 save-dir 后由 A/B 阶段部署
 set -u

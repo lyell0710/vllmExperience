@@ -35,6 +35,6 @@ PR 正文将引用 #48309 作为"相邻先例",并说明以上区别。
 - 远端查重(gh api,三组关键词):无 NVIDIA 4090 BF16 MoE config 类
   PR/issue(仅 AMD 消费卡请求 #30245/#30599,不冲突)。
 - 判定:**第二 PR 机会开放**。其 fused_moe_triton 与 vLLM 同源,
-  EXP-015 已调优的两个 JSON 大概率直接可用(须在 sglang 运行时 A/B 验证
+  EXP-015《D2 MoE config 调优》已调优的两个 JSON 大概率直接可用(须在 sglang 运行时 A/B 验证
   后再提)。源码已 clone 至 /root/repos/sglang(shallow);
   sglang venv 未安装(用户暂停,待指示)。

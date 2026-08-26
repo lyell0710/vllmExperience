@@ -1,5 +1,5 @@
 #!/bin/bash
-# D1 · nsys kernel 分解:MoE TP2+EP decode 稳态,bs=1 与 bs=32 两窗(EXP-014)
+# D1 · nsys kernel 分解:MoE TP2+EP decode 稳态,bs=1 与 bs=32 两窗(EXP-014（D1 MoE decode 分解）)
 # 机制:vllm --profiler-config.profiler=cuda + nsys --capture-range=cudaProfilerApi
 #      /start_profile → cudaProfilerStart(全 rank)→ nsys 开采;/stop_profile 收窗。
 # 用法: d1_nsys.sh <bs>   (每次一个采集窗,采完服务关闭)

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""D1 分析:decode 吞吐-batch 曲线(MoE vs dense)+ 派生表(EXP-014)。
+"""D1 分析:decode 吞吐-batch 曲线(MoE vs dense)+ 派生表(EXP-014（D1 MoE decode 分解）)。
 
 图样式沿用 pd_disagg/scripts/make_figures.py 的既定规范(dataviz validated
 palette、白底、单图单结论、图脚注 provenance)。

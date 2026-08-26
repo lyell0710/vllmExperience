@@ -1,6 +1,6 @@
 #!/bin/bash
-# EXT1 · request 级 KV-wait 关联测量（EXP-013）
-# 1P1D pull 臂（EXP-006 同配置）+ EXT1 patch（nixl_req_telemetry_v0251.patch 已打入 ENV-B）
+# EXT1 · request 级 KV-wait 关联测量（EXP-013（EXT-1 request 级 KV-wait 关联））
+# 1P1D pull 臂（EXP-006（pd1p1d 指标探针 + 归因 + NIXL 大传输实测）同配置）+ EXT1 patch（nixl_req_telemetry_v0251.patch 已打入 ENV-B）
 # 产物: raw/EXP-013/{client.jsonl, proxy.log, P.log, D.log, ext1_kv_lines.txt,
 #        metrics_{8100,8200}_{before,after}.prom}
 set -u

@@ -1,5 +1,5 @@
 #!/bin/bash
-# EXP-015 补测:tuned e2e c32(+c128 复核)带 warmup,消除 Triton 首次 JIT 伪影
+# EXP-015（D2 MoE config 调优）补测:tuned e2e c32(+c128 复核)带 warmup,消除 Triton 首次 JIT 伪影
 # (首跑 c32 的 TTFT p50 1021ms 被新 tile 配置的现场编译污染,时长多 ~2s)
 set -u
 DIR=$(cd "$(dirname "$0")" && pwd)

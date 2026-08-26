@@ -1,5 +1,5 @@
 #!/bin/bash
-# D5 · EPLB gate(EXP-017):Qwen3-30B-A3B-GPTQ-Int4(W4A16)TP2+EP+EPLB
+# D5 · EPLB gate(EXP-017（D5 EPLB gate）):Qwen3-30B-A3B-GPTQ-Int4(W4A16)TP2+EP+EPLB
 # Gate 三项:①真实重排("Rearranging experts" @ eplb_state.py:748,调小
 # window/interval 逼出)②重排前后 greedy 输出一致 ③W4A16 权重搬运不崩。
 # 任一不过 → D5 整条砍掉(白板级保留),原样记录。

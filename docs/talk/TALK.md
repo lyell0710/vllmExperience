@@ -9,23 +9,23 @@
 
 在 2×RTX 4090(无 NVLink、P2P 驱动级禁用)上做了两条线。第一条,vLLM 四种部署
 形态的选型基准——单卡混部/双副本/TP2/NIXL PD 分离,512/2K/8K 输入×多档负载
-60+ 测量点(EXP-007),并用 request 级三段关联把 PD 的 TTFT 拆到因果占比:KV
-等待占 54–64%(EXP-013)。第二条,MoE 性能优化——nsys kernel 级分解定位
-fused MoE grouped GEMM 占 serving batch GPU 时间 56.4%(EXP-014),据此为社区
-空缺的 4090 BF16 config 完成上游标准调优、PR 材料备齐(EXP-015),外加 FP8 vs
-W4A16 的量化选型边界(EXP-016)。
+60+ 测量点(EXP-007《B1 四臂 offered-load 扫描战役》),并用 request 级三段关联把 PD 的 TTFT 拆到因果占比:KV
+等待占 54–64%(EXP-013《EXT-1 request 级 KV-wait 关联》)。第二条,MoE 性能优化——nsys kernel 级分解定位
+fused MoE grouped GEMM 占 serving batch GPU 时间 56.4%(EXP-014《D1 MoE decode 分解》),据此为社区
+空缺的 4090 BF16 config 完成上游标准调优、PR 材料备齐(EXP-015《D2 MoE config 调优》),外加 FP8 vs
+W4A16 的量化选型边界(EXP-016《D4 FP8 vs W4A16 同卡对比》)。
 
 ## 1. 主线一:部署选型(S1,EXP-007/EXP-013)
 
 **90 秒讲法**:消费级双卡的互联画像先钉死——P2P 驱动级禁用(GNS)、单向 D2D
-0.60–0.91 GB/s、NCCL bus bw 1.78 GB/s(EXP-002,`pd_disagg/hw/`)。四臂结论:
+0.60–0.91 GB/s、NCCL bus bw 1.78 GB/s(EXP-002《硬件三数》,`pd_disagg/hw/`)。四臂结论:
 双副本近线性 2×(2K 输入 7.00 vs 3.63 req/s)且 goodput 全场最高;TP2 decode
 提速 42%(带宽分摊)但 prefill 零加速(大消息 allreduce 撞 1.78GB/s 墙),吞吐
 仅 +13–19%;PD 分离全负载段被传输压垮——NIXL 有效吞吐恒 0.26–0.27GB/s
 (telemetry-derived,~16KB/descriptor 碎片化)。再用 EXT-1(EXP-013)把"传输
 是不是瓶颈"从对账推断升级成因果占比:KV 等待占 TTFT 54.2/62.5/64.2%
 (512/2K/8K,p50),闭环误差 p50 <0.1%。推方向也试过:push 仅 -6.7% TTFT@8K
-(EXP-011),方向救不了量级——结论是选型边界,不是"PD 不行"。
+(EXP-011《EXT-2 NixlPush 单点》),方向救不了量级——结论是选型边界,不是"PD 不行"。
 
 **防御**:
 - "凭什么说传输真的发生了" → 每测量点 gate 字段(nixl bytes 增量、成功传输数=
@@ -51,7 +51,7 @@ W4A16 的量化选型边界(EXP-016)。
 wire protocol 没有 chunk 序号;0.17.1 的补法是 scheduler 侧攒块、末 chunk 才发,
 并用 assert(connector:433)把"P 节点任何多步执行都是 prefill 续传"焊死。P 端只要
 出现一步 decode——比如 proxy 没把 max_tokens 钳成 1——assert 直接打死 EngineCore。
-实机复现精确命中 :433 原生 traceback(EXP-012);实证还修正了静态分析:裸直连
+实机复现精确命中 :433 原生 traceback(EXP-012《vLLM 0.17.1 P2pNccl 两缺陷动态复现》);实证还修正了静态分析:裸直连
 (无地址串 id)会先崩在 :518 的 parse_request_id,:433 需要地址串 id + max_tokens>1
 两个条件同时成立。
 

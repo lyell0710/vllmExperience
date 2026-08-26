@@ -82,7 +82,7 @@ myself.(提交前由本人确认此句属实)
 ## 回填检查清单
 - [ ] configs_ep JSON 落盘 + 拷入 vllm/model_executor/layers/fused_moe/configs/
 - [ ] configs_noep JSON 同上
-- [ ] kernel A/B 数字(EXP-015 §5)
+- [ ] kernel A/B 数字(EXP-015《D2 MoE config 调优》 §5)
 - [ ] e2e 数字(EXP-015 §5)
 - [ ] correctness pytest 输出
 - [ ] 分支 commit(-s,本人身份)——由用户执行

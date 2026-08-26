@@ -93,7 +93,7 @@ logger.info(
     ...)
 ```
 
-完整 patch：`pd_disagg/ext1/nixl_req_telemetry_v0251.patch`（原件备份 `ext1/orig/`）。三段关联思路（[EXP-013](records/EXP-013_ext1_request_level_kv_attribution.md)）：
+完整 patch：`pd_disagg/ext1/nixl_req_telemetry_v0251.patch`（原件备份 `ext1/orig/`）。三段关联思路（[EXP-013《EXT-1 request 级 KV-wait 关联》](records/EXP-013_ext1_request_level_kv_attribution.md)）：
 
 1. **身份**：client 自定 `X-Request-Id` 原样贯穿 proxy、P、D 三方，36/36 请求在 D 端 req_id 与 remote_request_id 中均可见——跨进程 join 键；
 2. **时钟**：同机 1P1D——时长用单调 perf_counter，跨进程对齐用同 host epoch；
@@ -129,23 +129,23 @@ bash moe_perf/d1_sweep.sh
 
 | 记录 | 结论 |
 |---|---|
-| [EXP-001](records/EXP-001_nixl_smoke_version_verdict.md) | NIXL 1P1D smoke 双版本 3/3 PASS，锁定 v0.25.1 为主力版本 |
-| [EXP-002](records/EXP-002_hardware_baseline.md) | 硬件三数落盘：P2P 驱动级禁用、单向 D2D 0.60–0.91 GB/s、NCCL bus bw 1.78 GB/s——全部归因的前提 |
-| [EXP-003](records/EXP-003_profiling_tooling.md) | torch profiler 直控 P/D 端口与容器内 nsys 全部验证可用 |
-| [EXP-004](records/EXP-004_b1_colocate_attribution_slo.md) | colocate 单卡归因基线成立，SLO 阈值锁定（TTFT 891ms / TPOT 50ms @2K） |
-| [EXP-005](records/EXP-005_replica2_tp2_powercap.md) | TP2 decode -42% 但 prefill 零加速；识别 450W 功率帽降频 ~12% 的隐藏变量 |
-| [EXP-006](records/EXP-006_pd1p1d_probe_attribution.md) | NIXL KV 通路有效吞吐恒定 0.26–0.27 GB/s——descriptor ~16KB 碎片化所致 |
-| [EXP-007](records/EXP-007_b1_sweep_campaign.md) | 四臂全矩阵 84 个有效测量点：replica2 全部输入桶最高，PD 分离最低 |
-| [EXP-008](records/EXP-008_b3_version_compare.md) | v0.17.1 至 v0.25.1：512 桶饱和吞吐 +45%、启动 308 -> 58s、计算受限桶零差异 |
-| [EXP-009](records/EXP-009_c1_moe_bringup.md) | Qwen1.5-MoE TP2+EP 部署成功，未调优基线 TPOT 4.62ms；运行时告警证实 config 空缺 |
-| [EXP-010](records/EXP-010_c3_w4a16_bringup.md) | Qwen3-30B-A3B GPTQ-Int4（Marlin）部署成功：TPOT 4.93ms，与 2.7B BF16 相当 |
-| [EXP-011](records/EXP-011_ext2_nixl_push.md) | 传输方向反转（push）仅挽回 6.7% TTFT——方向优化改变不了 PD 分离的量级 |
-| [EXP-012](records/EXP-012_p2pnccl_dynamic_repro.md) | 实机复现 v0.17 P2pNccl 两 bug：connector:433 崩溃与 D 实例挂死，并实证修正静态分析 |
-| [EXP-013](records/EXP-013_ext1_request_level_kv_attribution.md) | request 级三段关联：KV 等待占 TTFT 54.2/62.5/64.2%，闭环误差 p50 <0.1% |
-| [EXP-014](records/EXP-014_d1_moe_kernel_decomposition.md) | MoE decode 优势 2.03×(bs=1) -> 0.82×(bs=128) 反转；fused_moe 占 GPU 时间 56.4% |
-| [EXP-015](records/EXP-015_d2_moe_config_tuning.md) | 两个空缺 config 交付：kernel M=1 -8.5%、correctness 120 passed、PR 材料齐备 |
-| [EXP-016](records/EXP-016_d4_fp8_vs_w4a16.md) | W4A16 decode 全 regime 快 23–48%，FP8 仅高并发 prefill 反超——Ada 分派路径给出机理 |
-| [EXP-017](records/EXP-017_d5_eplb_gate.md) | EPLB：W4A16 被上游显式拒；FP8 真实重排 + 无 EPLB 对照组把输出分歧归因到重排 |
+| [EXP-001 NIXL 1P1D smoke 与版本裁决](records/EXP-001_nixl_smoke_version_verdict.md) | NIXL 1P1D smoke 双版本 3/3 PASS，锁定 v0.25.1 为主力版本 |
+| [EXP-002 硬件三数（R0-1 硬件画像）](records/EXP-002_hardware_baseline.md) | 硬件三数落盘：P2P 驱动级禁用、单向 D2D 0.60–0.91 GB/s、NCCL bus bw 1.78 GB/s——全部归因的前提 |
+| [EXP-003 profiling 工装验证（torch profiler + nsys）](records/EXP-003_profiling_tooling.md) | torch profiler 直控 P/D 端口与容器内 nsys 全部验证可用 |
+| [EXP-004 B1 colocate 归因基线 + SLO 锁定](records/EXP-004_b1_colocate_attribution_slo.md) | colocate 单卡归因基线成立，SLO 阈值锁定（TTFT 891ms / TPOT 50ms @2K） |
+| [EXP-005 replica2/tp2 归因 + 功率帽节流调查](records/EXP-005_replica2_tp2_powercap.md) | TP2 decode -42% 但 prefill 零加速；识别 450W 功率帽降频 ~12% 的隐藏变量 |
+| [EXP-006 pd1p1d 指标探针 + 归因 + NIXL 大传输实测](records/EXP-006_pd1p1d_probe_attribution.md) | NIXL KV 通路有效吞吐恒定 0.26–0.27 GB/s——descriptor ~16KB 碎片化所致 |
+| [EXP-007 B1 四臂 offered-load 扫描战役（协议 v2）](records/EXP-007_b1_sweep_campaign.md) | 四臂全矩阵 84 个有效测量点：replica2 全部输入桶最高，PD 分离最低 |
+| [EXP-008 B3 有限版本对照（v0.17.1 vs v0.25.1 单实例）](records/EXP-008_b3_version_compare.md) | v0.17.1 至 v0.25.1：512 桶饱和吞吐 +45%、启动 308 -> 58s、计算受限桶零差异 |
+| [EXP-009 C1 Qwen1.5-MoE-A2.7B 上卡（TP2+EP）+ C2 运行时证据](records/EXP-009_c1_moe_bringup.md) | Qwen1.5-MoE TP2+EP 部署成功，未调优基线 TPOT 4.62ms；运行时告警证实 config 空缺 |
+| [EXP-010 C3 Qwen3-30B-A3B W4A16 上卡](records/EXP-010_c3_w4a16_bringup.md) | Qwen3-30B-A3B GPTQ-Int4（Marlin）部署成功：TPOT 4.93ms，与 2.7B BF16 相当 |
+| [EXP-011 EXT-2 NixlPush 单点（推 vs 拉方向对照）](records/EXP-011_ext2_nixl_push.md) | 传输方向反转（push）仅挽回 6.7% TTFT——方向优化改变不了 PD 分离的量级 |
+| [EXP-012 vLLM 0.17.1 P2pNccl 两缺陷动态复现（1P1D 实机）](records/EXP-012_p2pnccl_dynamic_repro.md) | 实机复现 v0.17 P2pNccl 两 bug：connector:433 崩溃与 D 实例挂死，并实证修正静态分析 |
+| [EXP-013 EXT-1 request 级 KV-wait 关联(解锁"KV 占 TTFT%"红线)](records/EXP-013_ext1_request_level_kv_attribution.md) | request 级三段关联：KV 等待占 TTFT 54.2/62.5/64.2%，闭环误差 p50 <0.1% |
+| [EXP-014 D1 MoE decode 分解:吞吐-batch 曲线 + nsys kernel 占比](records/EXP-014_d1_moe_kernel_decomposition.md) | MoE decode 优势 2.03×(bs=1) -> 0.82×(bs=128) 反转；fused_moe 占 GPU 时间 56.4% |
+| [EXP-015 D2 MoE config 调优:4090 BF16 两个社区空缺 tuple + 六件套验证](records/EXP-015_d2_moe_config_tuning.md) | 两个空缺 config 交付：kernel M=1 -8.5%、correctness 120 passed、PR 材料齐备 |
+| [EXP-016 D4 FP8 vs W4A16 同卡对比(Qwen3-30B-A3B,Ada SM89)](records/EXP-016_d4_fp8_vs_w4a16.md) | W4A16 decode 全 regime 快 23–48%，FP8 仅高并发 prefill 反超——Ada 分派路径给出机理 |
+| [EXP-017 D5 EPLB gate(W4A16 不支持 / FP8 真实重排 + 对照组归因)](records/EXP-017_d5_eplb_gate.md) | EPLB：W4A16 被上游显式拒；FP8 真实重排 + 无 EPLB 对照组把输出分歧归因到重排 |
 
 ## 测量方法
 

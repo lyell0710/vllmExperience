@@ -1,5 +1,5 @@
 #!/bin/bash
-# D4 · FP8 vs W4A16 同卡对比(EXP-016):Qwen3-30B-A3B-FP8 vs -GPTQ-Int4
+# D4 · FP8 vs W4A16 同卡对比(EXP-016（D4 FP8 vs W4A16 同卡对比）):Qwen3-30B-A3B-FP8 vs -GPTQ-Int4
 # 吞吐曲线(conc 1/32/128,in128/out256)+ attribution(512/128, conc1)
 # FP8 on SM89(Ada):加载成败与所选 kernel 路径本身就是数据,失败原样记录
 set -u

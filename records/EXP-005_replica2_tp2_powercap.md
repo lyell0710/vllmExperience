@@ -12,7 +12,7 @@ replica2 与 tp2 两臂归因基线。调查分支的假设（数据倒逼产生
 "replica2@8K 快于 colocate 是单卡持续负载下的降频所致"。
 
 ## 2. 环境与配置
-- replica2：两个单卡实例（GPU0:8100 / GPU1:8200，配置同 EXP-004）+
+- replica2：两个单卡实例（GPU0:8100 / GPU1:8200，配置同 EXP-004《B1 colocate 归因基线 + SLO 锁定》）+
   `matrix/rr_proxy.py --port 8300 --backends 127.0.0.1:8100 127.0.0.1:8200`；
   bench 打 8300，快照直抓 8100/8200
 - tp2：`CUDA_VISIBLE_DEVICES=0,1 vllm serve ... --tensor-parallel-size 2 --port 8100`
@@ -52,7 +52,7 @@ replica2 三点 → 诊断跑 ×3（见下）→ 遥测采样验证 → 工装�
   差额疑与瞬时 boost/显存时钟相关（未深究，非主线）。
 - **发现② TP2 不对称收益**：decode 16→9.3ms（-42%，每卡半份权重 + 小消息
   allreduce ~1.3ms/token 代价）；8K prefill 零加速（694≈冷态单卡 700ms）——
-  28 层 × 58.7MB 大消息 allreduce 受 1.78GB/s collective 带宽约束（EXP-002 印证）。
+  28 层 × 58.7MB 大消息 allreduce 受 1.78GB/s collective 带宽约束（EXP-002《硬件三数》印证）。
 
 ## 7. 异常、偏差与开放问题
 - 诊断跑未存 raw（当时为快速排障）→ 已定规则杜绝（§8）。

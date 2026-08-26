@@ -9,7 +9,7 @@
 
 ## 1. 目的与假设
 量化 2×4090 的三条互联路径：GPU 间裸拷贝（p2p 路径）、TP collective 路径
-（NCCL allreduce）、KV 通路（NIXL，见 EXP-006）——为矩阵结果提供因果基线。
+（NCCL allreduce）、KV 通路（NIXL，见 EXP-006《pd1p1d 指标探针 + 归因 + NIXL 大传输实测》）——为矩阵结果提供因果基线。
 
 ## 2. 环境与配置
 - p2pBandwidthLatencyTest：cuda-samples（tool_sha b7c5481c55…，构建于 /root/tools/cuda-samples，
@@ -34,7 +34,7 @@
 ## 6. 分析与结论
 - 单向 0.6–0.9 GB/s 是 cudaMemcpyPeer 无 P2P 时分段中转路径；双向 22.7 GB/s
   接近 Gen4 x16 双向流水极限——单双向差 25 倍是"无 P2P"的定量指纹。
-- 1.78 GB/s collective 直接预言了 TP2 prefill 零加速（EXP-005 证实）。
+- 1.78 GB/s collective 直接预言了 TP2 prefill 零加速（EXP-005《replica2/tp2 归因 + 功率帽节流调查》证实）。
 - 标注：allreduce 数字仅代表 TP collective 路径，不代表 KV 通路（红线要求）。
 
 ## 7. 异常、偏差与开放问题

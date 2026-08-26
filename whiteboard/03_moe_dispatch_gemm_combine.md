@@ -1,7 +1,7 @@
 # 白板图 3 · MoE dispatch → GEMM → combine(vLLM fused_moe,TP2+EP)
 
 > P2 持续项。以 Qwen1.5-MoE-A2.7B(E=60 专家,top-4,moe_intermediate N=1408)
-> 在本机 TP2+EP 的真实形状标注;D1(EXP-014)nsys 的 kernel 归类即按此图分段。
+> 在本机 TP2+EP 的真实形状标注;D1(EXP-014《D1 MoE decode 分解》)nsys 的 kernel 归类即按此图分段。
 
 ## 图(白板版,单层 MoE block 的一个 decode step)
 
@@ -36,7 +36,7 @@ hidden_states [T, 2048]           T = batch 内 token 数
 | TP2 非 EP | 60(全量) | 704(按 N 切) | E=60,N=704 | 标准 TP all_reduce |
 
 两个 tuple 的 4090 BF16 config JSON 上游均缺失(C2 三重闭环)→ 运行时
-`WARNING fused_moe.py:1106 Using default MoE config`(EXP-009 原文在案)。
+`WARNING fused_moe.py:1106 Using default MoE config`(EXP-009《C1 Qwen1.5-MoE-A2.7B 上卡（TP2+EP）+ C2 运行时证据》原文在案)。
 
 ## 为什么 decode 快、饱和不快(EXP-009 数字的机理)
 

@@ -46,7 +46,7 @@
 - **面试防御**："凭什么说传输真的发生了" → 每测量点 gate 字段
   （nixl bytes 增量、成功传输数=预期远端请求数、failed=0、expired=0、
   failure_policy=fail、/metrics 直抓引擎端口）随数据同行存于 runs.jsonl。
-  "54–64% 怎么来的" → EXP-013 三重互证：逐请求 bytes 和=Prometheus 分毫不差、
+  "54–64% 怎么来的" → EXP-013《EXT-1 request 级 KV-wait 关联》三重互证：逐请求 bytes 和=Prometheus 分毫不差、
   kv_wait≈xferDuration（差 0.3–1.9ms）、六段分解闭环误差 p50 <0.1%（最差桶 0.084%）；观测无扰动
   （patch 前后 TTFT 噪声内）；36/36 请求身份双端匹配。
 
@@ -68,9 +68,9 @@
   input_processor.py:212、PUT 模式 D 端无超时 Condition.wait 挂死
   （engine:317）+ 内存泄漏、GET 模式静默乱码、四层 ID 传播表、
   NIXL 三层身份拆分对照；文末含面试 2 分钟口径草稿。
-  版本性能维度补充（EXP-008，system-version comparison 非组件归因）：
+  版本性能维度补充（EXP-008《B3 有限版本对照》，system-version comparison 非组件归因）：
   无负载 Δ<1%、512 桶饱和 +45%、启动 308→58s。
-- **✅ 动态复现闭环（EXP-012，8/23）**：bug1 精确命中 connector:433 原生
+- **✅ 动态复现闭环（EXP-012《vLLM 0.17.1 P2pNccl 两缺陷动态复现》，8/23）**：bug1 精确命中 connector:433 原生
   traceback（需地址串 id + max_tokens>1 两条件，实证修正静态分析——裸 id 先崩
   :518）；bug2 D 整实例挂死行为学+wchan 闭环；B3 完整版表述定稿
   （0.17.1 PD 默认配置不可用对照臂 vs 0.25.1 NIXL 可用）。
@@ -84,14 +84,14 @@
 > 并向上游提交 PR `#[编号]`。（合并后升级为"已合入"。）
 
 - **当前可填**："社区空缺"已解锁（三重闭环：本地判定 + 远端查重 + 运行时告警
-  原文点名 E=30,N=1408 缺失，EXP-009）；C1 上卡完成，**未调优基线在案**：
+  原文点名 E=30,N=1408 缺失，EXP-009《C1 Qwen1.5-MoE-A2.7B 上卡（TP2+EP）+ C2 运行时证据》）；C1 上卡完成，**未调优基线在案**：
   TP2+EP TPOT 4.62ms（dense 7B TP2 的 2.0×）、饱和 11.50 req/s@512
   ——D2 调优 A/B 的 before 数字。
-  **✅ D1 分解完成（EXP-014，8/23）**：nsys node 级分解定位 fused_moe grouped
+  **✅ D1 分解完成（EXP-014《D1 MoE decode 分解》，8/23）**：nsys node 级分解定位 fused_moe grouped
   GEMM 占 GPU 时间 **56.4%**（bs=32 serving batch）；MoE/dense decode 反转点
   2.03×（bs=1）→0.97×（bs=8）→0.82×（bs=128）——"为什么调这个 config"的
   数据答案 + 报告第一页图（d1_fig1_decode_scaling.png）。
-- **✅ D2 完成（EXP-015，8/23）**，S3 成稿候选：
+- **✅ D2 完成（EXP-015《D2 MoE config 调优》，8/23）**，S3 成稿候选：
   > 以 nsys kernel 级分解定位 fused MoE grouped GEMM 占 serving batch GPU
   > 时间 56%，据此为社区空缺的 RTX 4090 BF16 config（E=30,N=1408 EP /
   > E=60,N=704 TP，本地+远端+运行时告警三重查重确认空缺）完成上游标准调优
@@ -111,7 +111,7 @@
 > 在 RTX 4090 上对比 `[具体FP8格式]` 与 `[具体W4A16 checkpoint/格式]`，量化吞吐、
 > 显存与 PPL/任务精度变化，给出 Ada 平台在不同 batch 和上下文长度下的量化选型边界。
 
-- **✅ 已完成（EXP-016）**，成稿候选：
+- **✅ 已完成（EXP-016《D4 FP8 vs W4A16 同卡对比》）**，成稿候选：
   > 在 2×RTX 4090 上对比 Qwen3-30B-A3B 官方 FP8（block FP8，Triton
   > block-scaled 路径）与 GPTQ-Int4（W4A16，Marlin）：W4A16 在 decode 全
   > regime 快 23–48%（TPOT 4.91 vs 7.10ms@bs1）且权重减半，FP8 仅在高并发
@@ -123,7 +123,7 @@
 
 ## S5 · EPLB（✅ gate 已跑完 8/23，维持不上简历）
 
-- **判定（EXP-017）**：W4A16 兼容 gate 上游显式拒绝（`routed_experts.py:151`
+- **判定（EXP-017《D5 EPLB gate》）**：W4A16 兼容 gate 上游显式拒绝（`routed_experts.py:151`
   NotImplementedError，TODO 指认为工程缺口非根本不兼容）；FP8 臂 2 次真实
   重排 + balancedness 0.53–0.74 实测；一致性 gate FAIL 但经无-EPLB 对照组
   归因为重排引起的数值性分歧（浮点归约顺序）。按清单规则不上简历。

@@ -53,7 +53,7 @@ P 端仅 `nixl_num_failed_{transfers,notifications}_total`、`nixl_num_kv_expire
 
 ## 6. 分析与结论
 - **有效吞吐 0.26–0.27GB/s 跨尺寸恒定**：descriptor ≈16KB/个（=每 block 每层
-  单发，56 desc/block=28 层×K,V）→ 碎片化小拷贝，量级与 EXP-002 单向
+  单发，56 desc/block=28 层×K,V）→ 碎片化小拷贝，量级与 EXP-002《硬件三数》单向
   无 P2P 路径一致。措辞红线：只可称 telemetry-derived effective throughput，
   xfer 时间不与 post 相加（post 已含）。
 - PD TTFT 分量对账：8K 的 2685 ≈ P prefill(~900，热态) + xfer(1603) + D 首步/代理 —— 吻合。

@@ -1,5 +1,5 @@
 #!/bin/bash
-# D2 · A/B 验证(EXP-015 后半):kernel A/B + e2e serving A/B + correctness
+# D2 · A/B 验证(EXP-015（D2 MoE config 调优）后半):kernel A/B + e2e serving A/B + correctness
 # 前置:d2_tune.sh 完成,configs_{ep,noep} 下有 JSON
 # A/B 次序:先测 default(未装 JSON)→ 装 JSON → 测 tuned;e2e 同理
 set -u

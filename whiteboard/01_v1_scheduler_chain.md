@@ -47,4 +47,4 @@ AsyncLLM detokenize → SSE stream 回客户端
   worker 侧(执行传输),元数据走 SchedulerOutput 显式传递;**为什么**:调度决策
   (allocate、何时可跑)与数据面(怎么搬)解耦,失败可回退(failure_policy)。
 - 本机实证:D 端请求在 `reqs_to_recv` 出现(worker 首见)到传输完成的窗口
-  = EXP-013 kv_wait,占 TTFT 54–64%。
+  = EXP-013《EXT-1 request 级 KV-wait 关联》 kv_wait,占 TTFT 54–64%。

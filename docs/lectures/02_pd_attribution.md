@@ -83,9 +83,9 @@ P:D 比例可调,而 1P1D 是这个形态最退化的样子——**收不到扩�
 
 **判据(第一性原理形式)**:PD 值不值,取决于付出的 $t_\mathrm{xfer}(n)$ 与省下的
 $\Delta t_\mathrm{interference}$ 孰大。这台机器上两件事让不等式必然向左倾斜:**并发 1 时
-右边恒为 0**——没有别的请求可被干扰,归因表(EXP-007 §5,同热工况 p50)里 colocate 与
+右边恒为 0**——没有别的请求可被干扰,归因表(EXP-007《B1 四臂 offered-load 扫描战役》 §5,同热工况 p50)里 colocate 与
 pd1p1d 的 TPOT 都是 15.9–16.4 ms,PD 没让 decode 变快,因为本来就没有干扰可消除;**满负载
-时左边爆炸**——8K 桶每请求要搬 469.8 MB(EXP-011 push 臂全量口径;pull 臂经前缀裁剪实拉
+时左边爆炸**——8K 桶每请求要搬 469.8 MB(EXP-011《EXT-2 NixlPush 单点》 push 臂全量口径;pull 臂经前缀裁剪实拉
 439.7 MB,EXP-006),按 0.27 GB/s 需 1.63 s。所以本仓的结论不是"PD 不好",是**形态与互联
 能力错配**;真正要论证的是下一句:那条溢价**确实**由传输造成——问题于是从"部署选型"推进到
 "归因方法"。
@@ -103,7 +103,7 @@ $$\Delta = \underbrace{\Delta t_\mathrm{interference}(\lambda)}_{\text{省下的
   ——所以它只能在 sweep 里测,不能在 attribution 里测。本仓的 sweep 结果(讲义 01 §5.3)
   已经给了答案:全负载段 pd 的 goodput 都低于 colocate,即这一项从未大到能翻盘。
 - $t_\mathrm{xfer}(n)$ 是**输入长度的函数**,可以在并发 1 下干净地测——这正是 §3–§5 的主题。
-- $o_\mathrm{handshake}$ 是**一次性**的:EXP-013 的 idx=0 首请求 kv_wait
+- $o_\mathrm{handshake}$ 是**一次性**的:EXP-013《EXT-1 request 级 KV-wait 关联》的 idx=0 首请求 kv_wait
   409.8/462.8/1770.3 ms,512 桶比后续请求高 292 ms,就是它的直接观测。
 
 **方法论要点**:一个由多项组成的判据,不同项要用**不同的实验设计**去量。把它们混在
@@ -142,7 +142,7 @@ token)管理,$16 \times 57{,}344 = 917{,}504$ B/block,传输按块取整,非块�
 向上取整(analysis/nixl_token_accounting.md 的"两计数器口径"表);③**单请求传输量**
 ——8192 token = 512 块 = 469,762,048 B ≈ 469.8 MB,EXP-013 实测 36/36 请求的 bytes 与
 该式**逐字节相等**(§3.5);④**传输时间**——$t_\mathrm{xfer} = B_{kv}/BW_\mathrm{eff}
-= 469.8\,\mathrm{MB}/0.27\,\mathrm{GB/s} \approx 1.63$ s,EXP-006 实测 avg xfer
+= 469.8\,\mathrm{MB}/0.27\,\mathrm{GB/s} \approx 1.63$ s,EXP-006《pd1p1d 指标探针 + 归因 + NIXL 大传输实测》实测 avg xfer
 1602.7 ms;⑤**容量上限**——传输在关键路径且串行,则 $\mathrm{req/s}_{\max} \approx
 0.27/0.470 \approx 0.57$,EXP-007 实测饱和 0.54 req/s@8K。**传输带宽即容量**。
 
@@ -187,7 +187,7 @@ v1 报告(fig4)是**分量对账**:拿 colocate 的无负载 TTFT 当 PD 的 P �
 (client 自定 / P 端引擎内部 / D 端引擎内部);NIXL 恰恰把"引擎身份 / 会话身份 / 内存寻址"三层
 **正交拆开**(theory/02 §2,pull_scheduler.py:265-275 显式交出 remote_engine_id /
 remote_request_id / remote_block_ids)——这对健壮性是优点(0.17.1 P2pNccl 正因隐式 key 分叉而
-挂死,EXP-012),对观测则意味着**必须显式建立 join 键**。**时钟**:client / proxy / P / D 是四个
+挂死,EXP-012《vLLM 0.17.1 P2pNccl 两缺陷动态复现》),对观测则意味着**必须显式建立 join 键**。**时钟**:client / proxy / P / D 是四个
 进程,时长要用单调钟(perf_counter),跨进程对齐要用同一把墙钟(epoch);本实验是同机 1P1D,
 epoch 天然同域——这是方法成立的前提,也是它的边界(§6)。
 
@@ -435,9 +435,9 @@ xferDuration ÷ descriptor 数:
 descriptor 大小恒定 16 KiB,每 descriptor 耗时也几乎恒定(61.5–65.8 µs)——**传输时间对
 descriptor 计数线性,而不是"带宽×时间"**。这就是碎片化的定量指纹:单次传输大小从没变
 过,吞吐被钉死在 $16{,}384\,\mathrm{B}/63\,\mu s \approx 0.26\,\mathrm{GB/s}$。**量级
-对照**:EXP-002 实测 GPU 间延迟 14.5–15.9 µs,一次 16 KiB 花 ~62 µs 约为裸延迟的 4 倍
+对照**:EXP-002《硬件三数》实测 GPU 间延迟 14.5–15.9 µs,一次 16 KiB 花 ~62 µs 约为裸延迟的 4 倍
 ——成本主要落在每次传输的固定开销(descriptor 处理、launch、同步),不在搬字节本身;
-这也解释了 fig5 上那条 ~12 ms 的"小传输延迟地板"(smoke 0.188 MB / 14.1 ms,EXP-001)。
+这也解释了 fig5 上那条 ~12 ms 的"小传输延迟地板"(smoke 0.188 MB / 14.1 ms,EXP-001《NIXL 1P1D smoke 与版本裁决》)。
 **工程推论(可证伪)**:要提速必须**合并 descriptor**(层维度批量成更大连续块),而不是
 换方向——方向已被实测排除:NixlPush 8K TTFT −6.7%、吞吐 +10–13%,**量级不变**
 (EXP-011)。**口径约定**:0.26–0.27 GB/s 只能称 telemetry-derived effective throughput,
@@ -504,12 +504,12 @@ $= 16\times KVH\times D\times s = 16{,}384$ B。这解释了 §3.6 的恒等式,
 PD 那条线的骨架是:**先把总量分解到可归属的段,再用独立证据链锁死归因,最后设对照臂验证**。
 MoE 线同法,只是尺子从"请求级时间"换成"kernel 级 GPU wall-time":①**分解**——nsys 采一个
 20 s 稳态窗,`cuda_gpu_kern_sum` 按 kernel 名归 9 类,bs=32 时 **fused_moe grouped GEMM 占
-56.4%**,bs=1 时反而是 dense GEMM/GEMV 占 40.9%(EXP-014 §5);②**归因**——MoE/dense 的
+56.4%**,bs=1 时反而是 dense GEMM/GEMV 占 40.9%(EXP-014《D1 MoE decode 分解》 §5);②**归因**——MoE/dense 的
 decode 优势 **2.03×(bs=1) → 0.97×(bs=8,反转点)→ 0.82×(bs=128)**,机理是 top-4/60 路由
 下 batch 增大后每 step 命中的专家并集趋于全量(60 专家约 28.6 GB > dense 14.2 GB),bs=1 的
 激活权重优势(2.7 GB/step)反转为读放大劣势,分解表印证——grouped GEMM 占比 18.7% → 56.4%
 (EXP-014 §6);③**目标由数据锁定**——serving batch(≥8)下唯一大头是 fused_moe,而该形状的
-Triton config 在上游**社区空缺**(运行时告警在案,EXP-009 §5),moe_align(≤4.1%)与 permute
+Triton config 在上游**社区空缺**(运行时告警在案,EXP-009《C1 Qwen1.5-MoE-A2.7B 上卡（TP2+EP）+ C2 运行时证据》 §5),moe_align(≤4.1%)与 permute
 (≤0.5%)不值得动;④**三级验证**——correctness(没算错)/ kernel A/B(主证据)/ e2e(验证
 机理自洽);⑤**折算式** $\Delta_\mathrm{e2e} \approx \Delta_\mathrm{kernel} \times$ 该 kernel
 时间占比——kernel 端 M≥128 改善 3.3–3.9%,乘 56.4% 得 e2e 约 2% 的上限,实测 TPOT
@@ -572,7 +572,7 @@ those blocks."(`moe_align_block_size.py`)
   → 文件名 `E=60,N=704`。
 
 两者的 GEMM 形状完全不同(前者 M 小 N 大、专家少;后者专家多、N 小),所以**必须分别调优**
-——这正是 EXP-015 要产出两个 JSON 的原因,也是 A/B 必须 EP 与非 EP 分开跑的原因(§4 段 8)。
+——这正是 EXP-015《D2 MoE config 调优》要产出两个 JSON 的原因,也是 A/B 必须 EP 与非 EP 分开跑的原因(§4 段 8)。
 
 **与文献的关系**:按 rank 切专家是 GShard 提出的专家并行的标准形态
 (Lepikhin et al., arXiv:2006.16668);Qwen1.5-MoE 的"4 个常驻共享专家 + 60 路由专家取 4"

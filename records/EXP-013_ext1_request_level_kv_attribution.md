@@ -31,7 +31,7 @@
   → D 端 connector req_id 与 remote_request_id(P 端 id)均内嵌该串。
 - **时钟域**:同机 1P1D,client/proxy/P/D 全部同一 host 墙钟;kv_wait 用
   perf_counter 差值(单调),跨进程对齐用 epoch。
-- 测量栈:`ext1/run_ext1.sh` = EXP-006 同配置 1P1D pull(fail policy、
+- 测量栈:`ext1/run_ext1.sh` = EXP-006《pd1p1d 指标探针 + 归因 + NIXL 大传输实测》同配置 1P1D pull(fail policy、
   max-model-len 16384、无 enforce-eager)+ `ext1_proxy.py`(toy proxy +
   6 个 epoch 打点 + 透传 X-Request-Id)+ `ext1_client.py`(并发 1 流式,
   每请求唯一 seed,3 桶 × 12 请求,max_tokens=32)。

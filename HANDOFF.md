@@ -18,7 +18,7 @@ P2P 驱动禁用)上做推理部署选型 + MoE 性能优化,产出简历/面试
 2. 每个实验一份 `records/EXP-NNN_<slug>.md`(八节模板),当场写。
 3. 任何 GPU 跑一律存 raw(bench 加 `--save-result`);没存的降级"终端级证据"。
 4. 结果文件首行 provenance;数据里程碑 commit + push。
-5. 措辞红线查 LEDGER.md 表。**"KV 占 TTFT X%" 已解锁(EXP-013)**;0.17 两 bug
+5. 措辞红线查 LEDGER.md 表。**"KV 占 TTFT X%" 已解锁(EXP-013《EXT-1 request 级 KV-wait 关联》)**;0.17 两 bug
    仍只写"复现/定位/验证";PR 未提交不写"提交"。
 6. **杀进程用方括号技巧**(`pkill -f '[v]llm serve'`)——复合命令里普通 pattern
    会匹配自身 shell 导致 exit 144(本会话又验证了两次)。
@@ -44,7 +44,7 @@ P2P 驱动禁用)上做推理部署选型 + MoE 性能优化,产出简历/面试
   patch、instrumented proxy、client、run_ext1.sh、analyze_ext1.py)。
 - MoE 线(8/23 新增):`moe_perf/`——d1_sweep.sh / d1_nsys.sh(**必须
   `--cuda-graph-trace=node`,默认 graph 级会把 CUDA graphs 内的 decode kernel
-  全部藏掉,踩坑记录在 EXP-014 §7**)/ d1_analyze.py / d1_kernels.py /
+  全部藏掉,踩坑记录在 EXP-014《D1 MoE decode 分解》 §7**)/ d1_analyze.py / d1_kernels.py /
   d2_tune.sh / d2_ab.sh / d4_fp8_w4a16.sh / d4_ppl.py / d5_eplb.sh / PR_DRAFT.md。
 - nsys 精确控窗:`--profiler-config.profiler=cuda` + nsys
   `--capture-range=cudaProfilerApi --capture-range-end=stop-shutdown`,
@@ -53,11 +53,11 @@ P2P 驱动禁用)上做推理部署选型 + MoE 性能优化,产出简历/面试
 ## 4. 已完成(✅ = 数据落盘 + 记录 + 推送;详见 LEDGER.md 台账)
 
 R0-1~R0-5、B1、**B2(EXT-1 收官,KV 占 TTFT 54.2/62.5/64.2%)**、B3(两维度
-定稿)、**B4 报告 v2 定稿**、C1/C2/C3、EXT-2、R0-4 动态复现(EXP-012)、
+定稿)、**B4 报告 v2 定稿**、C1/C2/C3、EXT-2、R0-4 动态复现(EXP-012《vLLM 0.17.1 P2pNccl 两缺陷动态复现》)、
 **D1(EXP-014:MoE decode 反转点 2.03×→0.82×,fused_moe 56.4%@bs32)**、
-**D4(EXP-016:W4A16 decode 胜 23–48%,FP8 PPL 优 3.3%,Ada 路径 file:line)**、
-**D5(EXP-017:gate 判定完成,不上简历,白板素材)**、交付物对抗校验(20 条
-修复,commit cc473de)、**D2(EXP-015:两空缺 config 交付,kernel 两端
+**D4(EXP-016《D4 FP8 vs W4A16 同卡对比》:W4A16 decode 胜 23–48%,FP8 PPL 优 3.3%,Ada 路径 file:line)**、
+**D5(EXP-017《D5 EPLB gate》:gate 判定完成,不上简历,白板素材)**、交付物对抗校验(20 条
+修复,commit cc473de)、**D2(EXP-015《D2 MoE config 调优》:两空缺 config 交付,kernel 两端
 -3.3~-8.5%,e2e TPOT +0.8~1.2%,120 passed;D3 依数据转结论句)**。
 记录 EXP-001~017 全齐。M1/M2 提前达成,M3 材料齐备。
 

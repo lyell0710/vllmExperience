@@ -3,7 +3,7 @@
 > provenance: 2026-08-21 静态源码分析（AI 辅助，全部 file:line 已在本机两个 venv 核对）。
 > 依据：V17=/root/venvs/v0.17.1/.../vllm（0.17.1, g95c0f928c），V25=/root/venvs/v0.25.1/.../vllm。
 > 性质：R0-4 路径——**复现级机理定位**，措辞红线：复现/定位/验证，非"发现/修复"。
-> **动态复现已完成（2026-08-23，EXP-012）**：实机 1P1D 坐实——bug1 精确命中 `connector:433`
+> **动态复现已完成（2026-08-23，EXP-012《vLLM 0.17.1 P2pNccl 两缺陷动态复现》）**：实机 1P1D 坐实——bug1 精确命中 `connector:433`
 > AssertionError、bug2 D 整实例挂死（全线程 futex_wait + P /health 恒 200）；并**实证修正**了
 > 缺陷1 的触发条件（见下"⚑实测修正"）。原始崩溃/挂死日志见 `p2pnccl_repro/raw/EXP-012/`。
 > 关联：S2 简历句、B4 报告第 2/3 段、records/EXP-012。
