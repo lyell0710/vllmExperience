@@ -31,7 +31,7 @@
 
 ## 硬件基线(2026-08-21 实测,原始文件在 hw/,均带 provenance 行)
 
-- nccl-tests all_reduce_perf -g 2（TP collective 路径参考，不代表 KV 通路）: **avg bus bw 1.78 GB/s**，大消息（256M+）~1.85 GB/s → `hw/all_reduce_perf.txt`
+- nccl-tests all_reduce_perf -g 2（TP collective 路径参考，不代表 KV 通路）: collective 带宽实测值待复核（旧值 1.78 GB/s 已停用，见 EXP-018）→ `hw/all_reduce_perf.txt`
 - p2pBandwidthLatencyTest: P2P connectivity=0（GeForce 禁用，`topo -p2p r`=GNS）； 单向 D2D 0.60–0.91 GB/s（cudaMemcpyPeer 无 P2P 分段中转），**双向 22.6–22.8 GB/s**, GPU 间延迟 14.5–15.9 µs，本卡内 memcpy ~924 GB/s → `hw/p2p_bandwidth_latency.txt`
 - PCIe： 双卡均 Gen4 x16（空闲降 Gen1），bus C1/E1；`topo -m` 在本容器不可用（hwloc 无 PU 信息），以 `topo -p2p r`+PCIe link 替代 → `hw/topo.txt`
 - NIXL KV 通路初值（来自 R0-3 smoke，小传输、延迟主导）： avg 0.188 MB/transfer，avg xfer 14.1 ms，13.3 MB/s → `smoke/smoke_v0.25.1_result.txt`

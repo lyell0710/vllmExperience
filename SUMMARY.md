@@ -8,7 +8,7 @@
 
 | 块 | 项 | 状态 | 一句话 |
 |---|---|---|---|
-| 地基 | R0-1 硬件三数 | ✅ | P2P 禁用（GNS）/ NCCL 1.78GB/s / NIXL 0.27GB/s |
+| 地基 | R0-1 硬件三数 | ✅ | P2P 禁用（GNS）/ NCCL collective 带宽待复核 / NIXL 0.27GB/s |
 | 地基 | R0-2 三 venv + provenance | ✅ | ~/venvs 三环境 + 全套卫生工装 |
 | 地基 | R0-3 NIXL smoke + 裁决 | ✅ | 双版本 PASS，锁定 v0.25.1 主战场 |
 | 地基 | R0-4 课程基线 | ✅ 降级完成 | 双 bug 源码机理全 file：line（动态复现待课程脚本） |
@@ -26,7 +26,7 @@
 
 ## 二、核心数字（简历/面试的弹药，全部有 provenance）
 
-**硬件画像**：P2P=GNS 驱动禁用 · 单向 D2D 0.60–0.91 GB/s · 双向 22.7 GB/s · NCCL allreduce 1.78 GB/s · NIXL KV 有效 0.26–0.27 GB/s · 卡内 ~924 GB/s · 450W 功率帽降频 2820→2475MHz（TTFT +30%）
+**硬件画像**：P2P=GNS 驱动禁用 · 单向 D2D 0.60–0.91 GB/s · 双向 22.7 GB/s · NCCL collective 带宽待复核（见 EXP-018） · NIXL KV 有效 0.26–0.27 GB/s · 卡内 ~924 GB/s · 450W 功率帽降频 2820→2475MHz（TTFT +30%）
 
 **四臂矩阵**（512/2048/8192，SLO=TTFT≤328/891/4626ms+TPOT≤50ms）：
 

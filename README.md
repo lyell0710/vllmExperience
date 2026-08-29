@@ -34,7 +34,7 @@ flowchart LR
 | 结论 | 关键数字 | 证据 |
 |---|---|---|
 | 两卡选型：数据并行优于 TP2 与 PD 分离 | 饱和吞吐（req/s，2K 输入桶）：replica2 **7.00**、tp2 4.16、pd1p1d 2.12、colocate 单卡基线 3.63 | [EXP-007](records/EXP-007_b1_sweep_campaign.md)、`pd_disagg/results/b1_matrix/runs.jsonl` |
-| TP2 仅加速 decode：decode 提速 42%（权重带宽分摊），prefill 零加速 | allreduce 受限于 NCCL bus 带宽 **1.78 GB/s**（P2P 禁用） | [EXP-005](records/EXP-005_replica2_tp2_powercap.md) / [EXP-002](records/EXP-002_hardware_baseline.md)、`pd_disagg/hw/all_reduce_perf.txt` |
+| TP2 仅加速 decode：decode 提速 42%（权重带宽分摊），prefill 零加速 | allreduce 受限于 NCCL collective 带宽（P2P 禁用；实测值待复核，见 EXP-018） | [EXP-005](records/EXP-005_replica2_tp2_powercap.md) / [EXP-002](records/EXP-002_hardware_baseline.md)、`pd_disagg/hw/all_reduce_perf.txt` |
 | PD 分离瓶颈定量：KV 等待占 TTFT **54.2 / 62.5 / 64.2%**（512/2K/8K，p50，request 级因果占比，每桶 n=11） | 六段分解闭环误差 p50 <0.1%；bytes 与 Prometheus 对账完全一致 | [EXP-013](records/EXP-013_ext1_request_level_kv_attribution.md)、`pd_disagg/ext1/derived/ext1_per_request.csv` |
 | MoE 的 decode 优势在 bs≈8 反转 | MoE/dense 2.03×(bs=1) -> 0.97×(bs=8) -> **0.82×**(bs=128)；nsys node 级归因：fused_moe grouped GEMM 占 GPU 时间 56.4%（bs=32） | [EXP-014](records/EXP-014_d1_moe_kernel_decomposition.md)、`moe_perf/derived/d1_scaling.csv`、`moe_perf/derived/d1_kernel_share_bs32.csv` |
 | 补齐两个社区空缺的 MoE tuning config | E=30,N=1408 / E=60,N=704（各 18 M 档）；kernel A/B：M=1 **-8.5% / -3.8%**，M≥128 -3.3~-3.9%；correctness 120 passed；PR 材料齐备（未提交） | [EXP-015](records/EXP-015_d2_moe_config_tuning.md)、`moe_perf/PR_DRAFT.md` |
@@ -58,7 +58,7 @@ flowchart LR
 
 ## 关键发现
 
-**没有 NVLink 时，最优互联策略是避免互联。** 本平台 P2P 在驱动层被禁用，任何跨卡通信都要经过 1.78 GB/s 的 NCCL bus 带宽上限（实测，`pd_disagg/hw/`）。数据并行（replica2）零跨卡通信，因此在三个输入桶均取得最高饱和吞吐与 goodput；TP2 的 decode 能提速 42%——每张卡只读一半权重，权重带宽被分摊——但 prefill 的大消息 allreduce 直接受限于上述带宽上限，整体只换来 +13~19% 吞吐；PD 分离受影响最大：NIXL KV 通路受 ~16KB/descriptor 碎片化拖累，有效吞吐恒定在 0.26–0.27 GB/s（telemetry-derived），测量显示 KV 等待占 TTFT 的 54–64%（request 级因果占比）——传输方向反转（push）也仅挽回 6.7% TTFT，量级不变。结论：互联受限平台上部署形态的选择被硬件测量唯一确定。
+**没有 NVLink 时，最优互联策略是避免互联。** 本平台 P2P 在驱动层被禁用，任何跨卡通信都要经过 NCCL collective 路径的带宽上限（实测值待复核，见 EXP-018）。数据并行（replica2）零跨卡通信，因此在三个输入桶均取得最高饱和吞吐与 goodput；TP2 的 decode 能提速 42%——每张卡只读一半权重，权重带宽被分摊——但 prefill 的大消息 allreduce 直接受限于上述带宽上限，整体只换来 +13~19% 吞吐；PD 分离受影响最大：NIXL KV 通路受 ~16KB/descriptor 碎片化拖累，有效吞吐恒定在 0.26–0.27 GB/s（telemetry-derived），测量显示 KV 等待占 TTFT 的 54–64%（request 级因果占比）——传输方向反转（push）也仅挽回 6.7% TTFT，量级不变。结论：互联受限平台上部署形态的选择被硬件测量唯一确定。
 
 **MoE 的 decode 优势是激活参数量的优势，且随 batch 递减直至反转。** bs=1 时 MoE 每 token 只读 ~2.7B 激活参数，dense 7B 要读全量——带宽受限的 decode 因此快 2.03×；batch 增大后每 step 命中的专家数上升，权重读取量趋向全量 28.6GB，优势在 bs≈8 归零、bs=128 反转为 0.82×。nsys node 级分解（CUDA graph 内 kernel 必须 node 级 trace 才可见）把热点定位到 fused_moe grouped GEMM：占 serving batch GPU 时间 56.4%。这决定了优化杠杆是 Triton config 调优；而调优结果显示中段 M 与默认启发式打平——于是不做无数据支撑的 kernel 改动，收益集中在两端（decode M=1 -8.5%）。
 
@@ -130,7 +130,7 @@ bash moe_perf/d1_sweep.sh
 | 记录 | 结论 |
 |---|---|
 | [EXP-001 NIXL 1P1D smoke 与版本裁决](records/EXP-001_nixl_smoke_version_verdict.md) | NIXL 1P1D smoke 双版本 3/3 PASS，锁定 v0.25.1 为主力版本 |
-| [EXP-002 硬件三数（R0-1 硬件画像）](records/EXP-002_hardware_baseline.md) | 硬件三数落盘：P2P 驱动级禁用、单向 D2D 0.60–0.91 GB/s、NCCL bus bw 1.78 GB/s——全部归因的前提 |
+| [EXP-002 硬件三数（R0-1 硬件画像）](records/EXP-002_hardware_baseline.md) | 硬件三数落盘：P2P 驱动级禁用、单向 D2D 0.60–0.91 GB/s、NCCL collective 带宽（实测值待复核，见 EXP-018）——全部归因的前提 |
 | [EXP-003 profiling 工装验证（torch profiler + nsys）](records/EXP-003_profiling_tooling.md) | torch profiler 直控 P/D 端口与容器内 nsys 全部验证可用 |
 | [EXP-004 B1 colocate 归因基线 + SLO 锁定](records/EXP-004_b1_colocate_attribution_slo.md) | colocate 单卡归因基线成立，SLO 阈值锁定（TTFT 891ms / TPOT 50ms @2K） |
 | [EXP-005 replica2/tp2 归因 + 功率帽节流调查](records/EXP-005_replica2_tp2_powercap.md) | TP2 decode -42% 但 prefill 零加速；识别 450W 功率帽降频 ~12% 的隐藏变量 |

@@ -44,7 +44,7 @@ status: complete
 
 ## 1. 这一篇回答什么问题
 
-只有两张 RTX 4090（无 NVLink、P2P 被驱动禁用），单卡混部、双副本、张量并行 TP2、 Prefill-Decode 分离四种形态该选哪个，以及为什么在这台机器上答案是唯一的。读完你应当能： 手推 decode 的带宽 roofline 和 TP2 的收益/代价账（算式到 ms 级）；解释 1.78 GB/s、 0.26–0.27 GB/s、22.7 vs 0.6 GB/s 这三组互联数字各自代表哪条路径、怎么测出来； 面对"你的 SLO 阈值是不是挑出来的""replica2 凭什么不到 2× 也叫近线性"这类追问给出带证据锚点的回答。
+只有两张 RTX 4090（无 NVLink、P2P 被驱动禁用），单卡混部、双副本、张量并行 TP2、 Prefill-Decode 分离四种形态该选哪个，以及为什么在这台机器上答案是唯一的。读完你应当能： 手推 decode 的带宽 roofline 和 TP2 的收益/代价账（算式到 ms 级）；解释 collective 带宽、 0.26–0.27 GB/s、22.7 vs 0.6 GB/s 这三组互联数字各自代表哪条路径、怎么测出来； 面对"你的 SLO 阈值是不是挑出来的""replica2 凭什么不到 2× 也叫近线性"这类追问给出带证据锚点的回答。
 
 ### 1.1 本篇要建立的六条能力
 
@@ -61,7 +61,7 @@ status: complete
 |---|---|---|
 | $W$ | 模型权重字节数 | Qwen2-7B-Instruct BF16，见 §3.2.4 |
 | $BW_{\mathrm{mem}}$ | 卡内显存带宽 | 实测 ~924 GB/s(EXP-002)；标称 1008 GB/s（Ada 白皮书 Table 2） |
-| $BW_{\mathrm{col}}$ | NCCL collective 路径带宽 | 1.78 GB/s avg busbw(EXP-002) |
+| $BW_{\mathrm{col}}$ | NCCL collective 路径带宽 | 实测值待复核（EXP-002 旧值 1.78 已停用，EXP-018 复测得 ~6.2 未追认，见 EXP-018 §7） |
 | $BW_{\mathrm{eff}}$ | NIXL KV 通路有效吞吐 | 0.26–0.27 GB/s,telemetry-derived(EXP-006/007) |
 | $n$ | 单请求输入 token 数 | 三桶 512 / 2048 / 8192 |
 | $B_{kv}(n)$ | 单请求 KV 字节数 | $n\times 57{,}344$ B，按 16-token 块向上取整（§3.5） |
@@ -130,7 +130,7 @@ status: complete
 
 ### 2.3 类比失效点清单
 
-**"两家店 = 两倍吞吐"** 忽略了入口层（replica2 的 512 桶疑点在代理/客户端并发上限， §3.4.3）；**"合菜是二阶小量"** 忽略了 8192 token 时单层 allreduce 就是 58.7 MB， 在 1.78 GB/s 上不是小量（§3.3.2）；**"端菜就是走两步"** 忽略了每请求 469.8 MB 在 0.27 GB/s 上要 1.63 s(§3.5)——这是把整锅菜用吸管吸过去；**"专业化一定更快"** 忽略了阶段专业化的收益是**消除干扰**，而并发 1 时没有干扰可消除，收益恒为 0、成本照付。
+**"两家店 = 两倍吞吐"** 忽略了入口层（replica2 的 512 桶疑点在代理/客户端并发上限， §3.4.3）；**"合菜是二阶小量"** 忽略了 8192 token 时单层 allreduce 就是 58.7 MB， 在 collective 带宽上不是小量（§3.3.2）；**"端菜就是走两步"** 忽略了每请求 469.8 MB 在 0.27 GB/s 上要 1.63 s(§3.5)——这是把整锅菜用吸管吸过去；**"专业化一定更快"** 忽略了阶段专业化的收益是**消除干扰**，而并发 1 时没有干扰可消除，收益恒为 0、成本照付。
 
 ## 3. 完整推导/机制
 
@@ -140,7 +140,7 @@ status: complete
 
 - **P2P 能力**：`nvidia-smi topo -p2p r` 返回 GNS(GPU not supported)、 p2pBandwidthLatencyTest 的 connectivity matrix 全 0(`pd_disagg/hw/topo.txt`、 `hw/p2p_bandwidth_latency.txt`，EXP-002)——GeForce 驱动层禁用，不是拓扑问题。
 - **裸拷贝路径**：单向 D2D 0.60–0.91 GB/s，双向 22.6–22.8 GB/s，GPU 间延迟 14.5–15.9 µs，卡内 memcpy ~924 GB/s（同上）。单双向差约 25 倍是"无 P2P"的定量指纹： 无 P2P 时 cudaMemcpyPeer 退化为经主机内存的分段中转，单向吃满中转开销；双向两个方向的分段流水互相填空，逼近 Gen4 x16 的双向极限。
-- **collective 路径**：nccl-tests `all_reduce_perf -b 1M -e 512M -f 2 -g 2`， avg bus bw **1.78 GB/s**，256 MB 以上大消息 ~1.85 GB/s(`hw/all_reduce_perf.txt`， EXP-002)。NCCL 探测不到 P2P 后回退 SHM（共享内存中转）传输。
+- **collective 路径**：nccl-tests `all_reduce_perf -b 1M -e 512M -f 2 -g 2`， avg bus bw 旧值 1.78 GB/s 已停用待复核（EXP-018 复测得 ~6.2 GB/s 未追认）(`hw/all_reduce_perf.txt`， EXP-002)。NCCL 探测不到 P2P 后回退 SHM（共享内存中转）传输。
 - **KV 通路**：NIXL 的有效吞吐 0.26–0.27 GB/s(telemetry-derived，EXP-006/007)。注意这是第三条路径，既不等于裸拷贝也不等于 collective——为什么它最慢，是讲义 02 的主题。
 
 #### 3.1.1 路径一的语义:CUDA 文档怎么定义"没有 P2P"
@@ -167,7 +167,7 @@ PCIe 4.0 的链路规格：每 lane 16 GT/s，128b/130b 编码，故每 lane 有
 - **Algorithm bandwidth**:"using the most commonly used formula for bandwidth: size (S) / time (t)"，即 `algbw = S/t`;
 - **Bus bandwidth**:"To provide a number which reflects how optimally the hardware is used, NCCL tests introduce the notion of 'Bus Bandwidth'"; AllReduce 的换算是 $B = \mathrm{algbw}\times\frac{2(n-1)}{n}$，理由是 "we have S elements, 2*(n-1) operations per element, and n links of bandwidth B to perform them"。
 
-代入 $n=2$：$\frac{2(2-1)}{2}=1$——**两卡时 busbw 恰等于 algbw**。这解释了为什么仓内说"2 卡时两者相等"(§5.1)，也提醒一件事：**这个巧合只在 2 卡成立**，把本机的 1.78 GB/s 拿去和 8 卡集群的 busbw 比较，分母语义就不同了。
+代入 $n=2$：$\frac{2(2-1)}{2}=1$——**两卡时 busbw 恰等于 algbw**。这解释了为什么仓内说"2 卡时两者相等"(§5.1)，也提醒一件事：**这个巧合只在 2 卡成立**，把本机的 collective 带宽拿去和 8 卡集群的 busbw 比较，分母语义就不同了。
 
 NCCL 会选哪条传输？官方环境变量文档写明 "SHM is used between devices when peer-to-peer cannot happen， therefore， host memory is used"（NCCL User Guide， Environment Variables 页，`NCCL_SHM_DISABLE` 条）。**这正是本机的分支**：P2P 探测失败 → 回退 SHM → 数据经主机内存。同一页给出 `NCCL_BUFFSIZE` 默认 4194304(4 MiB)， 即每对 GPU 的传输缓冲区大小——这个量级解释了为什么 all_reduce_perf 的曲线从 1 MB 起就接近平坦：消息早已超过缓冲区粒度，再大没有新红利。
 
@@ -184,7 +184,7 @@ NIXL(NVIDIA Inference Xfer Library)的抽象层次与前两条完全不同。按
 | 路径 | 测什么 | 软件栈 | 消息粒度 | 本机数字 | 可比对象 |
 |---|---|---|---|---|---|
 | 裸拷贝 | 链路+驱动 | CUDA runtime `cudaMemcpyPeer` | 整块连续内存（测试用大块） | 单向 0.60–0.91 / 双向 22.6–22.8 GB/s | 同类无 P2P 的 PCIe 机器 |
-| collective | NCCL 算法+传输选择 | NCCL（SHM 回退） | 1 MB–512 MB 扫描 | avg busbw 1.78 GB/s | 同卡数的 busbw |
+| collective | NCCL 算法+传输选择 | NCCL（SHM 回退） | 1 MB–512 MB 扫描 | avg busbw 待复核（旧值 1.78 已停用） | 同卡数的 busbw |
 | KV 通路 | NIXL+UCX+connector 布局 | vLLM NixlConnector → NIXL → UCX | 16 KiB descriptor | 0.26–0.27 GB/s(telemetry-derived) | 同 connector 同布局的部署 |
 
 **读表法**：从左到右，软件栈越厚、粒度越碎，数字越小。三条路径的差距（单向裸拷贝 0.6 vs KV 通路 0.27，约 2.2×）不是"NIXL 比 memcpy 慢一半"这么简单的话能概括的——它是**粒度差**造成的，见公理 B。
@@ -286,7 +286,7 @@ MLP 块 $Y=\mathrm{GeLU}(XA)$ 有两种切 $A$ 的方式。按行切 $A=[A_1;A_2
 
 每层前向一次 allreduce 的**逻辑消息大小**是当前批的隐状态张量： $$m =(\text{本批 token 数}) \times d \times s.$$ prefill 8192 token：$8192\times3584\times2 = 58{,}720{,}256$ B $= 58.72$ MB（与 §3.3 一致）。 decode bs=1：$1\times3584\times2 = 7168$ B $= 7$ KiB。
 
-**这 7 KiB 是理解 decode 侧 1.3 ms/token 的关键**：按 1.78 GB/s 的渐近带宽算， 7 KiB 只要 4 µs，而实测每 token 的 allreduce 代价 ~1.3 ms(EXP-005 §6)是纯带宽项的 **325 倍**——decode 侧的 allreduce **完全由固定开销 $\alpha$ 主导**，与带宽几乎无关。按 $k=2$ 分摊单次 $\alpha\approx0.65$ ms，按 $k=1$ 约 1.3 ms；对照 GPU 间裸延迟 14.5–15.9 µs，是它的 **40–90 倍**，里面装着 SHM 中转的两段拷贝、host 侧同步、 NCCL kernel 启动与 ring 的两个阶段。**本仓没有做 allreduce 分段计时**，以上分配为推断。
+**这 7 KiB 是理解 decode 侧 1.3 ms/token 的关键**：按 collective 渐近带宽算， 7 KiB 只要几 µs，而实测每 token 的 allreduce 代价 ~1.3 ms(EXP-005 §6)是纯带宽项的 **数百倍**——decode 侧的 allreduce **完全由固定开销 $\alpha$ 主导**，与带宽几乎无关。按 $k=2$ 分摊单次 $\alpha\approx0.65$ ms，按 $k=1$ 约 1.3 ms；对照 GPU 间裸延迟 14.5–15.9 µs，是它的 **40–90 倍**，里面装着 SHM 中转的两段拷贝、host 侧同步、 NCCL kernel 启动与 ring 的两个阶段。**本仓没有做 allreduce 分段计时**，以上分配为推断。
 
 **一个可证伪的推论**：若 decode 侧由 $\alpha$ 主导，则 batch 增到 128 时消息涨 128 倍（7 KiB → 896 KiB）而每步 allreduce 时间几乎不变，**每 token 的通信税按 batch 反比下降**。这正好解释 §5.3 的"decode 的 -42% 在批量化后被稀释"：收益侧（权重分摊）不随 batch 变，成本侧随 batch 摊薄，叠加后 tp2 的吞吐优势稳定在 +13~19%。
 
@@ -445,7 +445,7 @@ $$\mathrm{TPOT} \approx \frac{W/C}{BW_{\mathrm{mem}}} + \frac{B_{kv}(n)/C}{BW_{\
 | 164 FLOP/B(ridge) | §3.2.2 | **理论上界**：上两者相除 | 随卡型变 |
 | 1.0 FLOP/B(decode) | §3.2.2 | **理论上界**：$2/s$ 恒等式 | 只随权重位宽变 |
 | 31.5 GB/s(PCIe 4.0 x16) | §3.1.2 | **硬件约束**：PCI-SIG 规格 | 随代际变（Gen5 翻倍） |
-| 1.78 GB/s | §3.1、§3.3 | **实测扫描**：nccl-tests 1M–512M 扫描的 avg busbw | 有 P2P/NVLink 时相差两个数量级 |
+| collective 带宽（值待复核） | §3.1、§3.3 | **实测扫描**：nccl-tests 1M–512M 扫描的 avg busbw（旧值 1.78 已停用，见 EXP-018） | 有 P2P/NVLink 时相差两个数量级 |
 | 0.26–0.27 GB/s | §3.1.4、§3.5 | **实测扫描**：NIXL telemetry 反解 | 由 $\alpha$ 与 descriptor 大小共同决定 |
 | 450 W / 0x4 | §5.4 | **硬件约束**：TGP 规格 + NVML 位定义 | 可用 `nvidia-smi --power-limit` 改 |
 | 2820 / 2475 MHz | §5.4 | **实测扫描**：遥测采样 | 随卡个体、散热、功率帽变 |
@@ -729,7 +729,7 @@ Bidirectional P2P=Disabled Bandwidth Matrix (GB/s)
 
 读法：对角线是卡内 memcpy（~924 GB/s，decode roofline 的分母）；非对角线才是跨卡。 "P2P=Enabled" 矩阵在本机与 Disabled 几乎相同——使能请求被驱动拒绝，回退同一条中转路径， 这本身就是 P2P 禁用的证据之一（连同 CANNOT Access Peer 行与 topo 的 GNS）。注意文件头的 NOTE：CUDA sample 不是精密基准，单向矩阵各单元分散（0.60/0.69/0.91/4.36），所以仓内引用一律用区间 0.60–0.91，不挑单值（EXP-002 §7）。
 
-`hw/all_reduce_perf.txt` 读法：看 busbw 列而非 algbw——busbw 是按 allreduce 通信量归一的口径（2 卡时两者相等），1 MB 到 512 MB 消息稳定在 1.67–1.87 GB/s，avg 1.78。 **平坦的带宽曲线**说明 SHM 回退路径没有大消息红利，这预言了 TP2 prefill 的大消息 allreduce 无处可逃（§3.3）。
+`hw/all_reduce_perf.txt` 读法：看 busbw 列而非 algbw——busbw 是按 allreduce 通信量归一的口径（2 卡时两者相等）。 **平坦的带宽曲线**说明 SHM 回退路径没有大消息红利，这预言了 TP2 prefill 的大消息 allreduce 无处可逃（§3.3）。〔待复核：EXP-002 的 avg busbw 1.78 GB/s 已被 EXP-018 复测得 ~6.2 GB/s 推翻，机制未查明前不引用具体值，见 EXP-018 §7。〕
 
 #### 5.1.1 "平坦"这件事本身携带信息(本讲义推导)
 
@@ -909,7 +909,7 @@ Ada 白皮书 Appendix A Table 2 给 RTX 4090 的 TGP(Total Graphics Power)为 *
 ## 7. 连环追问
 
 1. **Q：TP2 的 TPOT 为什么是 9.3 ms 而不是 16.35/2 ≈ 8.2 ms？** A：decode 每 token 还要付一次小消息 allreduce，实测代价 ~1.3 ms/token(EXP-005 §6)； 7.7（半权重下限）+1.3 ≈ 9.0，实测 9.26–9.48 ms，账闭合。
-2. **Q：1.78 GB/s 是怎么测的？** A：nccl-tests `all_reduce_perf -b 1M -e 512M -f 2 -g 2`，NCCL 探测不到 P2P 回退 SHM 传输，取 avg busbw(`hw/all_reduce_perf.txt`，EXP-002)。它只代表 collective 路径，不能代表 KV 通路（那是 NIXL 的 0.26–0.27 GB/s，telemetry-derived）。
+2. **Q：collective 带宽是怎么测的？** A：nccl-tests `all_reduce_perf -b 1M -e 512M -f 2 -g 2`，NCCL 探测不到 P2P 回退 SHM 传输，取 avg busbw(`hw/all_reduce_perf.txt`，EXP-002)。〔待复核：EXP-002 旧值 1.78 GB/s 已被 EXP-018 复测得 ~6.2 GB/s 推翻，机制未查明前不引用具体值。〕它只代表 collective 路径，不能代表 KV 通路（那是 NIXL 的 0.26–0.27 GB/s，telemetry-derived）。
 3. **Q：单向 0.6 GB/s 与双向 22.7 GB/s 差 25 倍怎么解释？** A：无 P2P 时 cudaMemcpyPeer 走经主机的分段中转，单向暴露全部中转开销；双向两个方向的分段互相流水，逼近 Gen4 x16 双向极限。这个 25 倍差本身就是"无 P2P"的指纹（EXP-002 §6）。
 4. **Q：goodput 为什么逐请求判而不用 p99 卡线？** A：要画连续曲线必须数出每个点的达标请求数（collect_point.py：106-116）；p99 卡线只给布尔结果，且会把"51% 请求超时"与"1% 超时"判成同一种失败。
 5. **Q：为什么 colocate 是"反例臂"？** A：所有双卡形态必须先回答"比一张卡好多少"——pd1p1d 三桶全输给单卡（0.58–0.76×）， 没有单卡臂这一事实根本暴露不出来。
@@ -950,11 +950,11 @@ Ada 白皮书 Appendix A Table 2 给 RTX 4090 的 TGP(Total Graphics Power)为 *
 | 10 | **Orca §3/§4.2**：iteration-level scheduling + selective batching；调度器每次迭代重选 batch，按 `max_bs` 与 `n_slots` 双约束 | 本仓不改调度器，只在**外部**用 offered load 扫描间接观察其行为 | **层次不同**。Orca 的 `n_rsrv`（按 `req.max_tokens` 预留 KV 槽位）在 vLLM 里被 PagedAttention 的按需分块取代，所以本仓的 `--ignore-eos` 固定输出长度不会触发 Orca 式的预留浪费 |
 | 11 | **Orca 摘要**：相对 FasterTransformer 同延迟下吞吐 36.9× | 本仓 EXP-008 测到 v0.17.1 → v0.25.1 的 512 桶饱和吞吐 +45%，计算受限桶零差异 | **不可比但可对读**。36.9× 是"有无连续批处理"的差距，+45% 是"连续批处理之后八个月的工程改进"的差距。**前者是范式差，后者是版本差**，两个数量级的差别本身就说明了范式改变的价值 |
 | 12 | **Megatron §3**：每层前向"only two all-reduces in the forward path" | 仓内按每层 1 次做下界计数（EXP-005 §6） | **本仓保守**。按 2 次算通信量翻倍（1.64 → 3.29 GB），零加速结论只会更强。**取下界是为了让结论对计数方式不敏感** |
-| 13 | **Mooncake §5.1**：跨节点扩 TP 需"two expensive RDMA-based all-reduce operations per layer， significantly reducing the MFU" | 本机 tp2 prefill 零加速（§3.3） | **同一机理，不同尺度**。Mooncake 说的是跨节点 RDMA（数十 GB/s）已经贵到不值得；本机是 1.78 GB/s 的 SHM 回退。**结论方向一致，阈值差两个数量级** |
+| 13 | **Mooncake §5.1**：跨节点扩 TP 需"two expensive RDMA-based all-reduce operations per layer， significantly reducing the MFU" | 本机 tp2 prefill 零加速（§3.3） | **同一机理，不同尺度**。Mooncake 说的是跨节点 RDMA（数十 GB/s）已经贵到不值得；本机是 SHM 回退的低带宽。**结论方向一致，阈值差两个数量级** |
 | 14 | **Ada 白皮书 Table 2**：RTX 4090 boost 2520 MHz、1008 GB/s、L2 73728 KB、TGP 450 W | 遥测实测未节流 2820 MHz、峰值功率 444.65 W；memcpy 924 GB/s | **时钟高于规格 11.9%，功率贴帽 98.8%，带宽达规格 91.7%**。教训：白皮书 boost 是"典型值"不是硬上限（§3.3.4），而 TGP 是硬上限 |
 | 15 | **CUDA Guide §3.4.2.1**：P2P 未启用时拷贝须经主机中转 | 单向 0.60–0.91 GB/s = PCIe 4.0 x16 规格的 1.9%–2.9% | **文档预言 → 实测证实**，而且量化到了具体倍数。文档只说"更慢"，本仓给出了"慢 35–50 倍"这个数 |
 | 16 | **nccl-tests PERFORMANCE.md**：AllReduce busbw $= \mathrm{algbw}\times 2(n-1)/n$ | 本机 2 卡，两列相等（§5.1） | **一致**，且解释了仓内"2 卡时两者相等"这句话的来历。**这个巧合只在 2 卡成立** |
-| 17 | **NCCL 环境变量文档**："SHM is used between devices when peer-to-peer cannot happen， therefore， host memory is used" | 1.78 GB/s avg busbw，1M–512M 曲线平坦 | **一致**。曲线平坦进一步说明该路径没有大消息红利（§5.1.1） |
+| 17 | **NCCL 环境变量文档**："SHM is used between devices when peer-to-peer cannot happen， therefore， host memory is used" | SHM 回退路径 avg busbw（旧值 1.78 GB/s 已停用，见 EXP-018），1M–512M 曲线平坦 | **一致**。曲线平坦进一步说明该路径没有大消息红利（§5.1.1） |
 | 18 | **NVML**：`SwPowerCap` = 0x4 "SW Power Scaling algorithm is reducing the clocks below requested clocks" | 40 个 GPU0 采样里 23 个带 0x4，无 0x20/0x40（本文现算） | **一致**，且位掩码的**缺席项**（热节流位）构成排除性证据（§5.4.1） |
 | 19 | **GPU Performance Background Guide §4**：ops：byte = 处理器数学带宽与内存带宽之比；性能受三因子之一限制 | bs=1 decode 算术强度 1.0 FLOP/B，ridge 164 FLOP/B（本讲义推导） | **一致**，差 164 倍。这是"decode 带宽受限"这句定性判断的定量强度 |
 | 20 | **Sarathi-Serve 摘要**：chunked prefill + stall-free 调度在 SLO 内提升吞吐，Mistral-7B 单 A100 最多 2.6× | 本仓**未做该臂的开关对照** | **本仓的设计缺口，如实登记**。它是解决同一个问题（prefill 干扰 decode）的零通信方案，在本机这种互联受限平台上很可能优于 PD 分离。不主张任何数字 |

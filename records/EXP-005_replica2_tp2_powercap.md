@@ -38,7 +38,7 @@ replica2 三点 → 诊断跑 ×3（见下）→ 遥测采样验证 → 工装�
 
 ## 6. 分析与结论
 - **发现① 功率帽节流**：colocate@8K 双段分布（EXP-004 §7）+ diag-1/2/3 全部 ~900ms（卡已热）+ 采样坐实 SW Power Cap → 持续 prefill 稳态 TTFT ≈905ms，冷启 boost 段 ≈700ms；replica2 轮转=50% 占空比维持 boost → 715ms。温度 63°C 排除热因。频率降 ~12% 与 TTFT +30% 不完全成比例，差额疑与瞬时 boost/显存时钟相关（未深究，非主线）。
-- **发现② TP2 不对称收益**：decode 16→9.3ms（-42%，每卡半份权重 + 小消息 allreduce ~1.3ms/token 代价）；8K prefill 零加速（694≈冷态单卡 700ms）—— 28 层 × 58.7MB 大消息 allreduce 受 1.78GB/s collective 带宽约束（EXP-002《硬件三数》印证）。
+- **发现② TP2 不对称收益**：decode 16→9.3ms（-42%，每卡半份权重 + 小消息 allreduce ~1.3ms/token 代价）；8K prefill 零加速（694≈冷态单卡 700ms）—— 28 层 × 58.7MB 大消息 allreduce 受 collective 带宽约束（EXP-002《硬件三数》印证；〔停用〕该带宽具体值 1.78GB/s 已被 EXP-018 复测推翻，具体值待查，见 EXP-018 §7）。
 
 ## 7. 异常、偏差与开放问题
 - 诊断跑未存 raw（当时为快速排障）→ 已定规则杜绝（§8）。

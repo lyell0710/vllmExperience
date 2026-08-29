@@ -8,7 +8,7 @@
 
 ## 1. 主线一:部署选型(S1,EXP-007/EXP-013)
 
-**90 秒讲法**：消费级双卡的互联画像先钉死——P2P 驱动级禁用（GNS）、单向 D2D 0.60–0.91 GB/s、NCCL bus bw 1.78 GB/s（EXP-002《硬件三数》，`pd_disagg/hw/`）。四臂结论： 双副本近线性 2×（2K 输入 7.00 vs 3.63 req/s）且 goodput 全场最高；TP2 decode 提速 42%（带宽分摊）但 prefill 零加速（大消息 allreduce 撞 1.78GB/s 墙），吞吐仅 +13–19%；PD 分离全负载段被传输压垮——NIXL 有效吞吐恒 0.26–0.27GB/s（telemetry-derived，~16KB/descriptor 碎片化）。再用 EXT-1(EXP-013)把"传输是不是瓶颈"从对账推断升级成因果占比：KV 等待占 TTFT 54.2/62.5/64.2% (512/2K/8K，p50)，闭环误差 p50 <0.1%。推方向也试过：push 仅 -6.7% TTFT@8K（EXP-011《EXT-2 NixlPush 单点》），方向救不了量级——结论是选型边界，不是"PD 不行"。
+**90 秒讲法**：消费级双卡的互联画像先钉死——P2P 驱动级禁用（GNS）、单向 D2D 0.60–0.91 GB/s、NCCL collective 带宽受限（EXP-002《硬件三数》，实测值待复核）。四臂结论： 双副本近线性 2×（2K 输入 7.00 vs 3.63 req/s）且 goodput 全场最高；TP2 decode 提速 42%（带宽分摊）但 prefill 零加速（大消息 allreduce 受 collective 带宽约束），吞吐仅 +13–19%；PD 分离全负载段被传输压垮——NIXL 有效吞吐恒 0.26–0.27GB/s（telemetry-derived，~16KB/descriptor 碎片化）。再用 EXT-1(EXP-013)把"传输是不是瓶颈"从对账推断升级成因果占比：KV 等待占 TTFT 54.2/62.5/64.2% (512/2K/8K，p50)，闭环误差 p50 <0.1%。推方向也试过：push 仅 -6.7% TTFT@8K（EXP-011《EXT-2 NixlPush 单点》），方向救不了量级——结论是选型边界，不是"PD 不行"。
 
 **防御**：
 - "凭什么说传输真的发生了" → 每测量点 gate 字段（nixl bytes 增量、成功传输数= 预期远端请求数、failed=0、expired=0、/metrics 直抓引擎端口）与指标同行存于 runs.jsonl(EXP-007)。

@@ -9,7 +9,7 @@
 | 数字 | 归属简历句 | 证据 |
 |---|---|---|
 | 四臂矩阵 60+ 扫描点：replica2 近线性 2×(7.00 vs 3.63 req/s@2K)、goodput 全场最高 | S1 | EXP-007 |
-| TP2 decode -42%(9.3 vs 16ms TPOT)但吞吐仅 +13–19%（allreduce 撞 1.78GB/s 墙） | S1 | EXP-005/007 |
+| TP2 decode -42%(9.3 vs 16ms TPOT)但吞吐仅 +13–19%（allreduce 受 collective 带宽约束） | S1 | EXP-005/007 |
 | **KV 等待占 TTFT 54.2/62.5/64.2%（request 级因果占比，闭环误差 p50 <0.1%（最差桶 0.084%））** | S1 | **EXP-013（本周日解锁）** |
 | NIXL 有效吞吐 0.26–0.27GB/s 恒定；push 方向 -6.7% TTFT，量级不变 | S1 | EXP-006/011 |
 | 功率帽：持续 prefill 降频 2820→2475MHz，TTFT +30% | S1 面试素材 | EXP-005 |

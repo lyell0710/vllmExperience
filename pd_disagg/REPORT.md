@@ -19,7 +19,7 @@
 | PD 分离 | **不可取** | KV 通路有效吞吐仅 0.27GB/s（telemetry-derived）；全负载段 goodput 溃败（fig1） |
 
 **三个机理级发现**（均为异常→拆解→实证的完整链条）：
-1. **TP2 收益不对称**：decode -42%（权重带宽分摊），prefill 零加速——28 层 × 58.7MB 的大消息 allreduce 正好撞上实测 1.78GB/s 的 collective 带宽墙。
+1. **TP2 收益不对称**：decode -42%（权重带宽分摊），prefill 零加速——28 层 × 58.7MB 的大消息 allreduce 撞上 collective 带宽墙（实测值待复核，见 EXP-018）。
 2. **NIXL KV 通路有效吞吐 0.26–0.27GB/s 恒定**：descriptor ~16KB/个（每 block 每层单发）的碎片化小拷贝，在无 P2P 的 PCIe 中转路径上跑不满带宽；小传输另有 ~12ms 延迟地板（fig5）。
 3. **450W 功率帽节流**：持续 prefill 使 SM 降频 2820→~2475MHz（SW Power Cap 0x4，63°C 非热因），TTFT 从冷态 700ms 抬升至稳态 ~905ms（+30%）——消费卡基准测量必须声明功率工况（本报告所有 v2 数据为同热工况）。
 
@@ -33,7 +33,7 @@
 | 单向 D2D | 0.60–0.91 GB/s | 无 P2P 的 cudaMemcpyPeer 分段中转 |
 | 双向 D2D | 22.6–22.8 GB/s | Gen4 x16 双向流水极限；与单向差 25 倍=无 P2P 指纹 |
 | GPU 间延迟 | 14.5–15.9 µs |— |
-| NCCL allreduce | **1.78 GB/s** bus bw | 仅代表 TP collective 路径 |
+| NCCL allreduce | collective 带宽受限（实测值待复核，见 EXP-018） | 仅代表 TP collective 路径 |
 | NIXL KV 通路 | **0.26–0.27 GB/s** 有效 | telemetry-derived；仅代表 KV 传输路径 |
 | 卡内带宽 | ~924 GB/s | GDDR6X，decode 的物理上限 |
 

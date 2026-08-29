@@ -46,7 +46,7 @@
 
 | 项 | 状态 | 关键数字 | 产物 |
 |---|---|---|---|
-| R0-1 硬件三数 | ✅ 8/21（8/29 复测差异待裁决） | P2P=GNS 禁用；单向 D2D 0.60–0.91 GB/s，双向 22.7 GB/s，延迟 ~15µs；NCCL bus bw 1.78 GB/s〔EXP-018 复测大消息平台 6.2 GB/s，差 3.5 倍，权威数字更新待用户裁决〕 | `pd_disagg/hw/{topo,p2p_bandwidth_latency,all_reduce_perf}.txt` + `20260829T104705_allreduce_size_scan_*.txt` |
+| R0-1 硬件三数 | ✅ 8/21（collective 带宽值停用待复核） | P2P=GNS 禁用；单向 D2D 0.60–0.91 GB/s，双向 22.7 GB/s，延迟 ~15µs；NCCL collective 带宽**旧值 1.78 GB/s 已停用**（EXP-018 复测得大消息平台 ~6.2 GB/s，机制未查明前两值均不作权威，见 EXP-018 §7） | `pd_disagg/hw/{topo,p2p_bandwidth_latency,all_reduce_perf}.txt` + `20260829T104705_allreduce_size_scan_*.txt` |
 | R0-2 三 venv + provenance | ✅ 8/21 | ~/venvs/{v0.17.1, v0.25.1, main} 均验证 import | `pd_disagg/scripts/provenance.sh`；setup 记录 `pd_disagg/setup_envs.log` |
 | R0-3 NIXL 1P1D smoke | ✅ 8/21 | 双版本 3/3 PASS；avg xfer 14.1ms / 0.188MB / 13.3MB/s；裁决锁定 v0.25.1 | `pd_disagg/smoke/`、`pd_disagg/DECISION.md` |
 | R0-4 0.17.1 课程基线 | ✅ 8/23 | 课程脚本非必需——官方 xPyD proxy+脚本在 v0.17.1 tag 内，自建 1P1D 复现栈 | `pd_disagg/p2pnccl_repro/launch_1p1d.sh`（从 tag 提取精简） |
@@ -57,7 +57,7 @@
 | B3 版本对照 | ✅ 8/23 两维度定稿 | ①单实例 system-version：无负载延迟 Δ<1%、**512 桶饱和 +45%**（7.14→10.36）、计算受限桶零差异、启动 308→58s；②PD 可用性对照（EXP-012 闭环）：0.17.1 PD 默认配置正常请求即触发 D 挂死→不构成可用对照臂，结论即"不可用 vs 可用"，无吞吐对比可做。另录版本差异一例：profiler 接口 env var→CLI | EXP-008、EXP-012、REPORT v2 §3 |
 | R0-4（降级路径） | ✅ 8/21 | 双 bug 源码机理分析完成（assert connector：433 / 分叉 input_processor.py：212 / 无超时 wait engine：317 / GET 静默乱码 / 四层 ID 链 / NIXL 身份拆分对照），全 file：line 核对 | `analysis/p2pnccl_bugs_id_chain.md` |
 | R0-4 动态复现 | ✅ 8/23 | **实机 1P1D 坐实两 bug**：bug1 精确命中 `connector:433` AssertionError（addr 串 id+max_tokens>1）；bug2 D 整实例挂死（双请求 hang + 全线程 futex_wait + P /health 恒 200）；**实证修正**：裸直连先崩于 `connector:518` parse_request_id 早于：433。py-spy 因容器 ptrace 限制未取栈帧（已诚实标注） | EXP-012；`pd_disagg/p2pnccl_repro/raw/EXP-012/` |
-| B1 附带发现 | ✅ 8/21 | ① 功率帽节流：持续 prefill 降频 2820→2475MHz（SW Power Cap，非热），TTFT +30%；② NIXL 有效吞吐 0.26–0.27GB/s 恒定（descriptor ~16KB 碎片化）；③ TP2 decode 提速 42%（带宽分摊）但 prefill 零加速（allreduce 撞 1.78GB/s 墙） | runs.jsonl gpu_telemetry / gates 字段；`DECISION.md` 硬件基线 |
+| B1 附带发现 | ✅ 8/21 | ① 功率帽节流：持续 prefill 降频 2820→2475MHz（SW Power Cap，非热），TTFT +30%；② NIXL 有效吞吐 0.26–0.27GB/s 恒定（descriptor ~16KB 碎片化）；③ TP2 decode 提速 42%（带宽分摊）但 prefill 零加速（allreduce 受 collective 带宽约束，具体值待复核） | runs.jsonl gpu_telemetry / gates 字段；`DECISION.md` 硬件基线 |
 | B4 报告 | ✅ 8/23 v2 定稿 | 一页结论 + 四章 + 附录；v2 吸收 EXT-1 因果占比 / EXT-2 推拉对照 / EXP-012 动态复现与 B3 定稿 | `pd_disagg/REPORT.md` |
 | C1 Qwen1.5-MoE 上卡 | ✅ 8/21 | TP2+EP 可用；未调优基线 TPOT 4.62ms（dense 7B TP2 的 2.0×）、饱和 11.50 req/s@512——D2 的 before 数字 | EXP-009 |
 | C2 config 查重 | ✅ 8/21 | 三重闭环：本地判定 + 远端查重 + **运行时告警原文**（fused_moe.py：1106 点名 E=30，N=1408 缺失） | `moe_configs/DEDUP.md`、EXP-009 §5 |
