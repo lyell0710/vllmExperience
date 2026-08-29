@@ -41,6 +41,7 @@
 | [EXP-016](records/EXP-016_d4_fp8_vs_w4a16.md) | D4 FP8 vs W4A16 同卡对比（Qwen3-30B-A3B,Ada SM89） | 8/23 | D4 | 完成 |
 | [EXP-017](records/EXP-017_d5_eplb_gate.md) | D5 EPLB gate（W4A16 不支持 / FP8 真实重排 + 对照组归因） | 8/23 | D5 | 完成 |
 | [EXP-018](records/EXP-018_nccl_allreduce_size_scan.md) | NCCL allreduce size 扫描（补 EXP-002 小消息缺口 + 复测大消息带宽） | 8/29 | R0-1 | 完成 |
+| [EXP-019](records/EXP-019_nccl_bw_discrepancy_rootcause.md) | 1.78 vs 6.2 GB/s 机制调查（环境 diff，先于 bench） | 8/30 | R0-1 | 完成 |
 
 ## 证据台账（勾一项 = 数据落盘 + 本表登记产物路径）
 

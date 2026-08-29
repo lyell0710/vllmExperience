@@ -268,3 +268,11 @@
 - **关键数字**：延迟地板 **~14µs**（8 KiB decode 消息 13.8µs，与 EXP-002 的 GPU 间延迟 14.5–15.9µs 同阶）；大消息平台 **6.2 GB/s**（16M–256M 稳定 6.40–6.50）。**核心发现**：EXP-002 的「1.78 GB/s 带宽墙」复现不了，同二进制同 NCCL 2.28.9 同参数复测得 6.2 GB/s，差 3.5 倍——原因待查（EXP-002 provenance 未记 PCIe 运行态/系统负载，候选：8/21 B1 战役并发负载或 PCIe 未升 Gen4；实测 allreduce 运行时 PCIe 升 Gen4）。与 EXP-D22 对账：88µs/次 = 14µs 传输 + 74µs torch.distributed 调度/同步，强化「派发主导」归因。
 - **产物**：`records/EXP-018_nccl_allreduce_size_scan.md`、`scripts/nccl_size_scan.sh`、`pd_disagg/hw/20260829T104705_allreduce_size_scan_{small,large}.txt`、EXP-002 §7 复测差异勘注、LEDGER EXP 索引 + R0-1 行更新。
 - **下一步**：**待用户裁决**——EXP-002 的 1.78 GB/s 权威数字是否更新为 6.2，以及是否连带修订 EXP-005「prefill 零加速归因」与 RESUME_EVIDENCE「1.78GB/s 带宽墙」措辞（涉及多处下游结论，见 EXP-018 §7/§8）。其余 B 类（三算子 autotune 可跳、sglang router S02-S07 需 sglang venv 未装）。
+
+## §26 1.78 vs 6.2 机制调查(EXP-019)+ LICENSE 补漏(2026-08-30)
+
+- **做了什么**：①EXP-019：按「先 diff 环境、不先跑 bench」排查 EXP-002 的 1.78 vs EXP-018 的 6.2 差 3.5 倍的机制。NCCL_DEBUG=INFO 抓自报 + 逐行读 nccl-tests 计时代码 + 单点对照（默认 vs NCCL_SHM_DISABLE=1）。②补 vllmExperience 的 Apache-2.0 LICENSE（用户追认协议 + 点名漏了它）。
+- **为什么**：交接单任务 1（最高优先）；用户押注「计时区混入非传输开销（与 reduce 同型）」，需用证据证伪或证实。
+- **关键数字**：计时区内无 malloc 混入（证伪「固定开销」假设）；单点对照 SHM **3.96** vs Socket **0.76 GB/s**（差 5.2 倍）；NCCL 拓扑自报 NET 路径 1.2 / CPU 中转 24.0。判定**升级为真实环境差异**，候选 H1=PCIe 未升 Gen4/走了 Socket、H2=8/21 并发负载。
+- **产物**：`records/EXP-019_nccl_bw_discrepancy_rootcause.md`、EXP-018 §7 闭环、EXP-002 §7 教训（provenance 缺 NCCL 环境变量+PCIe 运行态+DEBUG 日志）、LEDGER EXP-019 索引、LICENSE。
+- **下一步**：任务 2（EXP-D22 分项账重做，用 14µs 锚）；1.78 复现实验设计已固化在 EXP-019 §8（扫 NCCL_P2P_LEVEL × NCCL_SHM_DISABLE 找复现档），不再阻塞任何对外主张。
