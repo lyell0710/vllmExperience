@@ -252,3 +252,11 @@
 - **关键数字**：fig7 从 runs.jsonl 重算的饱和 req/s 与台账 B1 行逐位一致（colocate 10.36/3.63/0.90 · replica2 15.58/7.00/1.78 · tp2 12.31/4.16/1.02 · pd1p1d 7.84/2.12/0.54）；README 无新造数字，D2 e2e 未上 headline（红线）。
 - **产物**：README.md、pd_disagg/scripts/make_fig7_overview.py、 pd_disagg/figures/fig7_saturation_overview.png、本 commit。
 - **下一步**：不变——用户侧 R0-6 线上简历排雷 + D2 PR 本人 review 与提交（见 HANDOFF §5）。
+
+## §24 fork rebase + 社区空缺复验 + 公开仓瘦身调查(2026-08-29)
+
+- **做了什么**：①A-1：外层 `/root/projects/vllm` 浅克隆先 `fetch --unshallow upstream`（42s）拉全历史——浅克隆边界恰是 cacc429f62，本地 git 算不出 merge-base，交接单的「676 提交/无分叉」实为 GitHub API 所算；unshallow 后验证无分叉（is-ancestor=YES）、落后 676、本地零独有提交，`main` ff 到 cacc429f62 并 push myfork（903a02192f..cacc429f62），`moe-config-4090-qwen15moe` rebase 到 cacc429f62，2 个 config JSON 保持 staged 未 commit（遵守「不用 agent 身份提交」）。②A-2：用 `git ls-tree -r cacc429f62` 精确复验「社区空缺」（排除 staged 干扰）——上游仍无 E=30、E=60,N=704 仍仅 MI300X、4090 仍仅 2 个 fp8，空缺成立；另核 PR_DRAFT 复核一「fused_moe.py 0 提交」实为 6 行插入（A_scale 0-D reshape，量化路径 bugfix，不触及 BF16 config），「无需重测」结论不变。DEDUP/LEDGER 更新后 commit c6fc416。③A-5：vllmExperience 瘦身调查——**澄清交接单 A-5 措辞**：`.sqlite` 从未进历史（.gitignore 的 *.sqlite 一直生效，本地 1.6GB 中约 1GB 是未跟踪的 sqlite/nsys-rep，不影响公开仓）；历史里仅 72MB `.nsys-rep`（4 文件，属 LEDGER「证据箱：nsys-rep 入 git，体积换可信度」设计）。公开仓 clone 实际 400MB（非 1.6GB）。
+- **为什么**：D2 PR 需基于最新 upstream main（落后 676 提交）；「空缺」是主张，主张需复验（交接单 A-2）；A-5 瘦身需先核清「多少在历史、多少是本地」再决定是否动历史。
+- **关键数字**：落后 676 提交、behind_by=0 无分叉；fused_moe.py 自 7aa248fcfe 起 6 行插入（@857 invoke_fused_moe_triton_kernel 内 A_scale ndim==0 reshape）；历史 .nsys-rep 合计 72.05MB / .git 400MB / 历史 .sqlite 0。
+- **产物**：myfork main = cacc429f62、moe 分支 rebase、experiments commit c6fc416（DEDUP.md + LEDGER.md）。
+- **下一步**：C 类基础设施（/root/projects/README.md 七仓总入口 + /root/work 无远端）；B 类待 GPU 空闲。**历史重写瘦身（filter-repo 移除 72MB .nsys-rep + force push）未做**——收益 18%、代价为全部 commit hash 失效（文档内 cc473de/7aa248fc 等 10+ 处引用）与 force push 破坏性，属用户决策，待其明确授权。
