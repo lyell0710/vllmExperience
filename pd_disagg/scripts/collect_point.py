@@ -27,7 +27,7 @@ def read_prom(path):
 
 
 def exact_delta(deltas, metric_name, label_sub=None):
-    """按精确指标名(跨引擎端口求和)取增量。名字来源: 2026-08-21 PD 探针实测,
+    """按精确指标名(跨引擎端口求和)取增量。名字来源: PD 探针实测,
     v0.25.1 传输计数在 D(consumer)端, P 端仅 failed/expired; _created 是时间戳需排除。"""
     total, found = 0.0, False
     for k, v in deltas.items():
