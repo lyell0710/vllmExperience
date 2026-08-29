@@ -59,8 +59,8 @@ D0 地基、B1–B4、C1–C3、D1–D5、EXT-1/2、P1（材料层）/P2/P3 全�
 - 功率帽：持续 prefill 降频 ~12%，同热工况才可比。
 - 大文件 push 慢（nsys rep 上百 MB），push 放后台跑。
 
-## 7. 当前状态快照(2026-08-24,审计收尾批次)
+## 7. 当前状态快照(2026-08-29,fork rebase + 空缺复验批次)
 
-- git HEAD：main 与 origin/main 同步（以 `git status -sb` / `git log -1` 实时核对为准；本批次 = 2026-08-24 审计收尾 commit）。
-- 硬件占用：双卡正被另一实验占用——本仓一切 GPU 运行（bench/复测/profile）暂停。
-- 下一步第一动作：用户本人执行 R0-6 线上简历排雷 + D2 PR review/`git commit -s`/提交（见 §5）。
+- git HEAD：main 与 origin/main 同步（a35fc69；以 `git status -sb` / `git log -1` 实时核对为准）。外层 `/root/projects/vllm` 已 rebase 到 upstream cacc429f62 并 push myfork；`moe-config-4090-qwen15moe` 分支已 rebase，2 个 config JSON 保持 staged 待用户提交。
+- 硬件占用：双卡空闲（0% 占用），可跑 GPU 任务。
+- 下一步第一动作：用户本人执行 R0-6 线上简历排雷 + D2 PR review/`git commit -s`/提交（见 §5）。可选：公开仓瘦身历史重写（filter-repo 移除 72MB .nsys-rep + force push，破坏性，待用户授权）。
