@@ -44,3 +44,17 @@
 附带核查（PR_DRAFT 复核一曾断言「fused_moe.py 0 提交」）：自 `7aa248fcfe` 起 676 提交内 `fused_moe.py` 有 6 行插入，位于 `invoke_fused_moe_triton_kernel`——`A_scale` 为 0-D tensor 时 reshape 成 1-D（量化路径 bugfix）。仅在 `A_scale is not None` 生效，**不触及 BF16 config 查表与 kernel 路径**，故「rebase 后无需重测」结论仍成立。
 
 **复验结论：社区空缺主张继续成立，PR 无需改动。**
+
+## 复验（2026-08-30，针对 fe755c8899）
+
+rebase 到 upstream `fe755c8899`（08-30 拉取的最新 HEAD）后，第三次复验「社区空缺」判定。
+
+方法：`git ls-tree -r --name-only upstream/main vllm/model_executor/layers/fused_moe/configs/` 精确查上游目录（共 332 个文件）。
+
+| 主张 | 08-21 判定 | fe755c8899 复验 |
+|---|---|---|
+| 全库无 `E=30,*` | 成立 | **仍成立**（上游 configs 无任何 E=30 文件） |
+| `E=60,N=704` 仅 MI300X | 成立 | **仍成立**（上游仅 `AMD_Instinct_MI300X`，无 4090） |
+| 4090 现有 config 均为 fp8 | E=64,N=640、E=8,N=3584 | 仍仅这 2 个 fp8（`E=64,N=640` / `E=8,N=3584`，均 fp8_w8a8），无新增 4090 BF16 |
+
+**复验结论：社区空缺主张继续成立，PR 以「新增」提交，无需改动。**
