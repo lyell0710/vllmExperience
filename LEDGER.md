@@ -74,7 +74,7 @@
 | 红线 | 当前 | 解锁条件 / 依据 |
 |---|---|---|
 | "P2P 受限" | ✅ 可用 | `hw/p2p_bandwidth_latency.txt`（connectivity=0）+ `hw/topo.txt`（GNS） |
-| "社区空缺"（MoE config） | ✅ 可用 | 2026-08-21 远端复核完成：`moe_configs/DEDUP.md`（main 无 E=30；E=60，N=704 仅 MI300X；PR/issue 无冲突） |
+| "社区空缺"（MoE config） | ✅ 可用 | 2026-08-21 远端复核 + 2026-08-29 对 cacc429f62 复验（rebase 后）：`moe_configs/DEDUP.md`（main 无 E=30；E=60，N=704 仅 MI300X；PR/issue 无冲突，空缺仍成立） |
 | "KV 传输占 TTFT X%" | ✅ 可用 | **EXT-1 已解锁（EXP-013，2026-08-23）**：request 级三段关联（同身份同时钟域），KV 等待占 TTFT 54.2/62.5/64.2%（512/2K/8K），闭环误差 ≤0.08% |
 | telemetry 带宽表述 | 限定 | 只能称 telemetry-derived effective throughput；xferDuration 不与 postDuration 相加 |
 | 0.17 两 bug | 限定 | 只写"复现/定位/验证"，禁"发现/修复"；"吃透"→"梳理"。**动态复现已闭环（EXP-012）**：静态 file：line + 实机崩溃/挂死现场 + 实证修正，"复现/定位/验证"三词均有实测背书 |
