@@ -59,14 +59,15 @@ D0 地基、B1–B4、C1–C3、D1–D5、EXT-1/2、P1（材料层）/P2/P3 全�
 - 功率帽：持续 prefill 降频 ~12%，同热工况才可比。
 - 大文件 push 慢（nsys rep 上百 MB），push 放后台跑。
 
-## 7. 当前状态快照(2026-08-30,停用 1.78GB/s + D22 分项账标注批次)
+## 7. 当前状态快照(2026-08-30,任务 1/2 完成批次)
 
-- git HEAD：main 与 origin/main 同步（99219ca；以 `git status -sb` / `git log -1` 实时核对为准）。外层 `/root/projects/vllm` 已 rebase 到 upstream cacc429f62 并 push myfork；`moe-config-4090-qwen15moe` 分支已 rebase，2 个 config JSON 保持 staged 待用户提交。
-- 硬件占用：双卡空闲（0% 占用），可跑 GPU 任务。
+- git HEAD：main 与 origin/main 同步（c2e2775；以 `git status -sb` / `git log -1` 实时核对为准）。外层 `/root/projects/vllm` 已 rebase 到 upstream cacc429f62 并 push myfork；`moe-config-4090-qwen15moe` 分支已 rebase，2 个 config JSON 保持 staged 待用户提交。
+- 硬件占用：双卡被 sglang router 矩阵（S04，54 cell）占用中——本仓一切 GPU 运行暂停。
 - 下一步第一动作：用户本人执行 R0-6 线上简历排雷 + D2 PR review/`git commit -s`/提交。可选：公开仓瘦身历史重写（filter-repo 移除 72MB .nsys-rep + force push，破坏性，待用户授权）。
 
 ## 8. 还开着的事（跨仓，按 ROI 排序）
 
-6. **EXP-002「1.78 GB/s 带宽墙」与 EXP-018 实测 6.2 GB/s 差 3.5 倍，EXP-D22 的 88µs/次反推被实测 14µs 推翻（差 6.3 倍）。** 两个数都已在对外文档停用/标注，不阻塞。重开查时**先 diff 环境再跑 bench**：用 `NCCL_DEBUG=INFO` 抓 NCCL 自报的算法与拓扑（别看设了什么），并读 EXP-002 的计时区包了什么。首要怀疑是计时区混入非传输开销——与 reduce 那次的 cudaMalloc 同型。
-7. **md_reflow.py 已加 4 处语法保护**（callout / HTML 注释 / 引用块表格 / li 内嵌引用块）与内容守恒断言。注意守恒断言的盲区：它把全角半角视为等价，所以**语法字符必须走 protect() 挖空，不能指望断言拦下**。
+6. **EXP-002「1.78 GB/s」vs EXP-018「6.2 GB/s」已闭环（EXP-019）**：判定为真实环境差异、非计时口径问题（nccl-tests 计时区内无 malloc 混入）；SHM 3.96 vs Socket 0.76 GB/s 差 5 倍指向路径/PCIe 状态差异。复现实验设计固化在 EXP-019 §8（扫 NCCL_P2P_LEVEL × NCCL_SHM_DISABLE 找复现档），不再阻塞任何对外主张。
+7. **EXP-D22「88µs 反推」已重做（llm-engine f3c2c3d）**：实测拆分纯传输 14µs（2.1%）+ torch.distributed 派发/同步 55.7µs（8.1%），归因「亏在派发/同步、不在带宽」。
+8. **md_reflow.py 已加 4 处语法保护**（callout / HTML 注释 / 引用块表格 / li 内嵌引用块）与内容守恒断言。注意守恒断言的盲区：它把全角半角视为等价，所以**语法字符必须走 protect() 挖空，不能指望断言拦下**。
 
