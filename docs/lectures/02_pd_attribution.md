@@ -44,7 +44,7 @@ status: complete
 
 ## 1. 这一篇回答什么问题
 
-PD 分离在纸面上赢在哪、在这台机器上为什么全负载段输；以及一句话——"D 等待远端 KV 占 TTFT 54.2% / 62.5% / 64.2%"——怎么从**分量对账的推断**升级成**逐请求的因果占比**。读完你应当能： ①手推 PD 的三条账(单请求传输量 $B_{kv}(n)$、传输时间、容量上限 $BW_\mathrm{eff}/B_{kv}$)， 并解释实测饱和 0.54 req/s@8K 为何与算式的 0.57 对得上；②讲清 ~16 行本地可观测性改动为什么 **恰好**打在那几处（请求身份 + 同时钟域），以及六段闭环误差 p50 <0.1% 不是"噪声小"而是 **缺口具名**——本文把这 0.18–0.52 ms 的残差逐桶指认到了具体一段代码；③从遥测反解 0.27 GB/s 的碎片化根因（descriptor 恰 16,384 B/个，传输时间对 descriptor **计数**线性而非对字节线性）； ④把同一套"先分解、再归因、后验证"搬到 MoE：nsys node 级分解定位 fused_moe grouped GEMM 占 56.4%(bs=32)→ config 搜索 → correctness / kernel A/B / e2e 三级验证 → 材料齐备（**未提交**）；⑤答上"你凭什么说那 54% 是因果""闭环误差 0.02% 是不是自证循环"这类追问， 并诚实说出它不覆盖什么。
+PD 分离在纸面上赢在哪、在这台机器上为什么全负载段输；以及一句话——"D 等待远端 KV 占 TTFT 54.2% / 62.5% / 64.2%"——怎么从**分量对账的推断**升级成**逐请求的因果占比**。读完你应当能： ①手推 PD 的三条账（单请求传输量 $B_{kv}(n)$、传输时间、容量上限 $BW_\mathrm{eff}/B_{kv}$）， 并解释实测饱和 0.54 req/s@8K 为何与算式的 0.57 对得上；②讲清 ~16 行本地可观测性改动为什么 **恰好**打在那几处（请求身份 + 同时钟域），以及六段闭环误差 p50 <0.1% 不是"噪声小"而是 **缺口具名**——本文把这 0.18–0.52 ms 的残差逐桶指认到了具体一段代码；③从遥测反解 0.27 GB/s 的碎片化根因（descriptor 恰 16,384 B/个，传输时间对 descriptor **计数**线性而非对字节线性）； ④把同一套"先分解、再归因、后验证"搬到 MoE：nsys node 级分解定位 fused_moe grouped GEMM 占 56.4%(bs=32)→ config 搜索 → correctness / kernel A/B / e2e 三级验证 → 材料齐备（**未提交**）；⑤答上"你凭什么说那 54% 是因果""闭环误差 0.02% 是不是自证循环"这类追问， 并诚实说出它不覆盖什么。
 
 ### 1.1 本篇要建立的五条能力
 
@@ -58,7 +58,7 @@ PD 分离在纸面上赢在哪、在这台机器上为什么全负载段输；�
 
 | 符号 | 含义 | 本机取值/来源 |
 |---|---|---|
-| $B_{kv}(n)$ | 单请求 KV 字节数 | $n\times 57{，}344$ B，按 16-token 块向上取整 |
+| $B_{kv}(n)$ | 单请求 KV 字节数 | $n\times 57{,}344$ B，按 16-token 块向上取整 |
 | $BW_\mathrm{eff}$ | NIXL 有效吞吐 | 0.26–0.27 GB/s(telemetry-derived,EXP-006/007) |
 | kv_wait | D 端 connector 首见请求 → 全部 handle DONE | perf_counter 差，含握手（§3.3 ①） |
 | xferDuration | NIXL 自报的纯传输时间 | 已含 posting，**不与 postDuration 相加** |
@@ -77,7 +77,7 @@ PD 分离在纸面上赢在哪、在这台机器上为什么全负载段输；�
 
 ## 2. 直觉与第一性原理
 
-**先想没有 PD 分离的世界。** 一个引擎实例里 prefill 与 decode 抢同一批 SM：一条 8K 输入做 prefill 时，所有正在解码的请求都在等，ITL 被顶起来——经典的队头阻塞。PD 分离的价值主张只有两条：**①消除 prefill 对 decode 的干扰；②P 池与 D 池独立扩缩、各自选最优并行度**(REPORT §2.4)。**代价只有一条，但很硬：KV 必须搬家**，搬运量不是常数， 是 $B_{kv}(n) = n \times（\text{每 token KV 字节}）$，随输入长线性增长。
+**先想没有 PD 分离的世界。** 一个引擎实例里 prefill 与 decode 抢同一批 SM：一条 8K 输入做 prefill 时，所有正在解码的请求都在等，ITL 被顶起来——经典的队头阻塞。PD 分离的价值主张只有两条：**①消除 prefill 对 decode 的干扰；②P 池与 D 池独立扩缩、各自选最优并行度**(REPORT §2.4)。**代价只有一条，但很硬：KV 必须搬家**，搬运量不是常数， 是 $B_{kv}(n) = n \times(\text{每 token KV 字节})$，随输入长线性增长。
 
 **日常类比与失效点。** 像中央厨房备菜、门店出餐：备菜与出餐不再抢同一个灶。类比在两处失效：①连锁店之间"运菜"相对烹饪是二阶小量，而本机 KV 通路只有 0.26–0.27 GB/s (telemetry-derived effective throughput，EXP-006/007)，搬运成了主项；②"独立扩缩"要求 P：D 比例可调，而 1P1D 是这个形态最退化的样子——**收不到扩缩红利，却全额支付传输成本**。
 
@@ -85,7 +85,7 @@ PD 分离在纸面上赢在哪、在这台机器上为什么全负载段输；�
 
 ### 2.1 把判据写成不等式,然后逐项定价
 
-上面那句判据可以写死：PD 分离相对混部的净收益是 $$\Delta = \underbrace{\Delta t_\mathrm{interference}(\lambda)}_{\text{省下的干扰}} \；-\；\underbrace{t_\mathrm{xfer}(n)}_{\text{付出的传输}} \；-\；\underbrace{o_\mathrm{handshake}+o_\mathrm{proxy}}_{\text{一次性与常数项}}.$$
+上面那句判据可以写死：PD 分离相对混部的净收益是 $$\Delta = \underbrace{\Delta t_\mathrm{interference}(\lambda)}_{\text{省下的干扰}} \;-\;\underbrace{t_\mathrm{xfer}(n)}_{\text{付出的传输}} \;-\;\underbrace{o_\mathrm{handshake}+o_\mathrm{proxy}}_{\text{一次性与常数项}}.$$
 
 三项各自的定价方式完全不同，这是本篇后面所有工作的分工：
 
@@ -117,13 +117,13 @@ PD 分离在纸面上赢在哪、在这台机器上为什么全负载段输；�
 
 ### 3.1 三条账:传输量、传输时间、容量上限
 
-一步一理由：①**每 token KV 字节**——Qwen2-7B 28 层，每层 K、V 各一份，每份 4 个 KV 头 × 128 维，BF16 每元素 2 B：$28 \times 2 \times 4 \times 128 \times 2 = 57{，}344$ B/token（GQA 下 KV 头数 4 不等于注意力头数，这步最常算错）；②**块粒度**——KV 按 block(16 token)管理，$16 \times 57{，}344 = 917{，}504$ B/block，传输按块取整，非块对齐 prompt 向上取整（analysis/nixl_token_accounting.md 的"两计数器口径"表）；③**单请求传输量**——8192 token = 512 块 = 469,762,048 B ≈ 469.8 MB，EXP-013 实测 36/36 请求的 bytes 与该式**逐字节相等**(§3.5)；④**传输时间**——$t_\mathrm{xfer} = B_{kv}/BW_\mathrm{eff} = 469.8\，\mathrm{MB}/0.27\，\mathrm{GB/s} \approx 1.63$ s，EXP-006《pd1p1d 指标探针 + 归因 + NIXL 大传输实测》实测 avg xfer 1602.7 ms；⑤**容量上限**——传输在关键路径且串行，则 $\mathrm{req/s}_{\max} \approx 0.27/0.470 \approx 0.57$，EXP-007 实测饱和 0.54 req/s@8K。**传输带宽即容量**。
+一步一理由：①**每 token KV 字节**——Qwen2-7B 28 层，每层 K、V 各一份，每份 4 个 KV 头 × 128 维，BF16 每元素 2 B：$28 \times 2 \times 4 \times 128 \times 2 = 57{,}344$ B/token（GQA 下 KV 头数 4 不等于注意力头数，这步最常算错）；②**块粒度**——KV 按 block(16 token)管理，$16 \times 57{,}344 = 917{,}504$ B/block，传输按块取整，非块对齐 prompt 向上取整（analysis/nixl_token_accounting.md 的"两计数器口径"表）；③**单请求传输量**——8192 token = 512 块 = 469,762,048 B ≈ 469.8 MB，EXP-013 实测 36/36 请求的 bytes 与该式**逐字节相等**(§3.5)；④**传输时间**——$t_\mathrm{xfer} = B_{kv}/BW_\mathrm{eff} = 469.8\,\mathrm{MB}/0.27\,\mathrm{GB/s} \approx 1.63$ s，EXP-006《pd1p1d 指标探针 + 归因 + NIXL 大传输实测》实测 avg xfer 1602.7 ms；⑤**容量上限**——传输在关键路径且串行，则 $\mathrm{req/s}_{\max} \approx 0.27/0.470 \approx 0.57$，EXP-007 实测饱和 0.54 req/s@8K。**传输带宽即容量**。
 
 TTFT 侧对照（EXP-007 §5 归因表，并发 1、同热工况、p50）：PD 溢价 = 219.3−65.4 = 153.9 ms(512)、 718.6−224.9 = 493.7(2K)、2718.7−925.2 = 1793.5(8K)；溢价随输入长增长的形状与 $B_{kv}(n)$ 一致——但**形状一致不等于因果**。
 
 #### 3.1.1 57,344 这个数字里,GQA 占了 7 倍
 
-$B_{kv}$ 的每 token 系数完全由 config 决定：$2\，L\，KVH\，D\，s = 2\times28\times4\times128\times2 = 57{，}344$ B。**四个因子里最容易搞错的是 $KVH$**： Qwen2-7B 的 `num_attention_heads` 是 28 而 `num_key_value_heads` 是 4，用前者会把整笔账放大 7 倍。GQA 的原始动机就是压这一项（Ainslie et al.， arXiv：2305.13245，§2）。
+$B_{kv}$ 的每 token 系数完全由 config 决定：$2\,L\,KVH\,D\,s = 2\times28\times4\times128\times2 = 57{,}344$ B。**四个因子里最容易搞错的是 $KVH$**： Qwen2-7B 的 `num_attention_heads` 是 28 而 `num_key_value_heads` 是 4，用前者会把整笔账放大 7 倍。GQA 的原始动机就是压这一项（Ainslie et al.， arXiv：2305.13245，§2）。
 
 **这条对 PD 分离的意义比对单机推理更大**：单机上 GQA 省的是显存与读带宽，PD 分离上它直接省的是**跨卡搬运量**。假想 MHA 版本的 Qwen2-7B，8K 请求的 KV 是 3.29 GB，按 0.27 GB/s 要 12.2 s——**本机 PD 的溃败程度已被 GQA 缓解了 7 倍，仍然溃败**。
 
@@ -143,7 +143,7 @@ v1 报告（fig4）是**分量对账**：拿 colocate 的无负载 TTFT 当 PD �
 
 必须先把话说小：本文的"因果占比"**不是干预实验意义上的因果**（那需要改变 $BW_\mathrm{eff}$ 再看 TTFT 怎么动）。它主张的是一个更弱但可验证的命题：
 
-> 在同一条请求的时间轴上，存在一段连续的、可命名的窗口 $[t_0， t_\mathrm{done}]$， 该请求在此窗口内**除等待远端 KV 之外无事可做**，且该窗口长度占 TTFT 的 54.2% / 62.5% / 64.2%。
+> 在同一条请求的时间轴上，存在一段连续的、可命名的窗口 $[t_0, t_\mathrm{done}]$， 该请求在此窗口内**除等待远端 KV 之外无事可做**，且该窗口长度占 TTFT 的 54.2% / 62.5% / 64.2%。
 
 这个命题比"相关"强，因为它是**同一对象、同一时间轴上的区间分解**，不是两组数字的统计关联； 它比"干预因果"弱，因为它不排除"如果传输变快，别的段会变慢"这类补偿效应。
 
@@ -221,13 +221,13 @@ Python 官方文档把这两者的契约写得很清楚：
 
 两条契约正好互补：**perf_counter 有单调性但没有共同原点，time.time 有共同原点但可能回退**。本篇的用法因此是唯一正确的组合——**时长用 perf_counter（单调、高分辨率）， 跨进程对齐用 epoch（有共同原点）**。
 
-**换错会怎样，可以精确说**：若把 `done_epoch` 换成 perf_counter 值，则 $post\_kv = t_f（\text{client 的 epoch}） - done\_epoch（\text{D 的 perf\_counter}）$ 两个量没有共同原点，差值是一个**任意大的常数**（取决于两个进程各自的进程启动时刻）， post_kv 会算出荒谬值——而**闭环校验会立刻把它抓出来**，因为 $\Sigma_6$ 与 TTFT 会差同一个常数。这是"多条互相独立的校验"在实践中的价值：一个口径错误会同时打破多处。
+**换错会怎样，可以精确说**：若把 `done_epoch` 换成 perf_counter 值，则 $post\_kv = t_f(\text{client 的 epoch}) - done\_epoch(\text{D 的 perf\_counter})$ 两个量没有共同原点，差值是一个**任意大的常数**（取决于两个进程各自的进程启动时刻）， post_kv 会算出荒谬值——而**闭环校验会立刻把它抓出来**，因为 $\Sigma_6$ 与 TTFT 会差同一个常数。这是"多条互相独立的校验"在实践中的价值：一个口径错误会同时打破多处。
 
 **边界**：这套用法的前提是**同机**。跨节点时 epoch 不再同源，PTP/NTP 的残差（通常数十微秒到毫秒量级）会直接进入分解，0.1% 量级的闭环无从谈起（§6 边界①）。
 
 ### 3.5 三重互证:三条正交证据链,各自排除什么
 
-**链 1 · 账目对不对（bytes 与 descriptor 双恒等）**。逐请求 bytes 求和 = **7,398,752,256** = Prometheus `vllm:nixl_bytes_transferred_sum`，分毫不差（EXP-013 §5）。本文进一步核验 descriptor：逐请求 Σdescs = **451,584** = `vllm:nixl_num_descriptors_sum` 的 after 值（before 全 0，`raw/EXP-013/metrics_8200_{before,after}.prom`），同样分毫不差。它排除：日志行丢失、重复计入、handle 漏聚合。再算两步（本文现算，纯算术）： $7{，}398{，}752{，}256 / 451{，}584 = 16{，}384$ B——每 descriptor **恰 16 KiB**； $7{，}398{，}752{，}256 / 57{，}344 = 129{，}024$ token $= 12 \times (512+2048+8192)$——**恰等于协议期望的全部 prompt token**，即零本地前缀命中、零舍入。对照 EXP-006 的固定 seed 协议：那次 262,144 − 245,344 = 16,800 token 的缺口全部是 D 端本地 prefix cache 命中（analysis/nixl_token_accounting.md 逐块定罪，其中 511 块源码定罪于 bench 的 test 请求）。同一套记账在两种协议下给出两种结果而两次都对上账——这是**协议 v2（每请求唯一 seed） 有效性的独立验证**。
+**链 1 · 账目对不对（bytes 与 descriptor 双恒等）**。逐请求 bytes 求和 = **7,398,752,256** = Prometheus `vllm:nixl_bytes_transferred_sum`，分毫不差（EXP-013 §5）。本文进一步核验 descriptor：逐请求 Σdescs = **451,584** = `vllm:nixl_num_descriptors_sum` 的 after 值（before 全 0，`raw/EXP-013/metrics_8200_{before,after}.prom`），同样分毫不差。它排除：日志行丢失、重复计入、handle 漏聚合。再算两步（本文现算，纯算术）： $7{,}398{,}752{,}256 / 451{,}584 = 16{,}384$ B——每 descriptor **恰 16 KiB**； $7{,}398{,}752{,}256 / 57{,}344 = 129{,}024$ token $= 12 \times (512+2048+8192)$——**恰等于协议期望的全部 prompt token**，即零本地前缀命中、零舍入。对照 EXP-006 的固定 seed 协议：那次 262,144 − 245,344 = 16,800 token 的缺口全部是 D 端本地 prefix cache 命中（analysis/nixl_token_accounting.md 逐块定罪，其中 511 块源码定罪于 bench 的 test 请求）。同一套记账在两种协议下给出两种结果而两次都对上账——这是**协议 v2（每请求唯一 seed） 有效性的独立验证**。
 
 **链 2 · 归因边界对不对（kv_wait ≈ xferDuration）**。kv_wait 是**墙钟**等待窗口，xferDuration 是 NIXL **自报**的纯传输时间，来源完全独立；实测差 0.3–1.9 ms（各桶 p50 = 0.33/0.71/1.78 ms， EXP-013 §6）。它排除"kv_wait 里混了大量调度轮询/握手/块分配"。**注意**：xferDuration 已含 posting，**不与 postDuration 相加**。**链 3 · 分解完不完整（六段闭环）**。§3.4 已证：误差 p50 <0.1%（最差桶 0.084%，逐请求最大 0.11%），且残差被指认到 proxy 内部解析段；它排除"某段被重复计入或漏掉"。
 
@@ -250,7 +250,7 @@ Python 官方文档把这两者的契约写得很清楚：
 
 #### 3.5.2 链 1 的两个整数为什么值得单独算一遍
 
-$7{，}398{，}752{，}256 / 451{，}584 = 16{，}384$ 与 $7{，}398{，}752{，}256 / 57{，}344 = 129{，}024 = 12\times(512+2048+8192)$ 这两步都是纯算术， 但它们各自封住一个可能的解释：
+$7{,}398{,}752{,}256 / 451{,}584 = 16{,}384$ 与 $7{,}398{,}752{,}256 / 57{,}344 = 129{,}024 = 12\times(512+2048+8192)$ 这两步都是纯算术， 但它们各自封住一个可能的解释：
 
 - 第一步**封住"descriptor 大小是变的"**：如果 descriptor 大小随传输规模变化， 总字节除以总个数不会恰好落在 $2^{14}$ 上；
 - 第二步**封住"有本地前缀命中"**：129,024 恰等于协议期望的全部 prompt token 数（三桶各 12 请求），说明零命中、零舍入。
@@ -259,7 +259,7 @@ $7{，}398{，}752{，}256 / 451{，}584 = 16{，}384$ 与 $7{，}398{，}752{�
 
 ### 3.6 0.27 GB/s 的碎片化根因:从 descriptor 恒等式反解
 
-链 1 里那个 16,384 B 不是巧合，可从第一性原理推出： $16\ \text{token/block} \times 4\ \text{KV 头} \times 128\ \text{维} \times 2\，\mathrm{B} = 16{，}384\，\mathrm{B}$，即**一个 descriptor =（一层， K 或 V， 一个 block）**。每 block 需 $28 \times 2 = 56$ 个 descriptor，$56 \times 16{，}384 = 917{，}504$ B/block，与 §3.1 第 2 步闭合。实测 descs 逐桶 1792 / 7168 / 28672（`derived/ext1_per_request.csv`，36/36 无一例外）= $56 \times$（32/128/512 块），逐字对上。**关键判据（本文现算）**——每请求 xferDuration ÷ descriptor 数：
+链 1 里那个 16,384 B 不是巧合，可从第一性原理推出： $16\ \text{token/block} \times 4\ \text{KV 头} \times 128\ \text{维} \times 2\,\mathrm{B} = 16{,}384\,\mathrm{B}$，即**一个 descriptor =（一层， K 或 V， 一个 block）**。每 block 需 $28 \times 2 = 56$ 个 descriptor，$56 \times 16{,}384 = 917{,}504$ B/block，与 §3.1 第 2 步闭合。实测 descs 逐桶 1792 / 7168 / 28672（`derived/ext1_per_request.csv`，36/36 无一例外）= $56 \times$（32/128/512 块），逐字对上。**关键判据（本文现算）**——每请求 xferDuration ÷ descriptor 数：
 
 | 桶 | descs | xfer p50 (ms) | **每 descriptor 耗时** | 等效吞吐 |
 |---|---|---|---|---|
@@ -267,15 +267,15 @@ $7{，}398{，}752{，}256 / 451{，}584 = 16{，}384$ 与 $7{，}398{，}752{�
 | 2048 | 7,168 | 454.5 | 63.4 µs | 0.258 GB/s |
 | 8192 | 28,672 | 1762.7 | 61.5 µs | 0.267 GB/s |
 
-descriptor 大小恒定 16 KiB，每 descriptor 耗时也几乎恒定（61.5–65.8 µs）——**传输时间对 descriptor 计数线性，而不是"带宽×时间"**。这就是碎片化的定量指纹：单次传输大小从没变过，吞吐被钉死在 $16{，}384\，\mathrm{B}/63\，\mu s \approx 0.26\，\mathrm{GB/s}$。**量级对照**：EXP-002《硬件三数》实测 GPU 间延迟 14.5–15.9 µs，一次 16 KiB 花 ~62 µs 约为裸延迟的 4 倍——成本主要落在每次传输的固定开销（descriptor 处理、launch、同步），不在搬字节本身； 这也解释了 fig5 上那条 ~12 ms 的"小传输延迟地板"（smoke 0.188 MB / 14.1 ms，EXP-001《NIXL 1P1D smoke 与版本裁决》）。 **工程推论（可证伪）**：要提速必须**合并 descriptor**（层维度批量成更大连续块），而不是换方向——方向已被实测排除：NixlPush 8K TTFT −6.7%、吞吐 +10–13%，**量级不变** (EXP-011)。**口径约定**：0.26–0.27 GB/s 只能称 telemetry-derived effective throughput， 不能讲成链路物理带宽。
+descriptor 大小恒定 16 KiB，每 descriptor 耗时也几乎恒定（61.5–65.8 µs）——**传输时间对 descriptor 计数线性，而不是"带宽×时间"**。这就是碎片化的定量指纹：单次传输大小从没变过，吞吐被钉死在 $16{,}384\,\mathrm{B}/63\,\mu s \approx 0.26\,\mathrm{GB/s}$。**量级对照**：EXP-002《硬件三数》实测 GPU 间延迟 14.5–15.9 µs，一次 16 KiB 花 ~62 µs 约为裸延迟的 4 倍——成本主要落在每次传输的固定开销（descriptor 处理、launch、同步），不在搬字节本身； 这也解释了 fig5 上那条 ~12 ms 的"小传输延迟地板"（smoke 0.188 MB / 14.1 ms，EXP-001《NIXL 1P1D smoke 与版本裁决》）。 **工程推论（可证伪）**：要提速必须**合并 descriptor**（层维度批量成更大连续块），而不是换方向——方向已被实测排除：NixlPush 8K TTFT −6.7%、吞吐 +10–13%，**量级不变** (EXP-011)。**口径约定**：0.26–0.27 GB/s 只能称 telemetry-derived effective throughput， 不能讲成链路物理带宽。
 
 #### 3.6.1 用两参数模型把"碎片化"写成公式(本讲义推导)
 
-按讲义 01 公理 B，一次传输的时间是 $t(m)=\alpha+m/\beta$，有效吞吐 $$T(m)=\frac{m}{\alpha+m/\beta}.$$ 本机实测：$m=16{，}384$ B 固定，$t$ 在三个桶里是 61.5–65.8 µs，**几乎不随桶变**。把两个已知端点代进去反解：
+按讲义 01 公理 B，一次传输的时间是 $t(m)=\alpha+m/\beta$，有效吞吐 $$T(m)=\frac{m}{\alpha+m/\beta}.$$ 本机实测：$m=16{,}384$ B 固定，$t$ 在三个桶里是 61.5–65.8 µs，**几乎不随桶变**。把两个已知端点代进去反解：
 
 - 若 $\alpha \gg m/\beta$，则 $T(m)\approx m/\alpha = 16{,}384/62\,\mu s \approx 0.264$ GB/s——与 telemetry 反解的 0.26–0.27 GB/s 一致；
-- 用 EXP-002 的单向裸拷贝 $\beta\approx 0.6$–0.91 GB/s 反查： $m/\beta = 16{，}384/0.75\，\mathrm{GB/s}\approx 22\，\mu s$，占 62 µs 的 35%； 余下 40 µs 是 $\alpha$。**两项同量级而 $\alpha$ 略大**，与"每 descriptor 耗时几乎恒定"这一观测自洽（若 $\beta$ 项主导，耗时会随 $m$ 变——但 $m$ 本来就不变， 所以这条只能作为量级检查，不能作为 $\alpha/\beta$ 的精确分离）。
-- **半带宽消息长度** $m_{1/2}=\alpha\beta \approx 40\，\mu s\times0.75\，\mathrm{GB/s} \approx 30$ KB。**16 KiB 恰好落在 $m_{1/2}$ 之下**——这就是"碎片化"的精确含义： 当前的传输粒度处在曲线的固定开销主导侧。
+- 用 EXP-002 的单向裸拷贝 $\beta\approx 0.6$–0.91 GB/s 反查： $m/\beta = 16{,}384/0.75\,\mathrm{GB/s}\approx 22\,\mu s$，占 62 µs 的 35%； 余下 40 µs 是 $\alpha$。**两项同量级而 $\alpha$ 略大**，与"每 descriptor 耗时几乎恒定"这一观测自洽（若 $\beta$ 项主导，耗时会随 $m$ 变——但 $m$ 本来就不变， 所以这条只能作为量级检查，不能作为 $\alpha/\beta$ 的精确分离）。
+- **半带宽消息长度** $m_{1/2}=\alpha\beta \approx 40\,\mu s\times0.75\,\mathrm{GB/s} \approx 30$ KB。**16 KiB 恰好落在 $m_{1/2}$ 之下**——这就是"碎片化"的精确含义： 当前的传输粒度处在曲线的固定开销主导侧。
 
 **口径提醒**：上面的 $\alpha$/$\beta$ 分离是**推断**，因为本仓只在单一 $m$ 下测过， 一个点解不出两个参数。要真正分离必须做 descriptor 大小扫描——本仓未做，不主张精确值。
 
@@ -283,14 +283,14 @@ descriptor 大小恒定 16 KiB，每 descriptor 耗时也几乎恒定（61.5–6
 
 16 KiB 不是 NIXL 的选择，是 vLLM NixlConnector 注册内存的方式决定的。v0.25.1 的 worker 侧在建立 Memory Section 时把 K 与 V 注册成**不同的 region**，源码注释原文： "K and V are now in different regions. Advantage is that we can elegantly support MLA and any cases where the K and V tensors are non-contiguous"。于是 region 数 $= L\times 2 = 56$，而 descriptor id 由 `(region_id, block_id)` 二元组线性化生成（`_compute_desc_ids`：`region_ids * num_blocks + block_arr`）。
 
-**结论**：一个 descriptor $=$ 一层的 K 或 V 在一个 block 上的连续片段 $= 16\times KVH\times D\times s = 16{，}384$ B。这解释了 §3.6 的恒等式，也说明 **要改这个粒度必须改 region 划分，而不是改 NIXL 参数**。
+**结论**：一个 descriptor $=$ 一层的 K 或 V 在一个 block 上的连续片段 $= 16\times KVH\times D\times s = 16{,}384$ B。这解释了 §3.6 的恒等式，也说明 **要改这个粒度必须改 region 划分，而不是改 NIXL 参数**。
 
 #### 3.6.3 合并 descriptor 能救多少:一个可证伪的上界(本讲义推导)
 
 工程推论是"合并 descriptor"，但收益不是无限的，可以算出上界：
 
 - **合并到什么程度**：把一个 block 的 56 个 descriptor 合成 1 个，$m$ 从 16 KiB 涨到 917,504 B（56 倍）。
-- **若 $\alpha$ 不变（40 µs）**:$T = 917{,}504/(40\,\mu s + 917{,}504/\beta)$。代入 $\beta=0.75$ GB/s：分母 $=40+1223=1263\,\mu s$,$T=0.73$ GB/s。
+- **若 $\alpha$ 不变（40 µs）**：$T = 917{,}504/(40\,\mu s + 917{,}504/\beta)$。代入 $\beta=0.75$ GB/s：分母 $=40+1223=1263\,\mu s$，$T=0.73$ GB/s。
 - **上界由谁决定**：注意此时 $\beta$ 项已经主导（1223 µs vs 40 µs）， **所以合并之后的天花板不再是 $\alpha$，而是这条链路本身的单向带宽 0.60–0.91 GB/s** (EXP-002)。
 
 **结论（可证伪）**：合并 descriptor 的收益上界约为 **2.4–3.4×**(0.27 → 0.6–0.91 GB/s)， 不是一两个数量级。要跨过 1 GB/s，必须换互联（有 P2P/NVLink/RDMA），不是换实现。 **这条上界把"优化方向"和"优化幅度"分开说清楚了**：方向正确，但即使做到极限， 8K 桶的传输仍需 0.5–0.8 s，PD 相对 colocate 的 TTFT 溢价仍在 50% 以上—— **结论不会翻转**。本仓未做该改造，以上为推导，不作实测主张。
@@ -365,7 +365,7 @@ D2 产出的 JSON 里每个 M 档有六个键。它们不是抽象超参，每�
 
 #### 3.8.1 BLOCK_SIZE_M/N/K + num_stages:共享内存的硬上限
 
-Triton 的 GEMM 主循环把 A 的 $[BM， BK]$ 片与 B 的 $[BK， BN]$ 片搬进共享内存， 并按 `num_stages` 做多缓冲。每级缓冲的字节数（BF16，$s=2$）： $$\mathrm{smem/stage} = (BM\cdot BK + BK\cdot BN)\times 2\ \mathrm{B}.$$
+Triton 的 GEMM 主循环把 A 的 $[BM, BK]$ 片与 B 的 $[BK, BN]$ 片搬进共享内存， 并按 `num_stages` 做多缓冲。每级缓冲的字节数（BF16，$s=2$）： $$\mathrm{smem/stage} = (BM\cdot BK + BK\cdot BN)\times 2\ \mathrm{B}.$$
 
 硬上限来自 Ada Tuning Guide §1.4.1.1:"The shared memory capacity per SM is 100 KB." "The maximum shared memory per thread block is 99 KB." "CUDA reserves 1 KB of shared memory per thread block."（§1.4.2.2 另给可配置档位："supports shared memory capacity of 0, 8, 16, 32, 64 or 100 KB per SM"）。
 
@@ -410,7 +410,7 @@ PTX ISA 把这套机制的语义写得非常精确（§9.7.9.26.3.1–3.3）：
 
 kernel 的 pid 映射不是行优先，而是分组的（`fused_moe.py:385-396`），注释写明 "This is done in a grouped ordering to promote L2 data reuse"。含义是：把 `GROUP_SIZE_M` 个 M-block 编成一组，组内先走完所有 N-block 再换行——于是同一组内的 block 反复命中同一批 B（专家权重）tile，**这些 tile 在 L2 里活着**。
 
-RTX 4090 的 L2 是 73728 KB（Ada 白皮书 Appendix A Table 2；完整 AD102 是 98304 KB， Ada Tuning Guide §1.4.2.1 称其为"16x larger than GA102"）。一个专家的一份权重 $2048\times1408\times2\，\mathrm{B} = 5.5$ MB，三份 16.5 MB——**几个专家的权重就能填满 L2 的一大块**， 所以分组的收益在专家数多、每专家 token 少的 MoE 形状下尤其明显。
+RTX 4090 的 L2 是 73728 KB（Ada 白皮书 Appendix A Table 2；完整 AD102 是 98304 KB， Ada Tuning Guide §1.4.2.1 称其为"16x larger than GA102"）。一个专家的一份权重 $2048\times1408\times2\,\mathrm{B} = 5.5$ MB，三份 16.5 MB——**几个专家的权重就能填满 L2 的一大块**， 所以分组的收益在专家数多、每专家 token 少的 MoE 形状下尤其明显。
 
 上游启发式对 `GROUP_SIZE_M` 的处理是：`tokens_per_expert = M // max(E, 1)`， `group_m = 16 if tokens_per_expert > 128 else 1`，注释理由是"with many experts each one sees few tokens so grouping is useless"。**代入本机**：EP 下 $E=30$，要让 `tokens_per_expert > 128` 需要 $M > 3840$——**即在整张 config 表的 18 个档里， 只有 M=4096 这一档会开启分组**。而搜索结果在 M=1 就选了 `GROUP_SIZE_M=32`， 在 M=24/96/128/256 选了 64。**启发式的"没用"判断在这个形状上过于保守**，这是两端有收益的一个具体来源。
 
@@ -438,7 +438,7 @@ RTX 4090 的 L2 是 73728 KB（Ada 白皮书 Appendix A Table 2；完整 AD102 �
 
 | 数字 | 出现在 | 由什么决定 | 换平台/换模型怎么变 |
 |---|---|---|---|
-| 57,344 B/token | §3.1 | **理论上界**：$2LKVH\，D\，s$，config 完全确定 | 按公式重算；MHA 会 ×7 |
+| 57,344 B/token | §3.1 | **理论上界**：$2LKVH\,D\,s$，config 完全确定 | 按公式重算；MHA 会 ×7 |
 | 16 token/block | §3.1.2 | **实测扫描**：PagedAttention §7.2 的块大小曲线 | vLLM 可配置 |
 | 16,384 B/descriptor | §3.6.2 | **理论上界**：由 connector 的 region 划分（K/V 分开）推出 | 改 region 划分即变 |
 | 56 descriptor/block | §3.6.2 | **理论上界**：$L\times2$ | 随层数变 |
@@ -756,7 +756,7 @@ echo "D2_AB_DONE"
 
 **（二）`triton_version` 是元键，必须存在且必须不被当成 M 档**。上游加载时 `tuned_config.pop("triton_version", None)` 再把其余键转 int(`fused_moe.py:1155-1157`)； 两个文件里都是 `"3.7.1"`。**交付物的规格数字要按消费方的解析逻辑数**——按顶层 key 数会数出 19，按 M 档数是 18（仓内已更正）。
 
-**（三）每个 tuple 都要过共享内存这一关**。按 §3.8.1 的公式逐个代入，两个文件的最大占用都是 80.0 KB(在 $(num\_stages-1)$ 级缓冲口径下)，离 Ada 的 99 KB 上限还有 19 KB 余量（本文现算）。**这说明搜索没有撞到共享内存的墙**——限制它的是别的维度。
+**（三）每个 tuple 都要过共享内存这一关**。按 §3.8.1 的公式逐个代入，两个文件的最大占用都是 80.0 KB（在 $(num\_stages-1)$ 级缓冲口径下），离 Ada 的 99 KB 上限还有 19 KB 余量（本文现算）。**这说明搜索没有撞到共享内存的墙**——限制它的是别的维度。
 
 **逐档速读（EP 文件，E=30 / N=1408）**：
 
@@ -811,7 +811,7 @@ echo "D2_AB_DONE"
 9. **压力问 Q：闭环误差 p50 <0.1% 会不会是自证循环——六段都由你自己定义，当然加得起来？** 诚实答：部分是。六段中有五段的端点来自自己插的打点，望远镜求和在**代数上**必然只剩 $t_\mathrm{p\_send}-t_\mathrm{recv}$ 一项，所以闭环本身**不能**证明任何一段的数值正确； 它只能证明两件事：①没有整段被漏掉或重复计入；②TTFT（client 侧独立测量，与打点体系无关） 与这套打点体系一致。真正给 kv_wait 定性的是**链 2**（与 NIXL 自报 xferDuration 独立吻合） 与**链 1**（与 Prometheus counter 独立吻合）——这两条的另一端都不由我定义。这也是为什么必须是三条正交链，而不是"闭环误差很小"一条。
 10. **压力问 Q：54–64% 换一台有 NVLink 的机器还剩多少？你的方法还能用吗？** 数字不能外推，方法能——但要付一次代价。数字上：占比 ≈ $t_\mathrm{xfer}$ / TTFT，而 $t_\mathrm{xfer} \propto 1/BW_\mathrm{eff}$；换到高速互联占比会塌到个位数甚至更低，PD 的收益项（消除干扰、独立扩缩）才有机会占上风——**本仓测的是该形态的下界条件，不是对形态的否定** (REPORT §2.4)。方法上：身份链（X-Request-Id 贯穿）与三重互证原样可用，**时钟域不行**——跨节点后 epoch 不再同源，必须先解决时钟同步，否则 0.1% 量级的闭环无从谈起；另外本仓只测了 1P1D、并发 1、pull 路径，xPyD 下还要多一层"P/D 配对与排队"的段，六段分解要重新设计。
 
-11. **Q：为什么 descriptor 恰好是 16 KiB，而不是 NIXL 的某个默认值？** 它由 connector 注册内存的方式决定：v0.25.1 把 K 与 V 注册成**不同的 region**（源码注释："K and V are now in different regions"），region 数 $=L\times2=56$， descriptor id 由 `(region_id, block_id)` 线性化。于是一个 descriptor $=16\times4\times128\times2=16{，}384$ B(§3.6.2)。**要改粒度必须改 region 划分， 不是调 NIXL 参数。**
+11. **Q：为什么 descriptor 恰好是 16 KiB，而不是 NIXL 的某个默认值？** 它由 connector 注册内存的方式决定：v0.25.1 把 K 与 V 注册成**不同的 region**（源码注释："K and V are now in different regions"），region 数 $=L\times2=56$， descriptor id 由 `(region_id, block_id)` 线性化。于是一个 descriptor $=16\times4\times128\times2=16{,}384$ B(§3.6.2)。**要改粒度必须改 region 划分， 不是调 NIXL 参数。**
 12. **Q：合并 descriptor 能把 0.27 GB/s 提到多少？** 上界约 **2.4–3.4×**（到 0.60–0.91 GB/s，即这条无 P2P 中转路径的单向带宽）， 因为合并后 $\beta$ 项接管、$\alpha$ 不再主导（§3.6.3 的算式）。**不是一两个数量级**； 要跨过 1 GB/s 必须换互联。本仓未做该改造，以上为推导，不作实测主张。
 13. **Q：MoE 的反转点为什么在 bs≈8 而不是别的数？** 因为每 step 命中的不同专家数期望是 $60(1-(1-4/60)^B)$，B=8 时约 25.5 个（42%）， 此时 MoE 每 token 分摊的权重读取已经追上 dense 的常数读取（§3.7.3）。 **换成 top-2/128 专家的模型，交点位置会明显右移**——这个式子给的是可外推的机制， 不是可外推的数字。
 14. **Q：为什么共享专家不算进 grouped GEMM 桶？** 因为它对每个 token 都激活，走的是普通的 dense GEMM 路径，不经过 `sorted_token_ids`/`expert_ids` 的分组索引。分类器把它归进 "dense GEMM/GEMV"（`d1_kernels.py` 的 BUCKETS 正则）。**分类口径决定了表怎么读**：bs=1 时那 40.9% 里就含着共享专家与 lm_head 两块。

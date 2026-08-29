@@ -64,7 +64,7 @@ status: complete
 | $BW_{\mathrm{col}}$ | NCCL collective 路径带宽 | 1.78 GB/s avg busbw(EXP-002) |
 | $BW_{\mathrm{eff}}$ | NIXL KV 通路有效吞吐 | 0.26–0.27 GB/s,telemetry-derived(EXP-006/007) |
 | $n$ | 单请求输入 token 数 | 三桶 512 / 2048 / 8192 |
-| $B_{kv}(n)$ | 单请求 KV 字节数 | $n\times 57{，}344$ B，按 16-token 块向上取整（§3.5） |
+| $B_{kv}(n)$ | 单请求 KV 字节数 | $n\times 57{,}344$ B，按 16-token 块向上取整（§3.5） |
 | TTFT / TPOT | 首 token 时延 / 每输出 token 时延 | bench 口径，`--percentile-metrics ttft,tpot,itl,e2el` |
 | goodput | 同时满足两条 SLO 的请求数 ÷ 墙钟 | §3.7、§4 段 5 |
 | $L$ / $H$ / $KVH$ / $D$ / $d$ | 层数 / Q 头 / KV 头 / head_dim / hidden | 28 / 28 / 4 / 128 / 3584 |
@@ -105,7 +105,7 @@ status: complete
 
 ### 2.1 把四臂写成同一个三元组
 
-上面那张表可以形式化成一个三元组 $(\，M，\；C，\；X\，)$：
+上面那张表可以形式化成一个三元组 $(\,M,\;C,\;X\,)$：
 
 - $M$：每卡驻留的权重字节数——决定 decode 的带宽下界与可用的 KV 预算；
 - $C$：一次前向被切成几份、在几张卡上并行——决定 prefill 的计算下界；
@@ -175,7 +175,7 @@ NCCL 会选哪条传输？官方环境变量文档写明 "SHM is used between de
 
 NIXL(NVIDIA Inference Xfer Library)的抽象层次与前两条完全不同。按其官方文档（ai-dynamo/nixl `docs/nixl.md`，Design/Memory Sections/Transfer 三节）：agent 在每个推理进程内实例化并持全局唯一 ID；内存以 "Memory Sections" 注册；发起方 "provide a list of local buffer descriptions and a list of remote buffer descriptors"，再"Using these descriptor lists， along with the target agent's name and the transfer operation (read or write)， a transfer handle can be created"； 后端（如 UCX）由 NIXL 自动选择。
 
-关键在**粒度**：传输的最小单位是 descriptor，而 descriptor 的划分由 KV cache 的内存布局决定，不由链路决定。本机的 vLLM NIXL connector 把 K 与 V 注册成不同 region（v0.25.1 `base_worker.py` 的 region 设置注释原文："K and V are now in different regions"），于是每 block 每层每个 K/V 各一个 descriptor，28 层 × 2 = 56 个/块。 Qwen2-7B 的一个 16-token 块里每层每个 K 或 V 恰好是 $16\times4\times128\times2 = 16{，}384$ B，所以 **descriptor 恒为 16 KiB**——这个数字与实测 desc 计数逐字吻合（EXP-006《pd1p1d 指标探针 + 归因 + NIXL 大传输实测》的 1792 desc/xfer @512 桶）， 完整的定量指纹在讲义 02 §3.6。
+关键在**粒度**：传输的最小单位是 descriptor，而 descriptor 的划分由 KV cache 的内存布局决定，不由链路决定。本机的 vLLM NIXL connector 把 K 与 V 注册成不同 region（v0.25.1 `base_worker.py` 的 region 设置注释原文："K and V are now in different regions"），于是每 block 每层每个 K/V 各一个 descriptor，28 层 × 2 = 56 个/块。 Qwen2-7B 的一个 16-token 块里每层每个 K 或 V 恰好是 $16\times4\times128\times2 = 16{,}384$ B，所以 **descriptor 恒为 16 KiB**——这个数字与实测 desc 计数逐字吻合（EXP-006《pd1p1d 指标探针 + 归因 + NIXL 大传输实测》的 1792 desc/xfer @512 桶）， 完整的定量指纹在讲义 02 §3.6。
 
 **结论**：三条路径测的是三件事——链路能不能直连（路径一）、集合通信库怎么用这条链路（路径二）、上层传输库以什么粒度使用这条链路（路径三）。它们的数字**不可互换**， 这是本仓在所有对外表述里坚持给三个数字各自加限定语的原因。
 
@@ -196,7 +196,7 @@ NIXL(NVIDIA Inference Xfer Library)的抽象层次与前两条完全不同。按
 1. decode 每生成 1 个 token 要做一次完整前向。——自回归定义：第 t+1 个 token 依赖前 t 个 token 的 KV 与全部层权重，绕不开。
 2. bs=1 时一次前向必须把全部权重从显存读一遍，且读进来的每个权重只做约 2 次浮点运算（乘、加）。——算术强度 ≈ 1 FLOP/byte，远低于 GPU 计算/带宽平衡点，处在 roofline 的内存受限侧；缓存放不下 14.2 GB，复用可忽略。
 3. 因此 $\mathrm{TPOT}_{\min} = \dfrac{W_{\text{bytes}}}{BW}$。——时间由搬运字节数除以带宽给出下界，这是内存受限段 roofline 的直接读法。
-4. 代入本机实测：$14.2\，\mathrm{GB} / 924\，\mathrm{GB/s} \approx 15.4\，\mathrm{ms}$。——14.2 GB 为 Qwen2-7B BF16 权重（仓内口径，`moe_perf/d1_analyze.py` roofline 注释）； 924 GB/s 用本机实测卡内 memcpy(EXP-002)而非标称 1008 GB/s，因为实测更贴近可达值（d1_analyze.py 用标称值，两口径都在仓内，引用时须注明用的哪个）。
+4. 代入本机实测：$14.2\,\mathrm{GB} / 924\,\mathrm{GB/s} \approx 15.4\,\mathrm{ms}$。——14.2 GB 为 Qwen2-7B BF16 权重（仓内口径，`moe_perf/d1_analyze.py` roofline 注释）； 924 GB/s 用本机实测卡内 memcpy(EXP-002)而非标称 1008 GB/s，因为实测更贴近可达值（d1_analyze.py 用标称值，两口径都在仓内，引用时须注明用的哪个）。
 5. 实测 TPOT p50 = 15.87–16.35 ms(EXP-004)，达成率约 94–97%。——decode 确为权重带宽受限，模型的其余一切（算子效率、调度）只在这 ~5% 余量里活动。
 
 #### 3.2.1 每一步的合法性条件与失效边界
@@ -205,7 +205,7 @@ NIXL(NVIDIA Inference Xfer Library)的抽象层次与前两条完全不同。按
 
 - **步骤 1 的前提**：稠密 decoder、无投机解码、无 early exit。MoE 打破"读全部权重"（每 step 只激活部分专家，讲义 02 §3.7），投机解码让一次前向产出多个 token。本仓 dense 臂两条都不触发。
 - **步骤 2 的前提**：$W$ 远大于片上缓存。RTX 4090 的 L2 是 73728 KB = 72 MiB（Ada 白皮书 Appendix A Table 2），而 $W\approx14.2$ GiB——比值约 197:1， 即使权重访问完全按顺序，L2 能省下的也只有 $O(1/197)$。**这是"复用可忽略" 这句话的定量依据**（本讲义推导）。"2 次浮点运算"同样是精确值：每个权重在 GEMV 里参与一乘一加。
-- **步骤 3 的前提**：roofline 的内存受限段。Williams et al. 把可达性能写成 $\min(\pi，\ \beta\cdot I)$（$\pi$ 峰值算力、$\beta$ 带宽、$I$ 算术强度）， 拐点（ridge point）在 $I=\pi/\beta$(CACM 52(4)：65–76, 2009， DOI 10.1145/1498765.1498785)。**它是下界不是预测**：假设带宽打满且计算访存完全重叠，所以实测必然 ≥ 该值。**如果实测小于该值，一定是分子或分母的口径错了**——§3.2.4 演示了这种情况怎么发生。
+- **步骤 3 的前提**：roofline 的内存受限段。Williams et al. 把可达性能写成 $\min(\pi,\ \beta\cdot I)$（$\pi$ 峰值算力、$\beta$ 带宽、$I$ 算术强度）， 拐点（ridge point）在 $I=\pi/\beta$(CACM 52(4)：65–76, 2009， DOI 10.1145/1498765.1498785)。**它是下界不是预测**：假设带宽打满且计算访存完全重叠，所以实测必然 ≥ 该值。**如果实测小于该值，一定是分子或分母的口径错了**——§3.2.4 演示了这种情况怎么发生。
 - **步骤 4/5 的前提**：bs=1。batch 增大后权重读取被摊薄，decode 逐渐离开带宽受限侧——这正是"tp2 的 -42% decode 收益在批量化后被稀释"的机理（§5.3）。
 
 #### 3.2.2 算术强度 1.0 FLOP/B 不是约数,是恒等式(本讲义推导)
@@ -235,9 +235,9 @@ NIXL(NVIDIA Inference Xfer Library)的抽象层次与前两条完全不同。按
 
 Qwen2-7B-Instruct 的权重体积可以精确算出来，不必估。两条独立途径：
 
-**途径 A（读 checkpoint 元数据）**：本机模型目录的 `model.safetensors.index.json` 的 `metadata.total_size` = **15,231,233,024** 字节。折算： $15{，}231{，}233{，}024 / 10^9 = 15.231$ GB（十进制）， $15{，}231{，}233{，}024 / 2^{30} = 14.185$ GiB（二进制）。
+**途径 A（读 checkpoint 元数据）**：本机模型目录的 `model.safetensors.index.json` 的 `metadata.total_size` = **15,231,233,024** 字节。折算： $15{,}231{,}233{,}024 / 10^9 = 15.231$ GB（十进制）， $15{,}231{,}233{,}024 / 2^{30} = 14.185$ GiB（二进制）。
 
-**途径 B（从 config 逐项加，本讲义推导）**：每层 $= q(3584^2)+k(3584{\times}512) +v(3584{\times}512)+o(3584^2)+\text{gate}/\text{up}/\text{down}（3584{\times}18944\text{ 各一}）=233{,}046{,}016$ 参数（不含 bias/norm）, 28 层 $=6{,}525{,}288{,}448$;embedding $152064{\times}3584=544{,}997{,}376$, `tie_word_embeddings` 为 false 故 lm_head 另算一份；合计 $\approx 7.615\times10^{9}$ 参数 $\times 2$ B $\approx 15.23$ GB。
+**途径 B（从 config 逐项加，本讲义推导）**：每层 $= q(3584^2)+k(3584{\times}512) +v(3584{\times}512)+o(3584^2)+\text{gate}/\text{up}/\text{down}(3584{\times}18944\text{ 各一})=233{,}046{,}016$ 参数（不含 bias/norm）， 28 层 $=6{,}525{,}288{,}448$；embedding $152064{\times}3584=544{,}997{,}376$， `tie_word_embeddings` 为 false 故 lm_head 另算一份；合计 $\approx 7.615\times10^{9}$ 参数 $\times 2$ B $\approx 15.23$ GB。
 
 两条途径一致。**于是 "14.2" 这个魔法数的身份确定了：它是 GiB 口径的参数字节数** (14.185 GiB)，不是十进制 GB。
 
@@ -259,16 +259,16 @@ Qwen2-7B-Instruct 的权重体积可以精确算出来，不必估。两条独�
 
 若下界是 15.11 ms、实测 15.87 ms，差 0.76 ms/token。这 0.76 ms 的候选去处：
 
-1. **KV cache 读取**。8192 上下文 KV 为 $8192\times57{，}344 = 469.8$ MB，按 1008 GB/s 需 0.47 ms；512 上下文只有 29.4 MB，需 0.03 ms。**这一项随上下文线性增长**—— EXP-004 的 TPOT 正好从 512 桶的 15.87 ms 涨到 8192 桶的 16.34 ms(+0.47 ms)， **预测 0.47 ms 与实测差值逐 ms 对上**（本讲义推导）。这是本篇最干净的一条闭合。
+1. **KV cache 读取**。8192 上下文 KV 为 $8192\times57{,}344 = 469.8$ MB，按 1008 GB/s 需 0.47 ms；512 上下文只有 29.4 MB，需 0.03 ms。**这一项随上下文线性增长**—— EXP-004 的 TPOT 正好从 512 桶的 15.87 ms 涨到 8192 桶的 16.34 ms(+0.47 ms)， **预测 0.47 ms 与实测差值逐 ms 对上**（本讲义推导）。这是本篇最干净的一条闭合。
 2. **launch 与调度**（sampler、logits 处理、Python 侧调度）；3. **带宽达成率不足**（1008 是规格值，真实可达通常 85–95%）；4. **激活读写**（bs=1 只有几十 KB，可忽略）。
 
 只有第 1 条能被数据独立验证，后三条本仓没有测量，**只列候选、不分配份额**。
 
 ### 3.3 TP2 的收益与代价:一半权重 + 一份通信税
 
-**decode 侧（收益成立）**：每卡只持一半权重，步骤 3 的 $W$ 减半： $7.1/0.924 \approx 7.7\，\mathrm{ms}$；再加每 token 的小消息 allreduce 实测代价 ~1.3 ms（EXP-005《replica2/tp2 归因 + 功率帽节流调查》 §6），合计 ≈ 9.0 ms；实测 9.26–9.48 ms(EXP-005/007)。账能闭合： **-42% 的 decode 提速 = 权重带宽分摊 − 通信税**。
+**decode 侧（收益成立）**：每卡只持一半权重，步骤 3 的 $W$ 减半： $7.1/0.924 \approx 7.7\,\mathrm{ms}$；再加每 token 的小消息 allreduce 实测代价 ~1.3 ms（EXP-005《replica2/tp2 归因 + 功率帽节流调查》 §6），合计 ≈ 9.0 ms；实测 9.26–9.48 ms(EXP-005/007)。账能闭合： **-42% 的 decode 提速 = 权重带宽分摊 − 通信税**。
 
-**prefill 侧（收益归零）**：prefill 是计算受限（8192 token 一批，GEMM 算术强度高）， 计算减半本应省约一半时间；但每层输出要做一次大消息 allreduce： $8192 \times 3584 \times 2\，\mathrm{B} = 58.7\，\mathrm{MB}$(hidden=3584，BF16)， 28 层合计 ~1.64 GB 通信量。若按大消息实测 1.85 GB/s 完全串行传输要 ~0.89 s——已超过实测 TTFT 693.7 ms(EXP-005)，说明真实执行存在计算-通信重叠/分块调度，该算式只能做 **量级判断**（推断，不是逐毫秒预测）：通信代价与计算减半的收益同量级，相互抵消。实测锚点： tp2 8K TTFT 693.7 ms ≈ 单卡冷态 ~700 ms(EXP-005)，**零加速**。另注：Megatron 式 TP 每层前向通常有注意力出投影、MLP 下投影两次 allreduce，仓内按每层一次做下界计数（EXP-005 §6 "28 层 × 58.7MB"），取哪个计数不改变量级结论。
+**prefill 侧（收益归零）**：prefill 是计算受限（8192 token 一批，GEMM 算术强度高）， 计算减半本应省约一半时间；但每层输出要做一次大消息 allreduce： $8192 \times 3584 \times 2\,\mathrm{B} = 58.7\,\mathrm{MB}$(hidden=3584，BF16)， 28 层合计 ~1.64 GB 通信量。若按大消息实测 1.85 GB/s 完全串行传输要 ~0.89 s——已超过实测 TTFT 693.7 ms(EXP-005)，说明真实执行存在计算-通信重叠/分块调度，该算式只能做 **量级判断**（推断，不是逐毫秒预测）：通信代价与计算减半的收益同量级，相互抵消。实测锚点： tp2 8K TTFT 693.7 ms ≈ 单卡冷态 ~700 ms(EXP-005)，**零加速**。另注：Megatron 式 TP 每层前向通常有注意力出投影、MLP 下投影两次 allreduce，仓内按每层一次做下界计数（EXP-005 §6 "28 层 × 58.7MB"），取哪个计数不改变量级结论。
 
 **汇总到吞吐**：饱和吞吐 tp2 相对 colocate 只有 +13~19%（512/2K/8K 桶：12.31/10.36、 4.16/3.63、1.02/0.90，EXP-007《B1 四臂 offered-load 扫描战役》）——decode 的 -42% 在批量化后被稀释（大 batch 下 decode 逐渐转向计算/调度约束），prefill 的 allreduce 墙成为主导。
 
@@ -276,7 +276,7 @@ Qwen2-7B-Instruct 的权重体积可以精确算出来，不必估。两条独�
 
 上一段的"两次"不是经验值，是切法的必然结果。Megatron-LM 的原始论证（Shoeybi et al.， "Megatron-LM： Training Multi-Billion Parameter Language Models Using Model Parallelism"， arXiv：1909.08053，§3 Model Parallel Transformers）：
 
-MLP 块 $Y=\mathrm{GeLU}(XA)$ 有两种切 $A$ 的方式。按行切 $A=[A_1；A_2]$、$X=[X_1，X_2]$ 得 $Y=\mathrm{GeLU}(X_1A_1+X_2A_2)$，而 "Since GeLU is a nonlinear function， $\mathrm{GeLU}(X_1A_1+X_2A_2)\neq \mathrm{GeLU}(X_1A_1)+\mathrm{GeLU}(X_2A_2)$ and this approach will require a synchronization point before the GeLU function"——**非线性不可分配律**是整个切法的第一性约束。按列切 $A=[A_1，A_2]$ 则 GeLU 可以各算各的（"This is advantageous as it removes a synchronization point"）。于是第一个 GEMM 列切、第二个行切，中间零通信，只在块末做一次 allreduce。注意力块同理：多头按头切 "doesnt require any immediate communication to complete the self-attention"， 出投影按行切。论文总结句："This enables us to perform all GEMMs in a simple transformer layer using only two all-reduces in the forward path and two in the backward path"(§3)。
+MLP 块 $Y=\mathrm{GeLU}(XA)$ 有两种切 $A$ 的方式。按行切 $A=[A_1;A_2]$、$X=[X_1,X_2]$ 得 $Y=\mathrm{GeLU}(X_1A_1+X_2A_2)$，而 "Since GeLU is a nonlinear function， $\mathrm{GeLU}(X_1A_1+X_2A_2)\neq \mathrm{GeLU}(X_1A_1)+\mathrm{GeLU}(X_2A_2)$ and this approach will require a synchronization point before the GeLU function"——**非线性不可分配律**是整个切法的第一性约束。按列切 $A=[A_1,A_2]$ 则 GeLU 可以各算各的（"This is advantageous as it removes a synchronization point"）。于是第一个 GEMM 列切、第二个行切，中间零通信，只在块末做一次 allreduce。注意力块同理：多头按头切 "doesnt require any immediate communication to complete the self-attention"， 出投影按行切。论文总结句："This enables us to perform all GEMMs in a simple transformer layer using only two all-reduces in the forward path and two in the backward path"(§3)。
 
 **这条语义对本仓的意义有两层**：
 1. **通信量的下界与上界都定了**。每层前向 1 次（仓内保守计数）到 2 次（Megatron 标准切法）allreduce，通信量因此在 1.64–3.29 GB 之间（8192 token、 28 层）。两个端点都远大于任何"二阶小量"的说法。
@@ -284,7 +284,7 @@ MLP 块 $Y=\mathrm{GeLU}(XA)$ 有两种切 $A$ 的方式。按行切 $A=[A_1；A
 
 #### 3.3.2 allreduce 字节数与 busbw 的换算(本讲义推导)
 
-每层前向一次 allreduce 的**逻辑消息大小**是当前批的隐状态张量： $$m =（\text{本批 token 数}） \times d \times s.$$ prefill 8192 token：$8192\times3584\times2 = 58{，}720{，}256$ B $= 58.72$ MB（与 §3.3 一致）。 decode bs=1：$1\times3584\times2 = 7168$ B $= 7$ KiB。
+每层前向一次 allreduce 的**逻辑消息大小**是当前批的隐状态张量： $$m =(\text{本批 token 数}) \times d \times s.$$ prefill 8192 token：$8192\times3584\times2 = 58{,}720{,}256$ B $= 58.72$ MB（与 §3.3 一致）。 decode bs=1：$1\times3584\times2 = 7168$ B $= 7$ KiB。
 
 **这 7 KiB 是理解 decode 侧 1.3 ms/token 的关键**：按 1.78 GB/s 的渐近带宽算， 7 KiB 只要 4 µs，而实测每 token 的 allreduce 代价 ~1.3 ms(EXP-005 §6)是纯带宽项的 **325 倍**——decode 侧的 allreduce **完全由固定开销 $\alpha$ 主导**，与带宽几乎无关。按 $k=2$ 分摊单次 $\alpha\approx0.65$ ms，按 $k=1$ 约 1.3 ms；对照 GPU 间裸延迟 14.5–15.9 µs，是它的 **40–90 倍**，里面装着 SHM 中转的两段拷贝、host 侧同步、 NCCL kernel 启动与 ring 的两个阶段。**本仓没有做 allreduce 分段计时**，以上分配为推断。
 
@@ -292,7 +292,7 @@ MLP 块 $Y=\mathrm{GeLU}(XA)$ 有两种切 $A$ 的方式。按行切 $A=[A_1；A
 
 #### 3.3.3 prefill 侧:两个同量级的量相减
 
-设单卡 prefill 计算时间 $T_c$，TP2 后计算时间 $\approx T_c/2$（理想切分）， 每层通信 $t_{ar}(m)$，共 $L\cdot k$ 次。若通信完全不与计算重叠： $$T_{\mathrm{tp2}} \approx \frac{T_c}{2} + L\，k\，t_{ar}(m).$$ 零加速的条件是 $T_{\mathrm{tp2}}\ge T_c$，即 $$L\，k\，t_{ar}(m) \ \ge\ \frac{T_c}{2}.$$ 代入本机：$T_c\approx 700$ ms（冷态），右边 350 ms；左边按 $k=1$、 $m=58.72$ MB、$\beta=1.85$ GB/s 得 $28\times31.7 = 888$ ms **≫** 350 ms。 **不等式以两倍以上的余量成立**——所以"零加速"不是巧合，是结构性的。
+设单卡 prefill 计算时间 $T_c$，TP2 后计算时间 $\approx T_c/2$（理想切分）， 每层通信 $t_{ar}(m)$，共 $L\cdot k$ 次。若通信完全不与计算重叠： $$T_{\mathrm{tp2}} \approx \frac{T_c}{2} + L\,k\,t_{ar}(m).$$ 零加速的条件是 $T_{\mathrm{tp2}}\ge T_c$，即 $$L\,k\,t_{ar}(m) \ \ge\ \frac{T_c}{2}.$$ 代入本机：$T_c\approx 700$ ms（冷态），右边 350 ms；左边按 $k=1$、 $m=58.72$ MB、$\beta=1.85$ GB/s 得 $28\times31.7 = 888$ ms **≫** 350 ms。 **不等式以两倍以上的余量成立**——所以"零加速"不是巧合，是结构性的。
 
 但要诚实：左边 888 ms 加上右边 350 ms 是 1238 ms，而实测 tp2 8K TTFT 只有 693.7 ms。**这说明通信与计算确实有重叠**，上面的串行式只能当量级判断。要把它变成逐 ms 的预测，需要知道重叠比例，而本仓没有对 tp2 做 kernel 级 trace——如实登记为开放问题，不外推。
 
@@ -304,7 +304,7 @@ MLP 块 $Y=\mathrm{GeLU}(XA)$ 有两种切 $A$ 的方式。按行切 $A=[A_1；A
 
 8192 token 一次 prefill 的浮点运算：
 - **GEMM 部分**：$2 \times P_{\text{body}} \times n$，其中 $P_{\text{body}} = 6.525\times10^{9}$（§3.2.4 途径 B，不含 embedding/lm_head， 因为 embedding 是查表、lm_head 在 prefill 只对最后 1 个 token 算）， 得 $2\times6.525\times10^{9}\times8192 = 1.069\times10^{14}$ FLOP。
-- **注意力部分**：每层 QK$^\top$ 满算 $2Hn^2D = 2\times28\times8192^2\times128 = 4.81\times10^{11}$,causal 掩掉一半 → $2.41\times10^{11}$;$\times V$ 同量， 每层合计 $4.81\times10^{11}$;28 层 $= 1.35\times10^{13}$ FLOP。
+- **注意力部分**：每层 QK$^\top$ 满算 $2Hn^2D = 2\times28\times8192^2\times128 = 4.81\times10^{11}$，causal 掩掉一半 → $2.41\times10^{11}$；$\times V$ 同量， 每层合计 $4.81\times10^{11}$；28 层 $= 1.35\times10^{13}$ FLOP。
 - 合计 $\approx 1.204\times10^{14}$ FLOP。
 
 除以峰值：
@@ -317,7 +317,7 @@ MLP 块 $Y=\mathrm{GeLU}(XA)$ 有两种切 $A$ 的方式。按行切 $A=[A_1；A
 
 **第一行是本篇第二个"下界被击穿"的例子**，而且这次的原因不是口径混用，是 **规格值不等于实际运行值**：仓内 EXP-005 的遥测明确记到未节流时 SM 时钟 2820 MHz， 比白皮书 boost 值高 11.9%。消费卡的实际 boost 常年高于标称，**把白皮书 boost 当硬上界会推出自相矛盾的结论**。这条教训与 §3.2.4 是一对：一个是分子口径错，一个是分母不是真上界。
 
-**但第三行的 80–82% 达成率仍然偏高**，如实标注为开放问题：典型 serving 系统的 prefill MFU 更常见在 50–65%。三类候选解释本仓都没有独立数据裁决：(a) 实际参与计算的 prompt token 少于 8192（前缀命中——`analysis/nixl_token_accounting.md` 确记到 bench 的 test 请求让请求 #0 命中 511 块）；(b) FLOP 计数漏项(未计 RoPE/norm/激活， 但这些是 $O(nd)$ 而非 $O(nd^2)$，量级不足以解释)；(c) 频率线性折算不成立。 **如实登记，不做归因。**
+**但第三行的 80–82% 达成率仍然偏高**，如实标注为开放问题：典型 serving 系统的 prefill MFU 更常见在 50–65%。三类候选解释本仓都没有独立数据裁决：(a) 实际参与计算的 prompt token 少于 8192（前缀命中——`analysis/nixl_token_accounting.md` 确记到 bench 的 test 请求让请求 #0 命中 511 块）；(b) FLOP 计数漏项（未计 RoPE/norm/激活， 但这些是 $O(nd)$ 而非 $O(nd^2)$，量级不足以解释）；(c) 频率线性折算不成立。 **如实登记，不做归因。**
 
 ### 3.4 replica2:零通信的复制,近线性的扩展
 
@@ -347,11 +347,11 @@ $R\to R/N$ 只在**请求被均分**时成立。排队等待随到达率单调�
 
 ### 3.5 pd1p1d:每请求一份 KV 的搬运账
 
-Qwen2-7B 的 KV 每 token 字节数： $28\，\text{层} \times 2\，(\mathrm{K，V}) \times 4\，\text{KV 头} \times 128\，\text{维} \times 2\，\mathrm{B} = 57344\，\mathrm{B}$——与 EXP-006 单请求探针 bytes=917504 = 16 token × 57344 B 完全吻合（block=16 取整）。8K 请求全量 KV ≈ 469.8 MB（EXP-011《EXT-2 NixlPush 单点》 push 臂实测全量）；pull 臂经前缀缓存裁剪实拉 439.7 MB(EXP-006)。在 0.27 GB/s 的有效吞吐下：$439.7\，\mathrm{MB} / 0.27\，\mathrm{GB/s} \approx 1.63\，\mathrm{s}$， 与实测 avg xfer 1602.7 ms(EXP-006)对上。容量上限： $0.27\，\mathrm{GB/s} \div 470\，\mathrm{MB/req} \approx 0.57\，\mathrm{req/s}$， 实测饱和 0.54 req/s@8K(EXP-007)——**传输带宽即容量**，账在两端都闭合。
+Qwen2-7B 的 KV 每 token 字节数： $28\,\text{层} \times 2\,(\mathrm{K,V}) \times 4\,\text{KV 头} \times 128\,\text{维} \times 2\,\mathrm{B} = 57344\,\mathrm{B}$——与 EXP-006 单请求探针 bytes=917504 = 16 token × 57344 B 完全吻合（block=16 取整）。8K 请求全量 KV ≈ 469.8 MB（EXP-011《EXT-2 NixlPush 单点》 push 臂实测全量）；pull 臂经前缀缓存裁剪实拉 439.7 MB(EXP-006)。在 0.27 GB/s 的有效吞吐下：$439.7\,\mathrm{MB} / 0.27\,\mathrm{GB/s} \approx 1.63\,\mathrm{s}$， 与实测 avg xfer 1602.7 ms(EXP-006)对上。容量上限： $0.27\,\mathrm{GB/s} \div 470\,\mathrm{MB/req} \approx 0.57\,\mathrm{req/s}$， 实测饱和 0.54 req/s@8K(EXP-007)——**传输带宽即容量**，账在两端都闭合。
 
 #### 3.5.1 GQA 已经把这笔账砍到了七分之一
 
-$57{，}344$ B/token 这个数字里，$KVH=4$ 是决定性的。若 Qwen2-7B 是 MHA（28 个 KV 头）， 每 token 就是 $28\times2\times28\times128\times2 = 401{，}408$ B—— **7 倍**。 8192 token 的单请求 KV 会从 469.8 MB 涨到 3.29 GB，按 0.27 GB/s 要 12.2 s。
+$57{,}344$ B/token 这个数字里，$KVH=4$ 是决定性的。若 Qwen2-7B 是 MHA（28 个 KV 头）， 每 token 就是 $28\times2\times28\times128\times2 = 401{,}408$ B—— **7 倍**。 8192 token 的单请求 KV 会从 469.8 MB 涨到 3.29 GB，按 0.27 GB/s 要 12.2 s。
 
 GQA 的原始动机正是这个：Ainslie et al. 指出多查询/分组查询注意力的收益在于减少 KV 的加载量（arXiv：2305.13245，§2）。**在 PD 分离场景里，GQA 的收益从 "少读"变成了"少传"**——这是同一个架构选择在不同系统形态下的两种兑现方式。换句话说：**本机 PD 溃败的严重程度已经被 GQA 缓解了 7 倍，仍然溃败。**
 
@@ -359,7 +359,7 @@ GQA 的原始动机正是这个：Ainslie et al. 指出多查询/分组查询注
 
 "KV 按 16 token 一块管理"不是本仓的约定，是 vLLM 的默认值，而这个默认值有论文依据。 PagedAttention 论文 §7.2 Impact of Block Size 做了 1–256 的扫描，结论原文： "In practice, we find that the block size 16 is large enough to efficiently utilize the GPU and small enough to avoid significant internal fragmentation in most workloads. Accordingly, vLLM sets its default block size as 16." (arXiv:2309.06180,§7.2)。同节还给出了两侧的失效机理：块太小则 "vLLM may not fully utilize the GPU's parallelism for reading and processing KV cache"；块太大则"internal fragmentation increases and the probability of sharing decreases"。
 
-**这条默认值直接决定本仓的三个数字**：$16\times57{，}344 = 917{，}504$ B/块（EXP-006 单请求探针的 bytes 实测值）；8192 token = 512 块恰好整除，故 8K 桶的 bytes 与公式逐字节相等；非块对齐 prompt 向上取整——这是探针里 9 token 的 prompt 报出一整块 917,504 B 的原因。**魔法数归类**：16 由**实测扫描**定（论文 §7.2 的曲线），既非理论上界也非硬件约束，别的 workload 上可以是别的值——所以它是可配置项。
+**这条默认值直接决定本仓的三个数字**：$16\times57{,}344 = 917{,}504$ B/块（EXP-006 单请求探针的 bytes 实测值）；8192 token = 512 块恰好整除，故 8K 桶的 bytes 与公式逐字节相等；非块对齐 prompt 向上取整——这是探针里 9 token 的 prompt 报出一整块 917,504 B 的原因。**魔法数归类**：16 由**实测扫描**定（论文 §7.2 的曲线），既非理论上界也非硬件约束，别的 workload 上可以是别的值——所以它是可配置项。
 
 #### 3.5.3 容量上限:一个排队论表述(本讲义推导)
 
@@ -708,7 +708,7 @@ GPU_COUNT=${GPU_COUNT:-$([ "$ARM" = colocate ] && echo 1 || echo 2)}
   ${SLO_TTFT_MS:+--slo-ttft-ms "$SLO_TTFT_MS"} ${SLO_TPOT_MS:+--slo-tpot-ms "$SLO_TPOT_MS"}
 ```
 
-角色：关采样器、抓 after 快照、把这一点的所有证据合成一行 JSONL。**关键行为什么这么写**： ① `GPU_COUNT` 默认值由臂名推出（colocate 1，其余 2）——**per-GPU 成本口径（fig3）的分母就来自这里**，写错直接改变成本结论；可被环境变量覆盖，给"同臂名不同卡数"留口子； ② `${VAR:+--flag "$VAR"}` 的含义是"变量非空才加整个选项"——**没设 SLO 时根本不传 `--slo-*`，段 5 的 goodput 保持 `None`**；写成 `"${SLO_TTFT_MS:-0}"` 会把"没设阈值" 变成"阈值为 0"，所有请求判不达标而看不出是配置缺失；③ `kill "$SAMPLER"` 在 after 快照**之前**，否则统计会读到正在写入的不完整行；④ `$PREFIX` 从段 1 一路传到这里， **bench json、log、gpu csv、before/after 快照五类文件共用同一前缀**，这是事后把一行 JSONL 反查回全部原始文件的唯一线索。
+角色：关采样器、抓 after 快照、把这一点的所有证据合成一行 JSONL。**关键行为什么这么写**： ① `GPU_COUNT` 默认值由臂名推出（colocate 1，其余 2）——**per-GPU 成本口径（fig3）的分母就来自这里**，写错直接改变成本结论；可被环境变量覆盖，给"同臂名不同卡数"留口子； ② `${VAR:+--flag "$VAR"}` 的含义是"变量非空才加整个选项"——**没设 SLO 时根本不传 `--slo-*`，段 5 的 goodput 保持 `None`**；写成 `"${SLO_TTFT_MS:-0}"` 会把"没设阈值" 变成"阈值为 0"，所有请求判不达标而看不出是配置缺失；③ `kill "$SAMPLER"`(pd_disagg/scripts/run_point.sh:54)写在 after 快照**之前**，否则统计会读到正在写入的不完整行；④ `$PREFIX` 从段 1 一路传到这里， **bench json、log、gpu csv、before/after 快照五类文件共用同一前缀**，这是事后把一行 JSONL 反查回全部原始文件的唯一线索。
 
 ## 5. 实验数据怎么读
 
@@ -733,7 +733,7 @@ Bidirectional P2P=Disabled Bandwidth Matrix (GB/s)
 
 #### 5.1.1 "平坦"这件事本身携带信息(本讲义推导)
 
-按公理 B，有效带宽 $m/(\alpha+m/\beta)$ **必然**随 $m$ 单调上升趋近 $\beta$。 **从 1 MB 就已平坦，说明 1 MB 远大于 $m_{1/2}=\alpha\beta$**。反解：若 $\beta\approx1.85$ GB/s 而 1 MB 处已达 1.67 GB/s（$\beta$ 的 90%），则 $\alpha\le\frac{1}{9}\cdot\frac{1\，\mathrm{MB}}{1.85\，\mathrm{GB/s}}\approx60\，\mu s$——与 §3.3.2 从 decode allreduce 反推的 0.65–1.3 ms **相差一个数量级**。
+按公理 B，有效带宽 $m/(\alpha+m/\beta)$ **必然**随 $m$ 单调上升趋近 $\beta$。 **从 1 MB 就已平坦，说明 1 MB 远大于 $m_{1/2}=\alpha\beta$**。反解：若 $\beta\approx1.85$ GB/s 而 1 MB 处已达 1.67 GB/s（$\beta$ 的 90%），则 $\alpha\le\frac{1}{9}\cdot\frac{1\,\mathrm{MB}}{1.85\,\mathrm{GB/s}}\approx60\,\mu s$——与 §3.3.2 从 decode allreduce 反推的 0.65–1.3 ms **相差一个数量级**。
 
 **这个矛盾必须解释。** 两个候选：(a) nccl-tests 测的是**稳态循环**（同一 buffer 反复 allreduce，连接与缓冲区都已热），而 vLLM 每步 allreduce 夹在一长串 kernel 之间， 要付同步与调度的钱；(b) 1.3 ms 是从 TPOT 差值反推的，可能混入 TP 切分本身的其它开销（更小的 GEMM 形状、额外的切分/拼接算子）。**本仓没有 tp2 的 kernel 级 trace， 无法裁决**——如实登记。方法论提醒：**微基准的 $\alpha$ 是下限，真实系统里总是更大。**
 
@@ -917,7 +917,7 @@ Ada 白皮书 Appendix A Table 2 给 RTX 4090 的 TGP(Total Graphics Power)为 *
 7. **Q：PD 的饱和 0.54 req/s 怎么从第一性原理预测？** A：每请求要传 ~470 MB KV，通路 0.27 GB/s，上限 0.27/0.47 ≈ 0.57 req/s，实测 0.54 (EXP-007 §6)。当传输是关键路径，容量=带宽/单请求传输量。
 8. **Q：replica2 需要什么额外组件，它会成为瓶颈吗？** A：一个轮询代理（rr_proxy.py）。512 桶饱和 15.58 存在代理/客户端并发上限疑点（EXP-007 §7 如实登记），这正是"零通信"形态把瓶颈推到入口层的表现；2K/8K 未见此效应。
 9. **Q：57,344 B/token 里哪一项最该被质疑？** A：`num_key_value_heads = 4`——它不是 `num_attention_heads` 的别名，GQA 下两者相差 7 倍（§3.5.1），按 28 算会把 KV 账放大 7 倍。第二该质疑的是 dtype（bf16 2 B， 开 FP8 KV cache 则减半）。**两处都在 config 里可查，不许估。**
-10. **Q：为什么 16 KiB 的 descriptor 会把有效吞吐钉在 0.27 GB/s？** A：按公理 B，$\alpha$ 主导时有效带宽 $\approx m/\alpha$；实测每 descriptor 约 62 µs（讲义 02 §3.6），$16{，}384/62\，\mu s\approx0.26$ GB/s，与 telemetry 反解一致。 **要提速必须增大 $m$（合并 descriptor），不是提高 $\beta$。**
+10. **Q：为什么 16 KiB 的 descriptor 会把有效吞吐钉在 0.27 GB/s？** A：按公理 B，$\alpha$ 主导时有效带宽 $\approx m/\alpha$；实测每 descriptor 约 62 µs（讲义 02 §3.6），$16{,}384/62\,\mu s\approx0.26$ GB/s，与 telemetry 反解一致。 **要提速必须增大 $m$（合并 descriptor），不是提高 $\beta$。**
 11. **Q：为什么 attribution 下 PD 的 TPOT 与 colocate 一样（15.9–16.4 ms）？** A：KV 传输只发生在第一个 token 之前，传完后 D 端就是普通的单卡 decode，权重带宽下界一模一样。**PD 分离改变 TTFT 的构成，不改变 TPOT 的物理下界**——所以它的收益只能来自"消除干扰"，而并发 1 时干扰为零（讲义 02 §2）。
 12. **Q：tp2 用 `--gpu-memory-utilization 0.88` 而其余臂用默认，算不算不公平？** A：算，而且已登记（EXP-007 §7:0.9 在 warmup 阶段 OOM，需 150 MB 仅剩 124 MB）。影响面是 KV 预算；但四臂的 KV 预算本来就不同（tp2 每卡省一半权重，KV 空间反而更大）， 成本口径不受影响。**如实登记、说明影响面、不粉饰。**
 13. **Q：为什么不把 chunked prefill 也做成一臂？** A：诚实答：这是本仓设计的缺口。Sarathi-Serve(arXiv：2403.02310)的 stall-free 调度在单实例内缓解 prefill 对 decode 的干扰、**零跨卡成本**，在互联受限平台上很可能是 PD 分离的正确替代品。本仓 colocate 臂跑在 vLLM 默认调度上，**没做开/关对照**， 不主张任何相关数字（§8.2）。
@@ -967,7 +967,7 @@ Ada 白皮书 Appendix A Table 2 给 RTX 4090 的 TGP(Total Graphics Power)为 *
 - **replica2 的生产形态**：多副本 + 专业负载均衡（K8s service、cache-aware router）。本仓 rr_proxy 是最小实现（§4 段 7），不做会话亲和，**所以 replica2 的数字是这一族方案的下限**。
 - **TP 的生产语境**：NVLink 平台上 allreduce 带宽高两个数量级，TP2 prefill 不再零加速； vLLM 的 custom allreduce 小消息路径也依赖 P2P，本机禁用后只剩 NCCL SHM—— **同一份代码在不同互联上走的是不同分支**。
 - **调度层的缺口（本仓没做的一臂）**：Sarathi-Serve 的分块 prefill + stall-free 调度（arXiv：2403.02310）与 PD 分离解决同一个问题——prefill 长任务阻塞 decode——但它 **不需要跨卡传输任何东西**。在本机这种互联受限平台上，它在原理上就该优于 PD 分离。本仓的 colocate 臂跑在 vLLM 默认调度上，**没有做该特性的开关对照**，因此不能主张任何相关数字。这是四臂矩阵设计的一个真实缺口，补法很明确：加一臂 `colocate_no_chunked`，同协议重跑三桶。
-- **调度层的历史坐标**：Orca 的 iteration-level scheduling(OSDI 2022，§3)把调度粒度从"请求"降到"迭代"，解决"早完成的请求不能提前返回、新到的必须等整批跑完"； selective batching 把 Attention 之外的算子按 token 拉平成 $[\sum L， H]$、 Attention 逐请求单算。本仓所有臂都跑在这套范式之后的 vLLM 上，**享受它但不研究它**——EXP-008《B3 有限版本对照》的版本对照（+45%@512 桶）测的是范式之上的工程演进。
+- **调度层的历史坐标**：Orca 的 iteration-level scheduling(OSDI 2022，§3)把调度粒度从"请求"降到"迭代"，解决"早完成的请求不能提前返回、新到的必须等整批跑完"； selective batching 把 Attention 之外的算子按 token 拉平成 $[\sum L, H]$、 Attention 逐请求单算。本仓所有臂都跑在这套范式之后的 vLLM 上，**享受它但不研究它**——EXP-008《B3 有限版本对照》的版本对照（+45%@512 桶）测的是范式之上的工程演进。
 - **KV 管理层**：PagedAttention 的块表（arXiv：2309.06180，§4.2）让 KV 不必连续， 代价是 attention kernel 慢 20–26%(§7.1)，收益是消除 60–80% 的显存浪费（§1）。本仓的 PD 传输账（16 token/块）完全建立在这套机制之上。
 - **量化**：本仓 dense 臂只跑 BF16；生产普遍上 W8A8/W4A16。量化会同时改变 §3.2 的分子（$W$ 减半）与 §3.5 的 KV 账（FP8 KV cache），四臂排序可能变化——**本仓不外推**。
 
@@ -985,6 +985,6 @@ Ada 白皮书 Appendix A Table 2 给 RTX 4090 的 TGP(Total Graphics Power)为 *
 10. Hockney， "The communication challenge for MPP： Intel Paragon and Meiko CS-2"， Parallel Computing 20(3)：389–398, 1994。——通信性能用"启动开销 + 带宽"两参数刻画的原始文献（COMMS1 口径），公理 B 的来源；想理解"为什么小消息换快链路没用"， 从这两个参数入手。
 11. NVIDIA, "NVIDIA Ada GPU Architecture" 白皮书，Appendix A Table 2。——RTX 4090 的 128 SM / boost 2520 MHz / 1008 GB/s / L2 73728 KB / BF16 Tensor FP32 累加 165.2 TFLOPS / TGP 450 W 的唯一权威出处。
 12. NVIDIA， CUDA C++ Programming Guide §3.4.2(Peer-to-Peer Memory Access / Transfers)与 "GPU Performance Background User's Guide" §4。——前者给 `cudaDeviceCanAccessPeer` 语义与"未启用 P2P 时须经主机中转"的官方出处（§3.1.1）， 后者给 arithmetic intensity 与 ops：byte 的官方定义（§3.2.2）。
-13. NVIDIA， NCCL User Guide 环境变量页（`NCCL_P2P_DISABLE` / `NCCL_SHM_DISABLE` / `NCCL_BUFFSIZE` 默认 4 MiB）、nccl-tests `doc/PERFORMANCE.md`(algbw/busbw 与 $2(n-1)/n$ 换算)、NVML API Reference `nvmlClocksThrottleReasons` 组。——三份工具语义文档，分别支撑 §3.1.3 的回退路径、§5.1 的读列法、§5.4.1 的排除性定案。
+13. NVIDIA， NCCL User Guide 环境变量页（`NCCL_P2P_DISABLE` / `NCCL_SHM_DISABLE` / `NCCL_BUFFSIZE` 默认 4 MiB）、nccl-tests `doc/PERFORMANCE.md`（algbw/busbw 与 $2(n-1)/n$ 换算）、NVML API Reference `nvmlClocksThrottleReasons` 组。——三份工具语义文档，分别支撑 §3.1.3 的回退路径、§5.1 的读列法、§5.4.1 的排除性定案。
 14. `pd_disagg/hw/` 三个原始文件 + `pd_disagg/REPORT.md` §1–§2 + `figures/` 七张图。——建议对照 §5.1 的读法与 §5.6 的读图法各过一遍；三个 hw 文件各排除一类替代解释。
 15. `pd_disagg/analysis/nixl_token_accounting.md`、`records/EXP-005` §4–§6（含 `records/data/EXP-005_throttle_trace.csv` 80 行采样流水）、`records/EXP-007` §2/§7。——依次回答：前缀缓存污染是怎么被逐块定位的、功率帽是怎么被位掩码定案的、 84 点网格的四条偏差是怎么如实登记的。
