@@ -260,3 +260,11 @@
 - **关键数字**：落后 676 提交、behind_by=0 无分叉；fused_moe.py 自 7aa248fcfe 起 6 行插入（@857 invoke_fused_moe_triton_kernel 内 A_scale ndim==0 reshape）；历史 .nsys-rep 合计 72.05MB / .git 400MB / 历史 .sqlite 0。
 - **产物**：myfork main = cacc429f62、moe 分支 rebase、experiments commit c6fc416（DEDUP.md + LEDGER.md）。
 - **下一步**：C 类基础设施（/root/projects/README.md 七仓总入口 + /root/work 无远端）；B 类待 GPU 空闲。**历史重写瘦身（filter-repo 移除 72MB .nsys-rep + force push）未做**——收益 18%、代价为全部 commit hash 失效（文档内 cc473de/7aa248fc 等 10+ 处引用）与 force push 破坏性，属用户决策，待其明确授权。
+
+## §25 NCCL allreduce size 扫描(EXP-018)+ LEDGER D23/D24 补账(2026-08-29)
+
+- **做了什么**：①补 llm-engine LEDGER 缺的 EXP-D23/D24 台账行（records/LAB_JOURNAL 早有，LEDGER 台账表只到 D22，违反铁律 1 单一事实源），补关键数字 + 红线 + 待办三处。②EXP-018：NCCL allreduce size 扫描——补 EXP-002 只测大消息(1M–512M)的缺口，分小消息(8B–1M, n=100)与大消息(1M–512M, n=20)两区间，写 `scripts/nccl_size_scan.sh` 采集脚本。
+- **为什么**：交接单 B 类「NCCL allreduce size 扫描（双卡，本机能做）」；EXP-002 只测了大消息单点区间，decode 级小消息(8 KiB)的纯 NCCL 延迟从无实测，llm-engine#EXP-D22 的「88µs/次」是反推的完整开销。
+- **关键数字**：延迟地板 **~14µs**（8 KiB decode 消息 13.8µs，与 EXP-002 的 GPU 间延迟 14.5–15.9µs 同阶）；大消息平台 **6.2 GB/s**（16M–256M 稳定 6.40–6.50）。**核心发现**：EXP-002 的「1.78 GB/s 带宽墙」复现不了，同二进制同 NCCL 2.28.9 同参数复测得 6.2 GB/s，差 3.5 倍——原因待查（EXP-002 provenance 未记 PCIe 运行态/系统负载，候选：8/21 B1 战役并发负载或 PCIe 未升 Gen4；实测 allreduce 运行时 PCIe 升 Gen4）。与 EXP-D22 对账：88µs/次 = 14µs 传输 + 74µs torch.distributed 调度/同步，强化「派发主导」归因。
+- **产物**：`records/EXP-018_nccl_allreduce_size_scan.md`、`scripts/nccl_size_scan.sh`、`pd_disagg/hw/20260829T104705_allreduce_size_scan_{small,large}.txt`、EXP-002 §7 复测差异勘注、LEDGER EXP 索引 + R0-1 行更新。
+- **下一步**：**待用户裁决**——EXP-002 的 1.78 GB/s 权威数字是否更新为 6.2，以及是否连带修订 EXP-005「prefill 零加速归因」与 RESUME_EVIDENCE「1.78GB/s 带宽墙」措辞（涉及多处下游结论，见 EXP-018 §7/§8）。其余 B 类（三算子 autotune 可跳、sglang router S02-S07 需 sglang venv 未装）。

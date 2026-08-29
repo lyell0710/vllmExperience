@@ -146,6 +146,7 @@ bash moe_perf/d1_sweep.sh
 | [EXP-015 D2 MoE config 调优:4090 BF16 两个社区空缺 tuple + 六件套验证](records/EXP-015_d2_moe_config_tuning.md) | 两个空缺 config 交付：kernel M=1 -8.5%、correctness 120 passed、PR 材料齐备 |
 | [EXP-016 D4 FP8 vs W4A16 同卡对比(Qwen3-30B-A3B,Ada SM89)](records/EXP-016_d4_fp8_vs_w4a16.md) | W4A16 decode 全 regime 快 23–48%，FP8 仅高并发 prefill 反超——Ada 分派路径给出机理 |
 | [EXP-017 D5 EPLB gate(W4A16 不支持 / FP8 真实重排 + 对照组归因)](records/EXP-017_d5_eplb_gate.md) | EPLB：W4A16 被上游显式拒；FP8 真实重排 + 无 EPLB 对照组把输出分歧归因到重排 |
+| [EXP-018 NCCL allreduce size 扫描(补小消息缺口 + 复测大消息带宽)](records/EXP-018_nccl_allreduce_size_scan.md) | 无 P2P 下纯 NCCL allreduce 延迟地板 ~14µs；大消息平台 ~6.2 GB/s |
 
 ## 测量方法
 

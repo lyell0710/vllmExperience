@@ -40,12 +40,13 @@
 | [EXP-015](records/EXP-015_d2_moe_config_tuning.md) | D2 MoE config 调优：4090 BF16 两个社区空缺 tuple + 六件套验证 | 8/23 | D2/P1 | 完成 |
 | [EXP-016](records/EXP-016_d4_fp8_vs_w4a16.md) | D4 FP8 vs W4A16 同卡对比（Qwen3-30B-A3B,Ada SM89） | 8/23 | D4 | 完成 |
 | [EXP-017](records/EXP-017_d5_eplb_gate.md) | D5 EPLB gate（W4A16 不支持 / FP8 真实重排 + 对照组归因） | 8/23 | D5 | 完成 |
+| [EXP-018](records/EXP-018_nccl_allreduce_size_scan.md) | NCCL allreduce size 扫描（补 EXP-002 小消息缺口 + 复测大消息带宽） | 8/29 | R0-1 | 完成 |
 
 ## 证据台账（勾一项 = 数据落盘 + 本表登记产物路径）
 
 | 项 | 状态 | 关键数字 | 产物 |
 |---|---|---|---|
-| R0-1 硬件三数 | ✅ 8/21 | P2P=GNS 禁用；单向 D2D 0.60–0.91 GB/s，双向 22.7 GB/s，延迟 ~15µs；NCCL bus bw 1.78 GB/s | `pd_disagg/hw/{topo,p2p_bandwidth_latency,all_reduce_perf}.txt` |
+| R0-1 硬件三数 | ✅ 8/21（8/29 复测差异待裁决） | P2P=GNS 禁用；单向 D2D 0.60–0.91 GB/s，双向 22.7 GB/s，延迟 ~15µs；NCCL bus bw 1.78 GB/s〔EXP-018 复测大消息平台 6.2 GB/s，差 3.5 倍，权威数字更新待用户裁决〕 | `pd_disagg/hw/{topo,p2p_bandwidth_latency,all_reduce_perf}.txt` + `20260829T104705_allreduce_size_scan_*.txt` |
 | R0-2 三 venv + provenance | ✅ 8/21 | ~/venvs/{v0.17.1, v0.25.1, main} 均验证 import | `pd_disagg/scripts/provenance.sh`；setup 记录 `pd_disagg/setup_envs.log` |
 | R0-3 NIXL 1P1D smoke | ✅ 8/21 | 双版本 3/3 PASS；avg xfer 14.1ms / 0.188MB / 13.3MB/s；裁决锁定 v0.25.1 | `pd_disagg/smoke/`、`pd_disagg/DECISION.md` |
 | R0-4 0.17.1 课程基线 | ✅ 8/23 | 课程脚本非必需——官方 xPyD proxy+脚本在 v0.17.1 tag 内，自建 1P1D 复现栈 | `pd_disagg/p2pnccl_repro/launch_1p1d.sh`（从 tag 提取精简） |
