@@ -1,1 +1,2 @@
-# provenance: env=ENV-B sha=752a3a5044 version=0.25.1 cmd="d1_sweep.sh (moe_tp2ep + dense_tp2, in128/out256, conc 1..128)" date=2026-08-23T08:04:43+00:00 gpu="2 NVIDIA GeForce RTX 4090" driver=610.57.04 
+# provenance: env=ENV-B sha=752a3a5044 version=0.25.1 cmd="d1_sweep.sh (moe_tp2ep + dense_tp2, in128/out256, conc 1..128)" date=2026-08-23T08:04:43+00:00 gpu="2 NVIDIA GeForce RTX 4090" driver=610.57.04
+# 2026-09-07 追注(旁路 sqlite,raw 本体一字未动):本目录 4 个 *.sqlite(d1_nsys_moe_bs{1,32}{,_graphlevel}.sqlite)均为旁路导出、来源未逐一验证(mtime 线索:两个 graphlevel 为 8/23 采集当日导出,bs1/bs32 两个为 8/24 审计批次 nsys stats 重导所疑,见 LAB_JOURNAL §22),已被 .gitignore(*.sqlite)排除、可由同名 .nsys-rep 再生;2026-09-07 诊断分析未采用任何旁路 sqlite,全部数字来自当场 `nsys stats --force-export` 从 rep 重导(见同目录 *_analysis.md 首行 provenance 与附录复现命令)。

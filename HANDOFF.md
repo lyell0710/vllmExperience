@@ -42,9 +42,9 @@ R0-1~R0-5、B1、**B2（EXT-1 收官，KV 占 TTFT 54.2/62.5/64.2%）**、B3（�
 
 D0 地基、B1–B4、C1–C3、D1–D5、EXT-1/2、P1（材料层）/P2/P3 全部收官， 记录 EXP-001~017 齐（见 LEDGER.md 索引）。M1/M2 提前达成；M3 = 材料齐备。
 
-### 唯余两项,均只能由用户本人执行
+### 唯余一项,只能由用户本人执行(9/7 勘:D2 PR 已提交)
 1. **R0-6**：线上简历稿"发现/修复"→"复现/定位/验证"。
-2. **D2 PR 提交**：分支 `moe-config-4090-qwen15moe`（/root/projects/vllm， 两 JSON 已暂存）→ 逐行 review → `git commit -s` → fork/push → 按 `moe_perf/PR_DRAFT.md` 开 PR（六件套数字已全部回填）。
+2. ~~D2 PR 提交~~ **已完成**：vllm-project/vllm#54372 已由用户本人于 2026-08-29 提交（gh 实查 OPEN 未合并；正文存档 `moe_perf/PR_BODY.txt`，commit 1252684）。红线不变：未合并不写"合入"。LEDGER D2 行/待办同句待同步（2026-09-07 批次改动范围外）。
 
 ### 可选(9 月池)
 - AutoGPTQMoEMethod 补 supports_eplb（EXP-017 §8，上游 TODO 邀请，先查重）；
@@ -59,11 +59,11 @@ D0 地基、B1–B4、C1–C3、D1–D5、EXT-1/2、P1（材料层）/P2/P3 全�
 - 功率帽：持续 prefill 降频 ~12%，同热工况才可比。
 - 大文件 push 慢（nsys rep 上百 MB），push 放后台跑。
 
-## 7. 当前状态快照(2026-08-30,任务 1/2 完成批次)
+## 7. 当前状态快照(2026-09-07,nsys 诊断报告批次)
 
-- git HEAD：main 与 origin/main 同步（c2e2775；以 `git status -sb` / `git log -1` 实时核对为准）。外层 `/root/projects/vllm` 已 rebase 到 upstream cacc429f62 并 push myfork；`moe-config-4090-qwen15moe` 分支已 rebase，2 个 config JSON 保持 staged 待用户提交。
-- 硬件占用：双卡被 sglang router 矩阵（S04，54 cell）占用中——本仓一切 GPU 运行暂停。
-- 下一步第一动作：用户本人执行 R0-6 线上简历排雷 + D2 PR review/`git commit -s`/提交。可选：公开仓瘦身历史重写（filter-repo 移除 72MB .nsys-rep + force push，破坏性，待用户授权）。
+- git HEAD：main 与 origin/main 同步（收尾前 43081ca，本批次「5 份 nsys 诊断报告」commit 随后落地；以 `git status -sb` / `git log -1` 实时核对为准）。
+- 硬件占用：双卡空闲（nvidia-smi 实查 0% util / 1MiB，无 compute 进程）——可跑 GPU。
+- 下一步第一动作：d1 同负载 ncu 复采 MoE 两热点拿 ES——bs1 gemvx（T=32.3%）+ bs32 fused_moe_kernel（T=56.4%），见 `moe_perf/raw/EXP-014/d1_nsys_moe_bs{1,32}_analysis.md` 的 P0 条目，回填 G=ES×T。
 
 ## 8. 还开着的事（跨仓，按 ROI 排序）
 
