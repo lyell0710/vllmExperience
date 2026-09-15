@@ -368,7 +368,7 @@ vllm/experiments/
 ├── LEDGER.md            对内账本：状态与措辞的唯一权威（证据台账、红线表、待办）
 ├── HANDOFF.md           接手入口（三行状态快照 + 环境 + 工装地图）
 ├── LAB_JOURNAL.md       顺写日记（四问：做了什么 / 为什么 / 关键数字 / 产物）
-├── records/EXP-001…019  八节实验记录（§1 假设与阈值跑前锁定；§4 raw 指针；§6 实测/推断分开）
+├── records/EXP-001…023  八节实验记录（§1 假设与阈值跑前锁定；§4 raw 指针；§6 实测/推断分开）
 ├── pd_disagg/           PD 线：scripts（run_point / collect_point / provenance）、results/b1_matrix（runs.jsonl + raw + snapshots）、ext1/（EXT-1 patch 与分析）、hw/、figures/fig1–7
 ├── moe_perf/            MoE 线：d1_* / d2_* / d4_* / d5_* 脚本、raw/EXP-014…017、figures、PR_DRAFT
 └── docs/                theory（速查）/ lectures（深度讲义）/ talk（讲稿）/ 本文
@@ -409,7 +409,7 @@ TTFT ≤ 328 / 891 / 4626 ms（512 / 2048 / 8192），TPOT ≤ 50 ms。v2 发现
 | tp2 | 12.31 / 4.16 / 1.02 | 10.18@11.8 / 2.51@2.7 / 0.60@0.81 |
 | pd1p1d | 7.84 / 2.12 / 0.54 | 1.59@5.2 / 0.16@1.8 / 0.11@0.45 |
 
-\* 512 桶 replica2 疑受 SAT_CONC=64 或 rr_proxy 上限影响，2048/8192 为 1.93/1.98×（EXP-007 §7；复测见附录 A）。
+\* 512 桶 replica2 疑受 SAT_CONC=64 或 rr_proxy 上限影响，2048/8192 为 1.93/1.98×（EXP-007 §7）。**复测（EXP-023，附录 D）：SAT_CONC=128 下 20.87 req/s，原值确系欠饱和，512 桶扩展效率同口径 1.63×**。
 
 ![四臂饱和吞吐总览](../pd_disagg/figures/fig7_saturation_overview.png)
 
@@ -472,7 +472,7 @@ bug1：`connector:433` AssertionError（P 上 `max_tokens>1` + 地址串 id）�
 | NCCL allreduce 大消息 | 1.78（8/21）vs 6.20 avg / 6.40–6.50 平台（8/29）GB/s | ⚠ 停用待复核 | EXP-002 / 018 / 019 |
 | 差异机制 | NCCL 自报 `Using network Socket` + `falling back to /dev/shm`；单点对照 SHM 3.96 vs Socket 0.76 GB/s；计时口径干净 | 终端级证据 | EXP-019 |
 
-EXP-019 §8 的复现四步（NCCL_DEBUG 落盘 → 扫 NCCL_P2P_LEVEL × NCCL_SHM_DISABLE → 记 PCIe 运行态 → 定因）与 EXP-018 缺的 half dtype 在本文写作时正在补跑，结果见附录 D（EXP-020/021）。
+EXP-019 §8 的复现四步与 EXP-018 缺的 half dtype 已补跑，结果见附录 D（EXP-020《NCCL 旋钮矩阵复现 1.78 GB/s》/ EXP-021《NCCL allreduce dtype 扫描》）：Socket 路径落窗、SHM 路径亦见塌陷，**定因不唯一**。
 
 ## 3.4 MoE
 
@@ -512,7 +512,7 @@ bs=1 roofline：MoE 221/~373 tok/s（59%），dense 109/~142（77%）。方法�
 | 非 EP（E=60, N=704） | 24.4 → 23.4（**−3.8%**） | ~0 | −3.7% | −3.3% | 单轮 |
 | 非 EP 三轮 | 24.4±0.1 → 23.5±0.1（**−3.6%**） |— | −3.7% | −3.4% | mean±std |
 
-correctness：`test_moe.py::test_fused_moe` 120 passed / 120 skipped；全文件子集 1041 passed / 127 skipped / 0 failed。e2e TPOT +0.8–1.2%（c1/c32/c128）与 $\Delta_{kernel} \times 56.4\%$ 折算一致，但低于跨会话漂移 ±5–8%，**不作 headline**（LEDGER 🚫）。D3 判定：中段打平说明 Triton tile 空间已被启发式覆盖，config 即最优杠杆。上游 PR：vllm-project/vllm#54372（2026-08-29 提交，OPEN 未合并）。
+correctness：`test_moe.py::test_fused_moe` 120 passed / 120 skipped；全文件子集 1041 passed / 127 skipped / 0 failed。e2e TPOT +0.8–1.2%（c1/c32/c128）与 $\Delta_{kernel} \times 56.4\%$ 折算一致，但低于跨会话漂移 ±5–8%，**不作 headline**（LEDGER 🚫）。D3 判定：中段打平说明 Triton tile 空间已被启发式覆盖，config 即最优杠杆。大 M 档（512–4096）独立复测见附录 D（EXP-022）：−2.8~−14.0% 全段显著。上游 PR：vllm-project/vllm#54372（2026-08-29 提交，OPEN 未合并）。
 
 ### EPLB gate（EXP-017 D5）
 
@@ -1273,22 +1273,22 @@ top-k 路由、grouped GEMM、$\bar M = NK/E$（D2/D3）；显式 permute（Cutl
 
 ## 附录 A 缺口审计（2026-09-15）
 
-> 只读审计 66 条的压缩版。数据完整性总体良好：19 份记录引用的 raw/图实查零缺失，git 与 origin 同步。状态列：⏳ 本文写作时已在补跑（结果见附录 D）；📝 本文写作时已同步；👤 只能用户做；🔒 环境限制；⬜ 未动。
+> 只读审计 66 条的压缩版。数据完整性总体良好：19 份记录引用的 raw/图实查零缺失，git 与 origin 同步。状态列：✅ 本文写作期间补跑完成（附录 D）；📝 本文写作时已同步；👤 只能用户做；🔒 环境限制；⬜ 未动。
 
 | # | 条目 | 性质 | 状态 |
 |---|---|---|---|
-| 1 | NCCL collective 带宽 1.78 vs 6.2 GB/s：EXP-019 §8 复现四步未执行；EXP-019 自身对照实验未落 raw（违反铁律 3）；全仓约 20 处"待复核" | 开放问题 / 数据缺失 | ⏳ EXP-020 |
-| 2 | EXP-018 只测 float 未测 half（decode 实际 bf16） | 未跑 | ⏳ EXP-021 |
-| 3 | EXP-015 大 M（512–4096）kernel A/B 未单测 | 未跑 | ⏳ EXP-022 |
-| 4 | EXP-007 replica2@512 疑欠饱和，需 SAT_CONC=128 复测 | 未跑 | ⏳ EXP-023 |
+| 1 | NCCL collective 带宽 1.78 vs 6.2 GB/s：EXP-019 §8 复现四步未执行；EXP-019 自身对照实验未落 raw（违反铁律 3）；全仓约 20 处"待复核" | 开放问题 / 数据缺失 | ✅ 已跑（EXP-020，附录 D）；定因不唯一，措辞裁决待用户 |
+| 2 | EXP-018 只测 float 未测 half（decode 实际 bf16） | 未跑 | ✅ 已跑（EXP-021，附录 D）；未决 |
+| 3 | EXP-015 大 M（512–4096）kernel A/B 未单测 | 未跑 | ✅ 已跑（EXP-022，附录 D）；8/8 显著 |
+| 4 | EXP-007 replica2@512 疑欠饱和，需 SAT_CONC=128 复测 | 未跑 | ✅ 已跑（EXP-023，附录 D）；欠饱和确认 |
 | 5 | HANDOFF"下一步第一动作"：d1 同负载 ncu 复采 gemvx/fused_moe 拿 Estimated Speedup | 未跑 | 🔒 主力机 RmProfilingAdminOnly=1，需采集主机 |
 | 6 | PR #54372 真实状态：OPEN，pre-run-check ×2 失败（缺 `ready` label / 作者 0 merged PR），无人类 review | 外部阻塞 | 👤 Slack #pr-reviews 求 reviewer |
 | 7 | "PR 提交留用户"过时表述 12 处（LEDGER / CHECKLIST / EXP-015 / PR_DRAFT / README / TALK / WEEKLY / RESUME_EVIDENCE…） | 文档不一致 | 📝 已同步 |
-| 8 | "记录 EXP-001~017 / 17 份"（HANDOFF / README / REPORT / 怎么读） | 文档不一致 | 📝 已同步为 19（附录 D 后需再 +N） |
+| 8 | "记录 EXP-001~017 / 17 份"（HANDOFF / README / REPORT / 怎么读） | 文档不一致 | 📝 已同步为 23 |
 | 9 | correctness 两口径并存（120 passed vs 1041 passed / 127 skipped） | 文档不一致 | 📝 已加括注 |
 | 10 | EXP-006 §7 7668 token 开放问题已在 analysis/ 关闭未回填；EXP-007 §8"figures/ 待出图"过时；EXP-008 状态行未同步 EXP-012 定稿 | 已解未回填 | 📝 已加勘注 |
 | 11 | HANDOFF §8 编号从 6 起；PR_BODY_FINAL 写 `git push myfork` 但无该 remote | 文档不一致 | 📝 已修 |
-| 12 | HANDOFF.md：15 铁律段、lectures/02:749 仍写"未提交不写提交" | 文档不一致 | ⬜ 见附录 D 后一并修 |
+| 12 | HANDOFF.md：15 铁律段、lectures/02:749 仍写"未提交不写提交" | 文档不一致 | 📝 已修 |
 | 13 | R0-6 线上简历措辞排雷 | 仅用户 | 👤 |
 | 14 | 是否追认 6.2 / 修订 1.78 及 EXP-005、RESUME_EVIDENCE 下游措辞 | 仅用户裁决 | 👤（附录 D 给依据） |
 | 15 | filter-repo 历史瘦身授权（移除 72 MB .nsys-rep，代价全部 hash 失效） | 仅用户 | 👤 建议不做 |
