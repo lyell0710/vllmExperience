@@ -105,6 +105,6 @@ PD 分离的价值主张（消除 prefill 对 decode 的干扰、独立扩缩 P/
 ## 附录
 - A. SLO 敏感性：fig6（0.5–4× 排序稳定）
 - B. 全量数据表：results/b1_matrix/derived/sweep_summary.csv
-- C. 实验记录索引：../records/（EXP-001~028）
+- C. 实验记录索引：../records/（EXP-001~029）
 - D. request 级 KV 归因全数据：ext1/derived/ext1_per_request.csv（EXP-013）
 - E. MoE 前瞻（第 2 阶段，EXP-009/014）：Qwen1.5-MoE-A2.7B TP2+EP 未调优基线 TPOT 4.62ms（dense 7B TP2 的 2.0×）；**decode 优势在 bs≈8 反转**（2.03×@bs1 → 0.82×@bs128，top-4/60 命中并集随 batch 趋全量的读放大）； nsys node 级分解：serving batch 下 fused_moe grouped GEMM 占 GPU 时间 56.4%——E=30，N=1408 config 缺失（运行时告警在案）正中该热点（图：../moe_perf/figures/d1_fig1_decode_scaling.png），调优见 moe_perf/（EXP-015）
