@@ -308,3 +308,15 @@
 **产物路径**：`records/EXP-024_512_bucket_conc128_parity.md`；`runs.jsonl` 行 128–129；`pd_disagg/raw/20260915T0949_tp2_*`、`raw/20260915T0952_pd1p1d_*`、`raw/20260915T0947_tp2_conc128_server_8100.log`、`raw/20260915T0950_pd1p1d_conc128_{P_8100,D_8200,proxy}.log`；`pd_disagg/hw/20260915T0936_nccl_h3_*`（120 文件）、`hw/derived/20260915T0936_nccl_h3_longrun.csv`；新脚本 `pd_disagg/scripts/{tp2_stack.sh,pd_stack.sh}`、`scripts/nccl_h3_longrun_probe.sh`；改 `pd_disagg/scripts/make_fig7_overview.py`（白名单）、重算 `figures/fig7_saturation_overview.png`。
 
 **下一步**：用户裁决 NCCL 措辞（维持停用已确认，H3 证据已备）；agent 可做：replica2 conc≥192 真饱和点、rr_proxy 开销拆分、pd_stack.sh 的 proxy 就绪探测改为 POST 一个 1-token 请求；ncu ES 需采集主机。
+
+## 2026-09-15（续二）EXP-025 replica2@512 真饱和点 + 吞吐峰≠goodput 峰
+
+**做了什么**：跑 EXP-025《replica2@512 真饱和点扫描》——同 N=1200 / 同 seed 1099 下扫 conc ∈ {128,192,256}，每档独立起栈并复核 prefix cache = 0；按跑前锁定的 A/B/C 判据与 ≤2% 判饱和阈值判读；另从 bench.json 的逐请求数组（`ttfts` + `itls`）按项目锁定 SLO（TTFT≤328 / TPOT≤50）现场重算 goodput。
+
+**为什么（决策依据）**：EXP-023 在 conc128 测得 20.87 但同档 TPOT p50 只有 36.8ms（< SLO 50ms），推断"可能仍未封顶"（EXP-024 §6⑥ 挂账）。设计时预判了一个陷阱：**N 不同会假性制造"未封顶"**（长跑 ramp 占比小），故必须在本实验内重跑 conc128@同 N 作唯一合法对照，而不是拿新点去比 20.87@N=400。
+
+**关键数字**：吞吐 **22.118 / 24.343 / 25.297 req/s**（conc 128/192/256）——conc192 vs 128 **+10.06%**（>5% → **判据 A 成立：未封顶**），conc256 再 +3.92%（>2%，**仍未见平台**）。**N 效应实测确认**：conc128@N=1200 = 22.12 vs @N=400 = 20.87，**+6.0%**（同并发同 seed，仅 N 不同）——预判的陷阱是真的。**吞吐峰 ≠ goodput 峰**：TPOT 违规 5→736→1050，TTFT 违规 915→1124→1198，goodput **5.16 / 0.47 / 0.00 req/s**（最优 conc128、conc256 归零）；吞吐 +14.4% 的边际增益全部由 SLO 合规性偿付。三档均触发功率帽（450+ W）。
+
+**产物路径**：`records/EXP-025_replica2_512_true_saturation.md`；`runs.jsonl` 行 130–132（run_id `20260915T1031/1034/1036`）；`raw/20260915T103{0,1,3,4,5,6}_*`、`snapshots/` 同前缀、服务日志 `raw/20260915T103{0,3,5}_replica2_conc128_server_*.log`；`figures/fig7` 不受影响（白名单不选新行——EXP-024 根治"后者覆盖"的首次实战验证）。
+
+**下一步**：① `collect_point.py` 增加 saturation 模式 goodput 计算（现 `goodput_slo_rps` 为 null）；② 若要报 conc256 口径的扩展效率，需补 colocate@512 同 conc 对照（本次未做）；③ 512 桶 SLO 在饱和投放下的口径错配问题（§6④）需报告层裁决；④ 剩余机器绑定项：descriptor 合并改造（最高价值）、rr_proxy 开销拆分。

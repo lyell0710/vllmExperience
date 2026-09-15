@@ -47,6 +47,7 @@
 | [EXP-022](records/EXP-022_d2_bigM_kernel_ab.md) | D2 大 M（512–4096）kernel A/B：tuned config 在 prefill 级 M 是否保持收益（补 EXP-015 §7 缺口） | 9/15 | D2 | 完成 |
 | [EXP-023](records/EXP-023_replica2_512_saturation_conc128.md) | replica2@512 饱和复测（SAT_CONC=128）：EXP-007 的欠饱和疑点追认或修正 | 9/15 | B1 | 完成 |
 | [EXP-024](records/EXP-024_512_bucket_conc128_parity.md) | 512 桶四臂统一到 conc128 口径（补 tp2 / pd1p1d 两臂，供 fig7 重算） | 9/15 | B1 | 完成 |
+| [EXP-025](records/EXP-025_replica2_512_true_saturation.md) | replica2@512 真饱和点扫描（conc 128/192/256，同 N 同 seed） | 9/15 | B1 | 完成（判据 A：未封顶） |
 
 ## 证据台账（勾一项 = 数据落盘 + 本表登记产物路径）
 
@@ -81,6 +82,7 @@
 | EXP-023《replica2@512 饱和复测（SAT_CONC=128）》 | ✅ 9/15 | replica2@512 conc128 **20.87 req/s**（conc64 15.58，+34% > 阈值 +5% → 欠饱和确认），TTFT p50 771 ms、TPOT p50 36.8 ms、gate 通过；colocate@512 conc128（fresh）12.81（原 10.36，TPOT p50 67 ms 已破 SLO）；512 桶扩展效率同口径 **1.63×**（原 1.50×）；conc128 仍未封顶，只写「≥20.87 @conc128」。措辞：EXP-007 §5 的 15.58\*/1.50× 引用时改为 ≥20.87 @conc128 / 1.63×；fig7 重算需排除污染行 `20260915T0330_colocate_512x128_saturation`（前缀命中 8.9%） | `pd_disagg/results/b1_matrix/raw/20260915T0329_replica2_*`、`20260915T0333_colocate_*`、`runs.jsonl` 行 125–127、服务日志 `20260915T0312_replica2_conc128_server_*` |
 | EXP-024《512 桶四臂统一到 conc128 口径》 | ✅ 9/15 | 四臂同口径 conc128：replica2 **20.87** · colocate **12.81** · tp2 **12.30** · pd1p1d **8.15** req/s；512 扩展效率 **1.63×**（原 1.50×）。**两臂性质与 colocate/replica2 相反**：tp2 在 conc64 即饱和（12.31→12.30，−0.1%）、pd1p1d 在 conc64 即撞传输墙（`bytes/wall` 0.230→0.239 GB/s，上限模型 0.2393/0.02936 = 8.15 与实测 8.152 精确吻合）；只有 colocate/replica2 真欠饱和（+23.6%/+34.0%）。副作用：**tp2 是四臂唯一不触发功率帽**（功率峰 326 W，无 0x4），PD 的 TPOT p50 18.97 ms 四臂最好 / TTFT p50 12669 ms 四臂最差。方法学：**并发>1 时 `bytes/ΣxferDuration` 不再是吞吐**（它累加了并发重叠的每请求时长），聚合速率一律用 `bytes/wall` | `runs.jsonl` 行 128–129、`raw/20260915T0949_tp2_*`、`raw/20260915T0952_pd1p1d_*`、`figures/fig7`（已按白名单重算） |
 | EXP-020 附录 C《H3 长跑探针》 | ✅ 9/15 | SHM 路径 60 轮大消息扫描（float/half 交替、200ms PCIe 采样）：**按锁定阈值（<3.0）零塌陷 → 判定 C**（频率 <1.7%）。post-hoc：第 43 轮平台 3.23 GB/s 未达线但**曲线从 1M 起平坦**，与 EXP-021 的 2.15、EXP-002 的 1.78 同族 → 低平台态频率 1/60，与 1/28 合并 2/88 ≈ 2.3%，**两次都在 Gen4 x16、时钟满血下**（机理不是 PCIe 未升频）。观测到的低平台态分位 2.15/3.23 未及 2.3 以下，而 Socket 档稳定 1.51–1.70 → **证据天平向 Socket 倾斜但仍不追认**，R0-1 维持"停用" | `pd_disagg/hw/20260915T0936_nccl_h3_*`（120 文件）、`hw/derived/20260915T0936_nccl_h3_longrun.csv`、`scripts/nccl_h3_longrun_probe.sh`、EXP-020 附录 C |
+| EXP-025《replica2@512 真饱和点扫描》 | ✅ 9/15 | 同 N=1200 同 seed 三档：**22.118 / 24.343 / 25.297 req/s**（conc 128/192/256），conc192 vs 128 **+10.06%**（>5% → 判据 A：**未封顶**），conc256 再 +3.92%（>2%，仍未见平台）。**吞吐峰 ≠ goodput 峰**：TPOT p50 在 conc192 就破 SLO 50ms（53.03）、TTFT p50 在 conc256 涨到 2444ms → 按锁定 SLO 自算 goodput **5.16 / 0.47 / 0.00 req/s**（最优在 conc128、conc256 归零）。**N 效应实测确认**：conc128@N=1200 = 22.12 vs @N=400 = 20.87（**+6.0%**），故 20.87 是 N=400 口径。措辞：`20.87` 需补 `N=400`；`1.63×` 保持 conc128 口径且注明随 conc 变；goodput 绝对值因 SLO 错配**不进对外文本** |
 
 ## 措辞红线状态（写简历/报告前查此表）
 
