@@ -38,7 +38,7 @@ flowchart LR
 | PD 分离瓶颈定量：KV 等待占 TTFT **54.2 / 62.5 / 64.2%**（512/2K/8K，p50，request 级因果占比，每桶 n=11） | 六段分解闭环误差 p50 <0.1%；bytes 与 Prometheus 对账完全一致 | [EXP-013](records/EXP-013_ext1_request_level_kv_attribution.md)、`pd_disagg/ext1/derived/ext1_per_request.csv` |
 | MoE 的 decode 优势在 bs≈8 反转 | MoE/dense 2.03×(bs=1) -> 0.97×(bs=8) -> **0.82×**(bs=128)；nsys node 级归因：fused_moe grouped GEMM 占 GPU 时间 56.4%（bs=32） | [EXP-014](records/EXP-014_d1_moe_kernel_decomposition.md)、`moe_perf/derived/d1_scaling.csv`、`moe_perf/derived/d1_kernel_share_bs32.csv` |
 | 补齐两个社区空缺的 MoE tuning config | E=30,N=1408 / E=60,N=704（各 18 M 档）；kernel A/B：M=1 **-8.5% / -3.8%**，M≥128 -3.3~-3.9%；correctness 120 passed（`::test_fused_moe` 单函数；全文件子集 1041 passed / 127 skipped，EXP-015 §5.1）；PR 已提交（vllm-project/vllm#54372，OPEN 未合并） | [EXP-015](records/EXP-015_d2_moe_config_tuning.md)、`moe_perf/PR_DRAFT.md` |
-| 版本升级实测（system-version comparison，v0.17.1 至 v0.25.1） | 512 桶饱和吞吐 **+45%**（7.14 -> 10.36 req/s）；启动 308 -> 58s；计算受限桶零差异 | [EXP-008](records/EXP-008_b3_version_compare.md) |
+| 版本升级实测（system-version comparison，v0.17.1 至 v0.25.1） | 512 桶饱和吞吐 **+45%**（7.14 -> 10.36 req/s，两侧同为 conc64 口径）；启动 308 -> 58s；计算受限桶零差异 | [EXP-008](records/EXP-008_b3_version_compare.md) |
 
 ![四臂饱和吞吐总览](pd_disagg/figures/fig7_saturation_overview.png)
 
@@ -68,7 +68,7 @@ flowchart LR
 
 ## 代码导览
 
-主要目录：`pd_disagg/`（部署选型：脚本、数据、图与报告 `pd_disagg/REPORT.md`）、`moe_perf/`（MoE 分解与调优）、`records/`（23 份八节实验记录）、`docs/theory/`（原理笔记）、`docs/TECH_DOC_vllm_engineering.md`（总览级技术文档：原理 / 数据 / 分析 / 分类面试题）。
+主要目录：`pd_disagg/`（部署选型：脚本、数据、图与报告 `pd_disagg/REPORT.md`）、`moe_perf/`（MoE 分解与调优）、`records/`（24 份八节实验记录）、`docs/theory/`（原理笔记）、`docs/TECH_DOC_vllm_engineering.md`（总览级技术文档：原理 / 数据 / 分析 / 分类面试题）。
 
 其中最值得读的一处改动：约 16 行本地可观测性 patch，把「KV 传输占 TTFT」从对账推断升级为因果测量。四臂矩阵显示 PD 分离最低，但「KV 传输占 TTFT 多少」最初只能靠分量对账（拿 colocate 无负载 TTFT 近似 P 段）间接推断。EXT-1 把这约 16 行改动打在 vLLM 0.25.1 NIXL connector（逐行 `# EXT1` 标记、原件备份可还原），将其升级为逐请求因果测量——核心节选：
 
@@ -152,6 +152,7 @@ bash moe_perf/d1_sweep.sh
 | [EXP-021 NCCL allreduce dtype 扫描（half/bfloat16 vs float，补 EXP-018 §7 缺口）](records/EXP-021_nccl_allreduce_dtype_scan.md) | 延迟地板对 dtype 不敏感（13.5–14.4 µs，差 <7%）；大消息平台的 dtype 差异被 ±30% 的运行间抖动盖住，未决；bf16 平台 6.0–6.9 GB/s |
 | [EXP-022 D2 大 M（512–4096）kernel A/B：tuned config 在 prefill 级 M 是否保持收益（补 EXP-015 §7 缺口）](records/EXP-022_d2_bigM_kernel_ab.md) | 3 轮交叉次序：EP −6.4/−14.0/−9.9/−6.8%、非 EP −2.8/−6.0/−11.8/−10.3%（M=512/1024/2048/4096），8/8 档超 2 倍合并 std |
 | [EXP-023 replica2@512 饱和复测（SAT_CONC=128）：EXP-007 的欠饱和疑点追认或修正](records/EXP-023_replica2_512_saturation_conc128.md) | replica2@512 在并发 128 下 20.87 req/s（并发 64 时 15.58，+34%），原值确系欠饱和；同口径 colocate 12.81，512 桶扩展效率 1.63×（原 1.50×） |
+| [EXP-024 512 桶四臂统一到 conc128 口径（补 tp2 / pd1p1d 两臂，供 fig7 重算）](records/EXP-024_512_bucket_conc128_parity.md) | 四臂同口径 conc128：replica2 20.87 · colocate 12.81 · tp2 12.30 · pd1p1d 8.15 req/s，512 扩展效率 1.63×；tp2 与 PD 在 conc64 时就已到顶（饱和 / 传输墙），只有 colocate/replica2 真欠饱和 |
 
 ## 测量方法
 

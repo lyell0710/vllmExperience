@@ -59,3 +59,5 @@
 
 ## 8. 下游影响
 S1 headline 全部就位；B4 报告主体数据齐；figures/ 待出图〔已出：pd_disagg/figures/fig1–fig7〕；PD 溃败的定量机理衔接 B2（传输延迟分解）。
+
+- 〔勘注 2026-09-15：**512 桶的 conc64 数字已被 conc128 口径取代**——EXP-023《replica2@512 饱和复测（SAT_CONC=128）》与 EXP-024《512 桶四臂统一到 conc128 口径》补测得 colocate 12.81 / replica2 20.87 / tp2 12.30 / pd1p1d 8.15 req/s，扩展效率 1.63×。其中 tp2 与 pd1p1d 在 conc64 时就已到顶（饱和 / 传输墙），只有 colocate/replica2 真欠饱和。本记录的 conc64 值作为史料保留；现行口径见 LEDGER B1 行与 fig7。2K/8K 桶不受影响。〕

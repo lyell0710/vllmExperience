@@ -296,3 +296,15 @@
 **产物路径**：`docs/TECH_DOC_vllm_engineering.md`；`records/EXP-020~023`；`pd_disagg/hw/20260915T*`、`hw/derived/20260915T*`；`moe_perf/raw/EXP-022/`、`moe_perf/derived/20260915T0304_exp022_bigM_ab.csv`；`pd_disagg/results/b1_matrix/raw/20260915T03*`、`runs.jsonl` +3 行；新脚本 `scripts/nccl_knob_matrix{.sh,_analyze.py}`、`scripts/nccl_size_scan_dtype.sh`、`scripts/nccl_dtype_scan_analyze.py`、`scripts/nccl_shm_collapse_probe.sh`、`scripts/nccl_h2_concurrent_load_probe{,_min}.sh`、`moe_perf/d2_bigM_ab.sh`、`moe_perf/d2_bigM_analyze.py`、`pd_disagg/scripts/replica2_stack.sh`。
 
 **下一步**：用户裁决 NCCL 带宽措辞（R0-1 停用 → 带路径引用？连带 EXP-005 §6 / RESUME_EVIDENCE / README 约 20 处）；用户去 vLLM Slack #pr-reviews 求 `ready` label；agent 侧：EXP-020 H3 长跑探针（≥50 轮带 PCIe 采样）、fig7 按 EXP-023 重算（排除污染行）；ncu ES 需采集主机。
+
+## 2026-09-15（续）512 桶口径补齐 + fig7 静默混口径根治 + H3 长跑
+
+**做了什么**：①发现并根治 fig7 的静默混口径——`make_fig7_overview.py` 原是"后来者覆盖"选择，512 桶会把 colocate/replica2 选成 conc128、tp2/pd1p1d 选成 conc64（同桶两种并发，柱子不可比）；改为**显式 `DECLARED` 白名单 + 唯一命中，任一不符即 SystemExit**，并把污染点 `20260915T0330_colocate` 写进脚本"刻意排除"注释。②按用户裁决走"整个 512 桶升 conc128"：新写 `pd_disagg/scripts/tp2_stack.sh`、`pd_stack.sh`（down 走 `/proc`+SIGTERM，不用 pkill 字面量），补测 tp2@512 与 pd1p1d@512 的 conc128 点（EXP-024），fig7 重算并核对四臂选值。③跑 EXP-020 附录 C 的 H3 长跑探针（60 轮 SHM 大消息 + 200ms PCIe 采样）。④同步 LEDGER（B1 行 512 列 + 索引 + 台账 2 行）、README（索引 +1、计数 23→24、B3 口径注）、REPORT、TECH_DOC（§3.1 表 + 脚注 + C11 + 附录 D 两节）、EXP-007 勘注。
+
+**为什么（决策依据）**：用户选 B（补测两臂使整桶同口径）——因为 A（冻结 conc64）会让 headline 图不体现 EXP-023 的修正，C（图内混口径）会误读。H3 长跑是 NCCL 措辞裁决的前置：用户选"维持停用"，而 H3 的结果正好给出"证据天平向 Socket 倾斜但仍不足以追认"的定量依据。
+
+**关键数字**：**512 桶四臂 conc128 = replica2 20.87 · colocate 12.81 · tp2 12.30 · pd1p1d 8.15 req/s，扩展效率 1.63×**（原 conc64 口径 1.50×）。性质分化：tp2 在 conc64 已饱和（12.31→12.30，−0.1%）、pd1p1d 在 conc64 已撞传输墙（`bytes/wall` 0.230→0.239 GB/s，上限模型 0.2393÷0.02936 = 8.15 = 实测 8.152）；只有 colocate/replica2 真欠饱和（+23.6% / +34.0%）。**tp2 是四臂唯一不触发功率帽**（326 W，无 0x4）。PD 的 TPOT p50 18.97 ms 四臂最好、TTFT p50 12669 ms 四臂最差。方法学：并发>1 时 `bytes/ΣxferDuration` 不再是吞吐（累加了并发重叠时长），聚合速率一律用 `bytes/wall`。H3：60 轮**按锁定阈值（<3.0）零塌陷 → 判定 C**；post-hoc 第 43 轮 3.23 GB/s 曲线形状属低平台态家族，频率 1/60（与 EXP-021 的 1/28 合并 2/88≈2.3%），两次都在 Gen4 x16 满血下 → 机理不是 PCIe 未升频，1.78 证据天平向 Socket 倾斜但仍不追认。
+
+**产物路径**：`records/EXP-024_512_bucket_conc128_parity.md`；`runs.jsonl` 行 128–129；`pd_disagg/raw/20260915T0949_tp2_*`、`raw/20260915T0952_pd1p1d_*`、`raw/20260915T0947_tp2_conc128_server_8100.log`、`raw/20260915T0950_pd1p1d_conc128_{P_8100,D_8200,proxy}.log`；`pd_disagg/hw/20260915T0936_nccl_h3_*`（120 文件）、`hw/derived/20260915T0936_nccl_h3_longrun.csv`；新脚本 `pd_disagg/scripts/{tp2_stack.sh,pd_stack.sh}`、`scripts/nccl_h3_longrun_probe.sh`；改 `pd_disagg/scripts/make_fig7_overview.py`（白名单）、重算 `figures/fig7_saturation_overview.png`。
+
+**下一步**：用户裁决 NCCL 措辞（维持停用已确认，H3 证据已备）；agent 可做：replica2 conc≥192 真饱和点、rr_proxy 开销拆分、pd_stack.sh 的 proxy 就绪探测改为 POST 一个 1-token 请求；ncu ES 需采集主机。

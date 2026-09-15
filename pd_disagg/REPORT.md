@@ -58,11 +58,12 @@
 ### 2.3 负载扫描（headline，fig1/fig2）
 | 桶 | 饱和 req/s：colo/repl/tp2/pd | goodput 峰值 rps |
 |---|---|---|
-| 512 | 10.36 / 15.58* / 12.31 / 7.84 | 8.57 / 12.75 / 10.18 / **1.59** |
+| 512 | **12.81 / 20.87 / 12.30 / 8.15**〔conc128，EXP-023/024〕 | 8.57 / 12.75 / 10.18 / **1.59** |
 | 2048 | 3.63 / 7.00 / 4.16 / 2.12 | 2.41 / 4.96 / 2.51 / **0.16** |
 | 8192 | 0.90 / 1.78 / 1.02 / **0.54** | 0.43 / 0.90 / 0.60 / **0.11** |
 
-*replica2@512 网格未达真实拐点（EXP-007 §7），数字保守。
+*replica2@512 的 conc64 原值确系欠饱和（EXP-023 复测 +34%）。
+512 桶现为 **conc128 口径**（EXP-023/024 四臂统一补测）；2K/8K 仍为 conc64。扩展效率同口径 1.63×（原 1.50×）。旧 conc64 值 10.36/15.58/12.31/7.84 见 EXP-007 史料。
 
 - **replica2**：2K/8K 桶 1.93/1.98× 扩展——无跨卡通信的复制在受限互联上是 "免费"的并行。
 - **tp2**：双卡只换 13–19% 吞吐。decode 提速在批量化后失去分量（大 batch 下 decode 转向计算/调度约束），prefill 的 allreduce 墙成为主导。
@@ -104,6 +105,6 @@ PD 分离的价值主张（消除 prefill 对 decode 的干扰、独立扩缩 P/
 ## 附录
 - A. SLO 敏感性：fig6（0.5–4× 排序稳定）
 - B. 全量数据表：results/b1_matrix/derived/sweep_summary.csv
-- C. 实验记录索引：../records/（EXP-001~023）
+- C. 实验记录索引：../records/（EXP-001~024）
 - D. request 级 KV 归因全数据：ext1/derived/ext1_per_request.csv（EXP-013）
 - E. MoE 前瞻（第 2 阶段，EXP-009/014）：Qwen1.5-MoE-A2.7B TP2+EP 未调优基线 TPOT 4.62ms（dense 7B TP2 的 2.0×）；**decode 优势在 bs≈8 反转**（2.03×@bs1 → 0.82×@bs128，top-4/60 命中并集随 batch 趋全量的读放大）； nsys node 级分解：serving batch 下 fused_moe grouped GEMM 占 GPU 时间 56.4%——E=30，N=1408 config 缺失（运行时告警在案）正中该热点（图：../moe_perf/figures/d1_fig1_decode_scaling.png），调优见 moe_perf/（EXP-015）
