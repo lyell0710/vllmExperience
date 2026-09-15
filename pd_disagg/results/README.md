@@ -28,6 +28,11 @@ results/b1_matrix/
     "tpot_ms": {"p50": 0, "p90": 0, "p99": 0},
     "throughput_tok_s": 0,
     "goodput_slo_rps": 0,               // SLO 定义见下，全矩阵统一，锁定后不改
+    "goodput_detail": {                 // 2026-09-15（EXP-028）新增：goodput 自带口径与达标率
+      "slo_ttft_ms": 328,               //   生效的 SLO（显式 --slo-* 优先，否则按输入桶查锁定表）
+      "slo_tpot_ms": 50,
+      "ok": 0, "total": 0, "frac": 0
+    },
     "gpu_seconds_per_request": 0        // = gpu_count × wall_time_s / completed
   },
   "gpu_count": 2,                        // colocate=1，其余=2（成本口径的分母依据）
@@ -55,7 +60,7 @@ results/b1_matrix/
 ## 规则
 
 1. `gates.pass=false` 的行**保留在 runs.jsonl**（诚实记录），但绝不进 derived/、 figures/ 与报告。
-2. **SLO 定义**（goodput 用）——方案 2026-08-21 锁定（DistServe 式相对 SLO）：
+2. **SLO 定义**（goodput 用）——**代码内唯一事实源 = `scripts/collect_point.py` 的 `SLO_TTFT_MS_BY_BUCKET` / `SLO_TPOT_MS_DEFAULT`**（`make_figures.py` 从这里 import，不再各留一份）。饱和/归因模式下若不显式传 `--slo-*`，`collect_point.py` 按输入桶自动缺省（512→328、2048→891、8192→4626 ms；TPOT 50 ms）；桶不在表里则 goodput 记 `null`。EXP-028《工装：`goodput_slo_rps` 在饱和模式下不再为空》验证了缺省路径与 EXP-025 的手算逐位一致。——方案 2026-08-21 锁定（DistServe 式相对 SLO）：
    - **TPOT ≤ 50 ms** 固定（=20 tok/s，约为人类阅读速度 3 倍，体验锚点，与硬件无关）
    - **TTFT ≤ 5 × 该输入桶的无负载基线**（基线 = colocate 臂 attribution 跑、并发 1 的 p50）
    - attribution 完成后将换算出的绝对毫秒数填入下表并 commit，**此后不得回改**：

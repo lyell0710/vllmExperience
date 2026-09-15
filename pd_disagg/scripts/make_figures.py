@@ -35,7 +35,8 @@ ARM_LABEL = {
 }
 ARMS = list(ARM_COLOR)
 BUCKETS = [512, 2048, 8192]
-SLO_TTFT = {512: 328, 2048: 891, 8192: 4626}
+# SLO 表不在这里定义：单一事实源 = collect_point.py（同一目录），此处只做别名。
+from collect_point import SLO_TTFT_MS_BY_BUCKET as SLO_TTFT  # noqa: E402
 PROV = "source: runs.jsonl (protocol v2, seed-per-point, 84 gated points) · 2×RTX4090 · vLLM 0.25.1"
 
 plt.rcParams.update({

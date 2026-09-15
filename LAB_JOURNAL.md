@@ -344,3 +344,15 @@
 **产物路径**：`records/EXP-027_rr_proxy_overhead_split.md`；raw `pd_disagg/results/b1_matrix/raw/20260915T1239_exp027_{direct8100,direct8200,proxy}_bench.{json,log}`、`20260915T1244_exp027_proxy_r2_bench.{json,log}`、服务/代理日志 `raw/20260915T1239_replica2_conc128_*`；脚本 `pd_disagg/scripts/exp027_proxy_overhead.sh`。**不进 runs.jsonl**（是开销拆分，不是四臂点）。
 
 **下一步**：① 候选 1「两实例共享主机资源」的定量拆分——在**单实例**上把并发推到与双实例合计相同的总在飞量，看单实例能否复现 22.28 req/s（这会把 1.63× 的最后一块补上）；② 代理侧开销构成未拆（uvicorn 单 worker / httpx 连接池 / 流式转发拷贝次数）。
+
+## 2026-09-15（续五）EXP-028 工装：goodput 不再是空字段（SLO 表收拢 + 交叉验证）
+
+**做了什么**：`runs.jsonl` 的 `goodput_slo_rps` 在饱和模式下一直是 `null`（EXP-025 §7 登记）。根因是 `run_point.sh` 只在显式设了 `SLO_TTFT_MS`/`SLO_TPOT_MS` 时才透传参数。把 SLO 锁定表搬进 `collect_point.py`（按输入桶自动缺省、显式传参优先），把 `make_figures.py` 里重复的那份改为 import（单一事实源），并抽出 `compute_goodput()`、新增 `goodput_detail` 字段与 `--dry-run`。
+
+**为什么（决策依据）**：① EXP-025 的 goodput 是**手写脚本**算的，若此后入库工具算出不同的数，就会变成"同一指标两套数"；② SLO 表当时在 `make_figures.py` 里独存一份，`collect_point.py` 需要它时只能靠调用方传参——这是典型的第二事实源；③ `--dry-run` 让以后验证工装改动不必污染权威数据。
+
+**关键数字**：用新缺省重算 EXP-025 三点 → **5.1609 / 0.4666 / 0.0000**，与当时手算**逐位相同**；达标数 280 / 23 / 0，总数 1200，也相同；生效 SLO = 328 ms（512 桶）/ 50 ms（TPOT）。
+
+**产物路径**：`records/EXP-028_goodput_field_backfill.md`；验证证据 `pd_disagg/results/b1_matrix/raw/20260915T1252_exp028_goodput_backfill_verify.txt`（首行 provenance）；改 `pd_disagg/scripts/{collect_point.py,make_figures.py}`、`pd_disagg/results/README.md`（schema + SLO 段）。**未回溯改写 runs.jsonl**（raw 不可变；旧行 goodput 可用 `--dry-run` 重算）。
+
+**下一步**：候选 1「两实例共享主机资源」的定量拆分（EXP-027 §6④）——单实例把并发推到与双实例合计相同的总在飞量，看能否复现 22.28 req/s。

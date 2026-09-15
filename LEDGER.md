@@ -50,6 +50,7 @@
 | [EXP-025](records/EXP-025_replica2_512_true_saturation.md) | replica2@512 真饱和点扫描（conc 128/192/256，同 N 同 seed） | 9/15 | B1 | 完成（判据 A：未封顶） |
 | [EXP-026](records/EXP-026_nixl_descriptor_granularity.md) | NIXL descriptor 粒度实验：把「描述符碎片化」从推断变成实测 | 9/15 | B2 | 完成（H1 成立、H2 推翻） |
 | [EXP-027](records/EXP-027_rr_proxy_overhead_split.md) | rr_proxy 开销拆分：replica2 的 1.63× 缺口里有多少是代理 | 9/15 | B1 | 完成（判定 B：≈2%，非主因） |
+| [EXP-028](records/EXP-028_goodput_field_backfill.md) | 工装：`goodput_slo_rps` 在饱和模式下不再为空（SLO 缺省表进 collect_point） | 9/15 | B1 工装 | 完成 |
 
 ## 证据台账（勾一项 = 数据落盘 + 本表登记产物路径）
 

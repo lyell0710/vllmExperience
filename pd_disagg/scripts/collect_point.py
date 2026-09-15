@@ -3,7 +3,8 @@
 
 - 指标来自 bench 结果 JSON（--save-result --save-detailed 产物）
 - gate 增量来自 before/after /metrics 快照（直抓引擎端口）
-- goodput 仅在给定 --slo-* 时计算（sweep 阶段；SLO 锁定见 results/README.md）
+- goodput：SLO 锁定表见 results/README.md（**本文件的 SLO_* 常量为唯一代码内事实源**，
+  make_figures.py 从这里 import）；显式 --slo-* 优先，否则按输入桶查表。
 """
 
 import argparse
@@ -15,6 +16,11 @@ from pathlib import Path
 BASE = Path(__file__).resolve().parent.parent / "results" / "b1_matrix"
 KV_PAT = re.compile(r"nixl|kv_transfer|kv_load|expired", re.I)
 LINE_PAT = re.compile(r"^([^#\s].*?)\s+([0-9.eE+-]+)$")
+
+# ── SLO 锁定表（results/README.md「SLO 定义」表，2026-08-21 起 commit 锁定、不回改）──
+# TTFT 基线 = colocate 臂 attribution（并发 1）的 p50，×5 换算；TPOT 固定 50 ms。
+SLO_TTFT_MS_BY_BUCKET = {512: 328, 2048: 891, 8192: 4626}
+SLO_TPOT_MS_DEFAULT = 50.0
 
 
 def read_prom(path):
@@ -41,6 +47,28 @@ def exact_delta(deltas, metric_name, label_sub=None):
     return total if found else None
 
 
+def compute_goodput(ttfts, itls, slo_ttft_ms, slo_tpot_ms, duration):
+    """逐请求判 SLO 达标，返回 (goodput_req_per_s, 达标数, 总请求数)。
+
+    口径（与 results/README.md §SLO 定义一致）：
+      - TTFT 单请求判：ttfts[i] * 1000 <= slo_ttft_ms
+      - TPOT 单请求判：该请求 itls[i] 的**均值** * 1000 <= slo_tpot_ms
+      - 两条件同时满足才计入；分母 = wall_time(duration)
+    缺数组（如未传 --save-detailed）时返回 None，不做静默回退（铁律 8）。
+    """
+    if not ttfts:
+        return None
+    ok = 0
+    for i, t in enumerate(ttfts):
+        per_itl = itls[i] if i < len(itls) else []
+        tpot_ms = (sum(per_itl) / len(per_itl) * 1000) if per_itl else float("inf")
+        if t * 1000 <= slo_ttft_ms and tpot_ms <= slo_tpot_ms:
+            ok += 1
+    if not duration:
+        return None
+    return round(ok / duration, 4), ok, len(ttfts)
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--prefix", required=True)
@@ -55,9 +83,20 @@ def main():
     ap.add_argument("--seed", type=int, default=42)
     ap.add_argument("--slo-ttft-ms", type=float, default=None)
     ap.add_argument("--slo-tpot-ms", type=float, default=None)
+    ap.add_argument("--dry-run", action="store_true",
+                    help="只计算并打印，不追加到 runs.jsonl")
     ap.add_argument("--env-label", default="ENV-B")
     ap.add_argument("--sha", default="752a3a5044")
     args = ap.parse_args()
+
+    # SLO 缺省按输入桶查锁定表（results/README.md §SLO 定义，commit 后不回改）。
+    # 显式传参优先；桶不在表里（如 128）则保持 None，goodput 记为 null。
+    # 动因：EXP-025 §7 发现 saturation 模式的 goodput_slo_rps 一直是 null，
+    # 因为 run_point.sh 只在显式设了 SLO_* 环境变量时才把参数传下来。
+    if args.slo_ttft_ms is None and args.input_len in SLO_TTFT_MS_BY_BUCKET:
+        args.slo_ttft_ms = SLO_TTFT_MS_BY_BUCKET[args.input_len]
+        if args.slo_tpot_ms is None:
+            args.slo_tpot_ms = SLO_TPOT_MS_DEFAULT
 
     bench_path = BASE / "raw" / f"{args.prefix}_bench.json"
     b = json.loads(bench_path.read_text())
@@ -104,16 +143,19 @@ def main():
         gate_pass = failed_requests == 0
 
     goodput = None
+    goodput_detail = None
     if args.slo_ttft_ms is not None and args.slo_tpot_ms is not None:
-        ttfts = g("ttfts") or []   # 单位: 秒(detailed 数组)
-        itls = g("itls") or []
-        ok = 0
-        for i, t in enumerate(ttfts):
-            per_itl = itls[i] if i < len(itls) else []
-            tpot_ms = (sum(per_itl) / len(per_itl) * 1000) if per_itl else float("inf")
-            if t * 1000 <= args.slo_ttft_ms and tpot_ms <= args.slo_tpot_ms:
-                ok += 1
-        goodput = round(ok / duration, 4) if duration else None
+        res = compute_goodput(g("ttfts") or [], g("itls") or [],
+                              args.slo_ttft_ms, args.slo_tpot_ms, duration)
+        if res is not None:
+            goodput, ok_n, tot_n = res
+            goodput_detail = {
+                "slo_ttft_ms": args.slo_ttft_ms,
+                "slo_tpot_ms": args.slo_tpot_ms,
+                "ok": ok_n,
+                "total": tot_n,
+                "frac": round(ok_n / tot_n, 4) if tot_n else None,
+            }
 
     def pct(metric):
         return {p: g(f"{p}_{metric}_ms") for p in ("p50", "p90", "p99")}
@@ -169,6 +211,7 @@ def main():
             "throughput_tok_s": g("total_token_throughput"),
             "output_tok_s": g("output_throughput"),
             "goodput_slo_rps": goodput,
+            "goodput_detail": goodput_detail,   # SLO 口径 + 达标数/总数（EXP-025 起）
             "gpu_seconds_per_request": round(args.gpu_count * duration / completed, 3)
             if completed else None,
         },
@@ -215,6 +258,11 @@ def main():
     }
 
     out = BASE / "runs.jsonl"
+    if args.dry_run:
+        print(json.dumps(row, ensure_ascii=False, indent=1))
+        print(f"[collect_point] DRY-RUN（未写入） {args.prefix} "
+              f"goodput_slo_rps={goodput} detail={goodput_detail}")
+        return
     with out.open("a") as f:
         f.write(json.dumps(row, ensure_ascii=False) + "\n")
     print(f"[collect_point] appended {args.prefix} -> {out} (gate_pass={gate_pass})")

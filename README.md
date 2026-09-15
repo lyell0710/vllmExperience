@@ -68,7 +68,7 @@ flowchart LR
 
 ## 代码导览
 
-主要目录：`pd_disagg/`（部署选型：脚本、数据、图与报告 `pd_disagg/REPORT.md`）、`moe_perf/`（MoE 分解与调优）、`records/`（27 份八节实验记录）、`docs/theory/`（原理笔记）、`docs/TECH_DOC_vllm_engineering.md`（总览级技术文档：原理 / 数据 / 分析 / 分类面试题）。
+主要目录：`pd_disagg/`（部署选型：脚本、数据、图与报告 `pd_disagg/REPORT.md`）、`moe_perf/`（MoE 分解与调优）、`records/`（28 份八节实验记录）、`docs/theory/`（原理笔记）、`docs/TECH_DOC_vllm_engineering.md`（总览级技术文档：原理 / 数据 / 分析 / 分类面试题）。
 
 其中最值得读的一处改动：约 16 行本地可观测性 patch，把「KV 传输占 TTFT」从对账推断升级为因果测量。四臂矩阵显示 PD 分离最低，但「KV 传输占 TTFT 多少」最初只能靠分量对账（拿 colocate 无负载 TTFT 近似 P 段）间接推断。EXT-1 把这约 16 行改动打在 vLLM 0.25.1 NIXL connector（逐行 `# EXT1` 标记、原件备份可还原），将其升级为逐请求因果测量——核心节选：
 
@@ -156,6 +156,7 @@ bash moe_perf/d1_sweep.sh
 | [EXP-025 replica2@512 真饱和点扫描（conc 128/192/256，同 N 同 seed）](records/EXP-025_replica2_512_true_saturation.md) | 未封顶：22.12 / 24.34 / 25.30 req/s（+10.06% 后 +3.92%）；但吞吐峰 ≠ goodput 峰——TPOT 在 conc192 破 SLO，goodput 5.16 → 0.00 req/s |
 | [EXP-026 NIXL descriptor 粒度实验：把「描述符碎片化」从推断变成实测](records/EXP-026_nixl_descriptor_granularity.md) | 粒度不是瓶颈（16 KiB→16 MiB 仅 −2%）；NIXL 默认已合并描述符（+45%，0.267→0.388 GB/s）；天花板是 UCX 的 TCP 路径且 UCX_TLS 不可调 |
 | [EXP-027 rr_proxy 开销拆分：replica2 的 1.63× 缺口里有多少是代理](records/EXP-027_rr_proxy_overhead_split.md) | 两臂并发形态对齐后：直连 22.280 vs 经代理 21.820/21.862 req/s → 代理开销 ≈2%（阈值 5%），**1.63× 缺口不在转发层** |
+| [EXP-028 工装：`goodput_slo_rps` 在饱和模式下不再为空](records/EXP-028_goodput_field_backfill.md) | SLO 表收进 `collect_point.py` 并按桶自动缺省（单一事实源）；重算 EXP-025 三点与手算逐位一致（5.1609/0.4666/0.0000） |
 
 ## 测量方法
 
