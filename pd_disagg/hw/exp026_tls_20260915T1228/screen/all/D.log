@@ -1,0 +1,12 @@
+2026-09-15 12:32:45 NIXL INFO    _api.py:390 Backend UCX was instantiated
+2026-09-15 12:32:45 NIXL INFO    _api.py:268 Initialized NIXL agent: EXP026_D
+[12:32:45] D ready: local=136512314277888 remote_agent=b'EXP026_P' region=134.2 MB
+[12:32:45] INIT_ONLY OK: ucx_tls=all remote=b'EXP026_P'
+[1789475564.151799] [cpod-1u8o0xv30sr6:227934:0]     ucp_context.c:2659 UCX  INFO  Version 1.21.0 (loaded from /root/venvs/v0.25.1/lib/python3.12/site-packages/nixl_cu13/../.nixl_cu13.mesonpy.libs/plugins/../../nixl_cu13.libs/libucp-1da16952.so.0.0.0)
+[1789475564.916598] [cpod-1u8o0xv30sr6:227934:0]          parser.c:2364 UCX  INFO  UCX_* env variables: UCX_LOG_LEVEL=info UCX_TLS=all
+[1789475564.957410] [cpod-1u8o0xv30sr6:227934:0]      ucp_worker.c:1984 UCX  INFO    ucp_context_0 self cfg#1 rma_am(tcp/eth0)  amo_am(tcp/eth0)  device(cuda_ipc/cuda)  am(tcp/eth0 cma/memory cuda_ipc/cuda)  ka(tcp/eth0)
+[1789475564.984612] [cpod-1u8o0xv30sr6:227934:0]      ucp_worker.c:1984 UCX  INFO    ucp_context_0 intra-node cfg#1 rma_am(tcp/eth0)  amo_am(tcp/eth0)  device(cuda_ipc/cuda)  am(tcp/eth0 cma/memory cuda_ipc/cuda)  ka(tcp/eth0)
+[1789475565.004718] [cpod-1u8o0xv30sr6:227934:0]      ucp_worker.c:1984 UCX  INFO    ucp_context_0 intra-node cfg#1 rma_am(tcp/eth0)  amo_am(tcp/eth0)  device(cuda_ipc/cuda)  am(tcp/eth0 cma/memory cuda_ipc/cuda)  ka(tcp/eth0)
+[1789475565.023340] [cpod-1u8o0xv30sr6:227934:0]      ucp_worker.c:1984 UCX  INFO    ucp_context_0 intra-node cfg#1 rma_am(tcp/eth0)  amo_am(tcp/eth0)  device(cuda_ipc/cuda)  am(tcp/eth0 cma/memory cuda_ipc/cuda)  ka(tcp/eth0)
+[1789475565.041880] [cpod-1u8o0xv30sr6:227934:0]      ucp_worker.c:1984 UCX  INFO    ucp_context_0 intra-node cfg#1 rma_am(tcp/eth0)  amo_am(tcp/eth0)  device(cuda_ipc/cuda)  am(tcp/eth0 cma/memory cuda_ipc/cuda)  ka(tcp/eth0)
+[1789475565.075809] [cpod-1u8o0xv30sr6:227934:0]      ucp_worker.c:1984 UCX  INFO    ucp_context_0 intra-node cfg#2 rma_am(tcp/eth0)  amo_am(tcp/eth0)  device(cuda_ipc/cuda)  am(tcp/eth0 cma/memory cuda_ipc/cuda)  ka(tcp/eth0)

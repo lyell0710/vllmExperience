@@ -1,0 +1,36 @@
+2026-09-15 12:36:17 NIXL INFO    _api.py:390 Backend UCX was instantiated
+2026-09-15 12:36:17 NIXL INFO    _api.py:268 Initialized NIXL agent: EXP026_D
+[12:36:17] D ready: local=129039071182848 remote_agent=b'EXP026_P' region=134.2 MB
+[12:36:18] A contiguous  G=   16KiB n_desc=  4096   185.90ms  0.361 GB/s   45.39 us/desc
+[12:36:18] A contiguous  G=   64KiB n_desc=  1024   187.59ms  0.358 GB/s  183.20 us/desc
+[12:36:19] A contiguous  G=  256KiB n_desc=   256   186.52ms  0.360 GB/s  728.58 us/desc
+[12:36:19] A contiguous  G= 1024KiB n_desc=    64   187.40ms  0.358 GB/s 2928.19 us/desc
+[12:36:20] A contiguous  G= 4096KiB n_desc=    16   177.83ms  0.377 GB/s 11114.11 us/desc
+[12:36:20] A contiguous  G=16384KiB n_desc=     4   178.74ms  0.375 GB/s 44686.21 us/desc
+[12:36:21] A scattered   G=   16KiB n_desc=  4096   266.83ms  0.252 GB/s   65.14 us/desc
+[12:36:22] A scattered   G=   64KiB n_desc=  1024   197.96ms  0.339 GB/s  193.32 us/desc
+[12:36:22] A scattered   G=  256KiB n_desc=   256   180.40ms  0.372 GB/s  704.68 us/desc
+[12:36:23] A scattered   G= 1024KiB n_desc=    64   176.63ms  0.380 GB/s 2759.86 us/desc
+[12:36:23] A scattered   G= 4096KiB n_desc=    16   176.54ms  0.380 GB/s 11034.00 us/desc
+[12:36:24] A scattered   G=16384KiB n_desc=     4   175.98ms  0.381 GB/s 43994.53 us/desc
+[12:36:25] C contiguous  G=   16KiB skip_merge=0   174.63ms  0.384 GB/s tel_descCount=1
+[12:36:25] C contiguous  G=   16KiB skip_merge=1   254.80ms  0.263 GB/s tel_descCount=4096
+[12:36:26] C scattered   G=   16KiB skip_merge=0   260.79ms  0.257 GB/s tel_descCount=4096
+[12:36:27] C scattered   G=   16KiB skip_merge=1   255.32ms  0.263 GB/s tel_descCount=4096
+[12:36:27] C contiguous  G= 1024KiB skip_merge=0   176.51ms  0.380 GB/s tel_descCount=1
+[12:36:28] C contiguous  G= 1024KiB skip_merge=1   174.71ms  0.384 GB/s tel_descCount=64
+[12:36:28] C scattered   G= 1024KiB skip_merge=0   176.96ms  0.379 GB/s tel_descCount=64
+[12:36:29] C scattered   G= 1024KiB skip_merge=1   178.11ms  0.377 GB/s tel_descCount=64
+[12:36:29] D size=    8MiB G=16KiB n_desc=   512    23.32ms  0.360 GB/s
+[12:36:29] D size=   32MiB G=16KiB n_desc=  2048    94.76ms  0.354 GB/s
+[12:36:30] D size=  128MiB G=16KiB n_desc=  8192   375.05ms  0.358 GB/s
+[12:36:31] 写出 pd_disagg/hw/exp026_tls_20260915T1228/bench/tcp_cuda_ipc_cuda_copy/D.csv（23 行）
+[12:36:31] D 完成
+[1789475776.686602] [cpod-1u8o0xv30sr6:230605:0]     ucp_context.c:2659 UCX  INFO  Version 1.21.0 (loaded from /root/venvs/v0.25.1/lib/python3.12/site-packages/nixl_cu13/../.nixl_cu13.mesonpy.libs/plugins/../../nixl_cu13.libs/libucp-1da16952.so.0.0.0)
+[1789475777.444656] [cpod-1u8o0xv30sr6:230605:0]          parser.c:2364 UCX  INFO  UCX_* env variables: UCX_LOG_LEVEL=info UCX_TLS=cuda_ipc,cuda_copy,tcp
+[1789475777.465433] [cpod-1u8o0xv30sr6:230605:0]      ucp_worker.c:1984 UCX  INFO    ucp_context_0 self cfg#1 rma_am(tcp/eth0)  amo_am(tcp/eth0)  device(cuda_ipc/cuda)  am(tcp/eth0 cuda_ipc/cuda)  ka(tcp/eth0)
+[1789475777.492336] [cpod-1u8o0xv30sr6:230605:0]      ucp_worker.c:1984 UCX  INFO    ucp_context_0 intra-node cfg#1 rma_am(tcp/eth0)  amo_am(tcp/eth0)  device(cuda_ipc/cuda)  am(tcp/eth0 cuda_ipc/cuda)  ka(tcp/eth0)
+[1789475777.511369] [cpod-1u8o0xv30sr6:230605:0]      ucp_worker.c:1984 UCX  INFO    ucp_context_0 intra-node cfg#1 rma_am(tcp/eth0)  amo_am(tcp/eth0)  device(cuda_ipc/cuda)  am(tcp/eth0 cuda_ipc/cuda)  ka(tcp/eth0)
+[1789475777.529883] [cpod-1u8o0xv30sr6:230605:0]      ucp_worker.c:1984 UCX  INFO    ucp_context_0 intra-node cfg#1 rma_am(tcp/eth0)  amo_am(tcp/eth0)  device(cuda_ipc/cuda)  am(tcp/eth0 cuda_ipc/cuda)  ka(tcp/eth0)
+[1789475777.548596] [cpod-1u8o0xv30sr6:230605:0]      ucp_worker.c:1984 UCX  INFO    ucp_context_0 intra-node cfg#1 rma_am(tcp/eth0)  amo_am(tcp/eth0)  device(cuda_ipc/cuda)  am(tcp/eth0 cuda_ipc/cuda)  ka(tcp/eth0)
+[1789475777.583888] [cpod-1u8o0xv30sr6:230605:0]      ucp_worker.c:1984 UCX  INFO    ucp_context_0 intra-node cfg#2 rma_am(tcp/eth0)  amo_am(tcp/eth0)  device(cuda_ipc/cuda)  am(tcp/eth0 cuda_ipc/cuda)  ka(tcp/eth0)

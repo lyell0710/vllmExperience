@@ -1,0 +1,23 @@
+[1789474835.573661] [cpod-1u8o0xv30sr6:222144:0]     ucp_context.c:2659 UCX  INFO  Version 1.21.0 (loaded from /root/venvs/v0.25.1/lib/python3.12/site-packages/nixl_cu13/../.nixl_cu13.mesonpy.libs/plugins/../../nixl_cu13.libs/libucp-1da16952.so.0.0.0)
+[1789474836.335470] [cpod-1u8o0xv30sr6:222144:0]          parser.c:2364 UCX  INFO  UCX_* env variables: UCX_LOG_LEVEL=info UCX_TLS=cuda_copy,shm
+[1789474836.359545] [cpod-1u8o0xv30sr6:222144:0]          select.c:657  UCX  ERROR   no active messages transport to <no debug data>: sysv/memory - no peer failure handler, posix/memory - no peer failure handler, cuda_copy/cuda - no am bcopy, cma/memory - no am bcopy
+W0915 12:20:36.359622  222144 ucx_enums.cpp:58] Unexpected UCX error: Destination is unreachable
+E0915 12:20:36.359717  222144 ucx_utils.cpp:537] UCX endpoint create failed: failed to create ep
+E0915 12:20:36.359725  222144 nixl_agent.cpp:359] createBackend: backend 'UCX' encountered error during intra-agent transfer setup with status NIXL_ERR_BACKEND
+Traceback (most recent call last):
+  File "/root/projects/vllm/experiments/scripts/nixl_desc_granularity_bench.py", line 312, in <module>
+    main()
+  File "/root/projects/vllm/experiments/scripts/nixl_desc_granularity_bench.py", line 308, in main
+    (role_p if args.role == "P" else role_d)(args)
+  File "/root/projects/vllm/experiments/scripts/nixl_desc_granularity_bench.py", line 148, in role_p
+    agent = make_agent("EXP026_P", 0)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/projects/vllm/experiments/scripts/nixl_desc_granularity_bench.py", line 61, in make_agent
+    return nixl_agent(name, cfg)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/root/venvs/v0.25.1/lib/python3.12/site-packages/nixl_cu13/_api.py", line 252, in __init__
+    self.create_backend(bknd, init)
+  File "/root/venvs/v0.25.1/lib/python3.12/site-packages/nixl_cu13/_api.py", line 383, in create_backend
+    self.backends[backend] = self.agent.createBackend(backend, initParams)
+                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+nixl_cu13._bindings.nixlBackendError: NIXL_ERR_BACKEND

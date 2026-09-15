@@ -320,3 +320,15 @@
 **产物路径**：`records/EXP-025_replica2_512_true_saturation.md`；`runs.jsonl` 行 130–132（run_id `20260915T1031/1034/1036`）；`raw/20260915T103{0,1,3,4,5,6}_*`、`snapshots/` 同前缀、服务日志 `raw/20260915T103{0,3,5}_replica2_conc128_server_*.log`；`figures/fig7` 不受影响（白名单不选新行——EXP-024 根治"后者覆盖"的首次实战验证）。
 
 **下一步**：① `collect_point.py` 增加 saturation 模式 goodput 计算（现 `goodput_slo_rps` 为 null）；② 若要报 conc256 口径的扩展效率，需补 colocate@512 同 conc 对照（本次未做）；③ 512 桶 SLO 在饱和投放下的口径错配问题（§6④）需报告层裁决；④ 剩余机器绑定项：descriptor 合并改造（最高价值）、rr_proxy 开销拆分。
+
+## 2026-09-15（续三）EXP-026 NIXL descriptor 粒度：一条用了五份记录的推断被实测推翻
+
+**做了什么**：读 NIXL 源码时发现 `make_prepped_xfer` 的 `skip_desc_merge` 默认为 `False`（vLLM 从不设它），于是用与 vLLM 同一条代码路径（`prep_xfer_dlist`+`make_prepped_xfer`、READ/pull、VRAM、UCX、`capture_telemetry=True`）写了两段实验：① 粒度 × 布局 × 合并开关的传输扫描（`scripts/nixl_desc_granularity_bench.py`，两进程 P/D）；② `UCX_TLS` 10 档两步骤筛选（`scripts/nixl_ucx_tls_sweep.sh`，先只验证初始化、再对通过的档跑传输）。
+
+**为什么（决策依据）**：EXP-009/011/013 与 EXP-020 附录 A 一路把 0.26–0.27 GB/s 归因于「16 KiB 描述符碎片化」，并据此推出「合并可拿回 2.4–3.4×」——**但这条链始终标着"推断"**，而源码里的默认参数正好构成反证线索。用户选「descriptor 合并改造」为最高价值项，那就先量机制，而不是先改代码。
+
+**关键数字**：① 粒度 **不是瓶颈**——合并开启下 descriptor 16 KiB→16 MiB（1000×）带宽仅 **−2.0%**（0.3832→0.3757 GB/s）；② **NIXL 默认就在合并**——contiguous+16 KiB+默认参数 telemetry `descCount=1`（4096 合 1）；显式关合并则 0.2673→**0.3883 GB/s（+45.3%）**；③ **天花板是 TCP 传输层且不可调**——UCX 自报 `rma_am(tcp/eth0)`、GPU 缓冲 software emulation；10 档 `UCX_TLS` 凡含 `shm`/`sm`/`cuda_ipc` 者 `createBackend` 即失败（`NIXL_ERR_BACKEND`），能起来的（纯 TCP / +cuda_copy / all）仍选 TCP，0.361–0.386 GB/s；④ α≈0、β≈0.375 GB/s。**交叉验证**：EXP-013 的 61.5–65.8 µs/desc 与 EXP-006 的 0.26–0.27 GB/s 都落在**未合并/散列**档（复现 61.3/64.2 µs、0.2673 GB/s），与合并档（42.2 µs、0.3883）不符 → **vLLM 的实际布局没吃到合并**。
+
+**产物路径**：`records/EXP-026_nixl_descriptor_granularity.md`；`pd_disagg/hw/exp026_20260915T1151/{D.csv,D.log,P.log}`（主运行 23 点）、`exp026_transport_20260915T1153/D.log`（传输取证）、`exp026_tls_20260915T1228/`（10 档筛选 + 汇总 CSV）；脚本 `scripts/nixl_desc_granularity_bench.py`、`scripts/nixl_ucx_tls_sweep.sh`；五个作废前缀原地保留并登记。
+
+**下一步**：① 给 vLLM 的 NIXL connector 打点，直接读真实 1P1D 里"请求 descCount vs 合并后 descCount"与 region 内块连续性 → 把 §6⑤ 的交叉验证升级为同构实测；② 补扫 `UCX_RNDV_THRESH` / `UCX_MAX_RNDV_RAILS` 与 NIXL 的 `backends=[...]`；③ 修完的工具 bug 中两条（无超时、CSV 逗号）建议进 CORE 本机坑。

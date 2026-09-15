@@ -1,0 +1,15 @@
+mode,name,ucx_tls,exit_code,transport,bw_16KiB_contig,error
+screen,baseline,未设,0,rma_am(tcp/eth0),,
+screen,shm,shm,1,,,NIXL_ERR_BACKEND
+screen,cuda_copy_shm,cuda_copy+shm,1,,,NIXL_ERR_BACKEND
+screen,cuda_ipc_shm,cuda_ipc+shm,1,,,NIXL_ERR_BACKEND
+screen,cuda_ipc_cuda_copy_shm,cuda_ipc+cuda_copy+shm,1,,,NIXL_ERR_BACKEND
+screen,all,all,0,rma_am(tcp/eth0),,
+screen,tcp_cuda_copy,cuda_copy+tcp,0,rma_am(tcp/eth0),,
+screen,tcp_cuda_ipc_cuda_copy,cuda_ipc+cuda_copy+tcp,0,rma_am(tcp/eth0),,
+screen,tcp_sm,sm+tcp,1,rma_am(tcp/eth0),,nixlBackendError
+screen,tcp_cuda_ipc,cuda_ipc+tcp,1,rma_am(tcp/eth0),,nixlBackendError
+bench,baseline,未设,0,rma_am(tcp/eth0),0.386 GB/s,
+bench,all,all,0,rma_am(tcp/eth0),0.373 GB/s,
+bench,tcp_cuda_copy,cuda_copy+tcp,0,rma_am(tcp/eth0),0.381 GB/s,
+bench,tcp_cuda_ipc_cuda_copy,cuda_ipc+cuda_copy+tcp,0,rma_am(tcp/eth0),0.361 GB/s,

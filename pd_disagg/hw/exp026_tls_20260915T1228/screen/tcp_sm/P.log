@@ -1,0 +1,25 @@
+W0915 12:33:04.658309  228788 ucx_utils.cpp:622] 8 NVIDIA GPU(s) were detected, but UCX CUDA support was not found! GPU memory is not supported.
+2026-09-15 12:33:04 NIXL INFO    _api.py:390 Backend UCX was instantiated
+2026-09-15 12:33:04 NIXL INFO    _api.py:268 Initialized NIXL agent: EXP026_P
+E0915 12:33:04.822703  228788 ucx_utils.cpp:576] VRAM memory is detected as host by UCX. UCX is likely not configured with CUDA/ROCm support. VRAM registration cannot proceed.
+E0915 12:33:04.822765  228788 nixl_agent.cpp:468] registerMem: registration failed for the specified or all potential backends
+[1789475583.904901] [cpod-1u8o0xv30sr6:228788:0]     ucp_context.c:2659 UCX  INFO  Version 1.21.0 (loaded from /root/venvs/v0.25.1/lib/python3.12/site-packages/nixl_cu13/../.nixl_cu13.mesonpy.libs/plugins/../../nixl_cu13.libs/libucp-1da16952.so.0.0.0)
+[1789475584.670453] [cpod-1u8o0xv30sr6:228788:0]          parser.c:2364 UCX  INFO  UCX_* env variables: UCX_LOG_LEVEL=info UCX_TLS=sm,tcp
+[1789475584.710043] [cpod-1u8o0xv30sr6:228788:0]      ucp_worker.c:1984 UCX  INFO    ucp_context_0 self cfg#0 rma_am(tcp/eth0)  amo_am(tcp/eth0)  am(tcp/eth0 cma/memory)  ka(tcp/eth0)
+[1789475584.743739] [cpod-1u8o0xv30sr6:228788:0]      ucp_worker.c:1984 UCX  INFO    ucp_context_0 intra-node cfg#0 rma_am(tcp/eth0)  amo_am(tcp/eth0)  am(tcp/eth0 cma/memory)  ka(tcp/eth0)
+[1789475584.759767] [cpod-1u8o0xv30sr6:228788:0]      ucp_worker.c:1984 UCX  INFO    ucp_context_0 intra-node cfg#0 rma_am(tcp/eth0)  amo_am(tcp/eth0)  am(tcp/eth0 cma/memory)  ka(tcp/eth0)
+[1789475584.776480] [cpod-1u8o0xv30sr6:228788:0]      ucp_worker.c:1984 UCX  INFO    ucp_context_0 intra-node cfg#0 rma_am(tcp/eth0)  amo_am(tcp/eth0)  am(tcp/eth0 cma/memory)  ka(tcp/eth0)
+[1789475584.793627] [cpod-1u8o0xv30sr6:228788:0]      ucp_worker.c:1984 UCX  INFO    ucp_context_0 intra-node cfg#0 rma_am(tcp/eth0)  amo_am(tcp/eth0)  am(tcp/eth0 cma/memory)  ka(tcp/eth0)
+Traceback (most recent call last):
+  File "/root/projects/vllm/experiments/scripts/nixl_desc_granularity_bench.py", line 312, in <module>
+    main()
+  File "/root/projects/vllm/experiments/scripts/nixl_desc_granularity_bench.py", line 308, in main
+    (role_p if args.role == "P" else role_d)(args)
+  File "/root/projects/vllm/experiments/scripts/nixl_desc_granularity_bench.py", line 149, in role_p
+    _t, addr = alloc_and_register(agent, nbytes, 0)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/projects/vllm/experiments/scripts/nixl_desc_granularity_bench.py", line 71, in alloc_and_register
+    agent.register_memory(descs, backends=["UCX"])
+  File "/root/venvs/v0.25.1/lib/python3.12/site-packages/nixl_cu13/_api.py", line 413, in register_memory
+    self.agent.registerMem(reg_descs, handle_list)
+nixl_cu13._bindings.nixlBackendError: NIXL_ERR_BACKEND

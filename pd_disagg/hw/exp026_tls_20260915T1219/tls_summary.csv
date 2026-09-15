@@ -1,0 +1,9 @@
+mode,name,ucx_tls,exit_code,transport,bw_16KiB_contig,error
+screen,baseline,未设,0,rma_am(tcp/eth0),,
+screen,shm,shm,1,,,pd_disagg/hw/exp026_tls_20260915T1219/screen/shm/P.log:NIXL_
+screen,cuda_copy_shm,cuda_copy,shm,1,,,pd_disagg/hw/exp026_tls_20260915T1219/screen/cuda_copy_shm/P
+screen,cuda_ipc_shm,cuda_ipc,shm,1,,,pd_disagg/hw/exp026_tls_20260915T1219/screen/cuda_ipc_shm/P.
+screen,cuda_ipc_cuda_copy_shm,cuda_ipc,cuda_copy,shm,1,,,pd_disagg/hw/exp026_tls_20260915T1219/screen/cuda_ipc_cuda_c
+screen,all,all,0,rma_am(tcp/eth0),,
+bench,baseline,未设,0,rma_am(tcp/eth0),0.392 GB/s,
+bench,all,all,0,rma_am(tcp/eth0),0.380 GB/s,

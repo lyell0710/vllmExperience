@@ -1,0 +1,36 @@
+2026-09-15 12:35:15 NIXL INFO    _api.py:390 Backend UCX was instantiated
+2026-09-15 12:35:15 NIXL INFO    _api.py:268 Initialized NIXL agent: EXP026_D
+[12:35:15] D ready: local=134222022967296 remote_agent=b'EXP026_P' region=134.2 MB
+[12:35:16] A contiguous  G=   16KiB n_desc=  4096   173.69ms  0.386 GB/s   42.40 us/desc
+[12:35:16] A contiguous  G=   64KiB n_desc=  1024   169.61ms  0.396 GB/s  165.64 us/desc
+[12:35:17] A contiguous  G=  256KiB n_desc=   256   175.69ms  0.382 GB/s  686.30 us/desc
+[12:35:17] A contiguous  G= 1024KiB n_desc=    64   179.64ms  0.374 GB/s 2806.86 us/desc
+[12:35:18] A contiguous  G= 4096KiB n_desc=    16   178.66ms  0.376 GB/s 11166.06 us/desc
+[12:35:18] A contiguous  G=16384KiB n_desc=     4   178.94ms  0.375 GB/s 44734.21 us/desc
+[12:35:19] A scattered   G=   16KiB n_desc=  4096   264.53ms  0.254 GB/s   64.58 us/desc
+[12:35:20] A scattered   G=   64KiB n_desc=  1024   193.32ms  0.347 GB/s  188.79 us/desc
+[12:35:20] A scattered   G=  256KiB n_desc=   256   174.11ms  0.385 GB/s  680.11 us/desc
+[12:35:21] A scattered   G= 1024KiB n_desc=    64   169.45ms  0.396 GB/s 2647.69 us/desc
+[12:35:21] A scattered   G= 4096KiB n_desc=    16   168.55ms  0.398 GB/s 10534.34 us/desc
+[12:35:22] A scattered   G=16384KiB n_desc=     4   168.19ms  0.399 GB/s 42048.70 us/desc
+[12:35:22] C contiguous  G=   16KiB skip_merge=0   168.88ms  0.397 GB/s tel_descCount=1
+[12:35:23] C contiguous  G=   16KiB skip_merge=1   243.05ms  0.276 GB/s tel_descCount=4096
+[12:35:24] C scattered   G=   16KiB skip_merge=0   247.73ms  0.271 GB/s tel_descCount=4096
+[12:35:24] C scattered   G=   16KiB skip_merge=1   250.28ms  0.268 GB/s tel_descCount=4096
+[12:35:25] C contiguous  G= 1024KiB skip_merge=0   172.92ms  0.388 GB/s tel_descCount=1
+[12:35:26] C contiguous  G= 1024KiB skip_merge=1   173.18ms  0.388 GB/s tel_descCount=64
+[12:35:26] C scattered   G= 1024KiB skip_merge=0   170.41ms  0.394 GB/s tel_descCount=64
+[12:35:27] C scattered   G= 1024KiB skip_merge=1   168.54ms  0.398 GB/s tel_descCount=64
+[12:35:27] D size=    8MiB G=16KiB n_desc=   512    20.92ms  0.401 GB/s
+[12:35:27] D size=   32MiB G=16KiB n_desc=  2048    84.31ms  0.398 GB/s
+[12:35:28] D size=  128MiB G=16KiB n_desc=  8192   341.73ms  0.393 GB/s
+[12:35:28] 写出 pd_disagg/hw/exp026_tls_20260915T1228/bench/baseline/D.csv（23 行）
+[12:35:28] D 完成
+[1789475714.645833] [cpod-1u8o0xv30sr6:229598:0]     ucp_context.c:2659 UCX  INFO  Version 1.21.0 (loaded from /root/venvs/v0.25.1/lib/python3.12/site-packages/nixl_cu13/../.nixl_cu13.mesonpy.libs/plugins/../../nixl_cu13.libs/libucp-1da16952.so.0.0.0)
+[1789475715.411213] [cpod-1u8o0xv30sr6:229598:0]          parser.c:2364 UCX  INFO  UCX_* env variable: UCX_LOG_LEVEL=info
+[1789475715.456240] [cpod-1u8o0xv30sr6:229598:0]      ucp_worker.c:1984 UCX  INFO    ucp_context_0 self cfg#1 rma_am(tcp/eth0)  amo_am(tcp/eth0)  device(cuda_ipc/cuda)  am(tcp/eth0 cma/memory cuda_ipc/cuda)  ka(tcp/eth0)
+[1789475715.483177] [cpod-1u8o0xv30sr6:229598:0]      ucp_worker.c:1984 UCX  INFO    ucp_context_0 intra-node cfg#1 rma_am(tcp/eth0)  amo_am(tcp/eth0)  device(cuda_ipc/cuda)  am(tcp/eth0 cma/memory cuda_ipc/cuda)  ka(tcp/eth0)
+[1789475715.502100] [cpod-1u8o0xv30sr6:229598:0]      ucp_worker.c:1984 UCX  INFO    ucp_context_0 intra-node cfg#1 rma_am(tcp/eth0)  amo_am(tcp/eth0)  device(cuda_ipc/cuda)  am(tcp/eth0 cma/memory cuda_ipc/cuda)  ka(tcp/eth0)
+[1789475715.521004] [cpod-1u8o0xv30sr6:229598:0]      ucp_worker.c:1984 UCX  INFO    ucp_context_0 intra-node cfg#1 rma_am(tcp/eth0)  amo_am(tcp/eth0)  device(cuda_ipc/cuda)  am(tcp/eth0 cma/memory cuda_ipc/cuda)  ka(tcp/eth0)
+[1789475715.539935] [cpod-1u8o0xv30sr6:229598:0]      ucp_worker.c:1984 UCX  INFO    ucp_context_0 intra-node cfg#1 rma_am(tcp/eth0)  amo_am(tcp/eth0)  device(cuda_ipc/cuda)  am(tcp/eth0 cma/memory cuda_ipc/cuda)  ka(tcp/eth0)
+[1789475715.574638] [cpod-1u8o0xv30sr6:229598:0]      ucp_worker.c:1984 UCX  INFO    ucp_context_0 intra-node cfg#2 rma_am(tcp/eth0)  amo_am(tcp/eth0)  device(cuda_ipc/cuda)  am(tcp/eth0 cma/memory cuda_ipc/cuda)  ka(tcp/eth0)
