@@ -173,5 +173,7 @@ python3 scripts/nccl_knob_matrix_analyze.py <STAMP>            # step4，写 der
 
 **工具 bug 与作废前缀（登记）**：探针首跑（`STAMP=20260915T0933`）的内联解析代码把捕获组号写错（`group(4)` 应为 `group(2)`），逐轮判定全部落空、平台值打印为空，判据形同失效——本次随即终止该前缀，并删除其 0 数据行的 `derived/20260915T0933_nccl_h3_longrun.csv`（derived 可重算，非 raw）。该前缀下 4 轮 raw（`20260915T0933_nccl_h3_{float_r1,float_r3,half_r2,half_r4}.txt` + `_pcie.csv`）**本身是有效测量**，但为保持单前缀可比性未纳入汇总，**原地保留不删**（铁律 3）。修好组号后以新前缀 `20260915T0936` 重跑 60 轮，即上表数据。
 
+**附带的工装事故（已处置）**：终止首跑时，脚本内的 `nvidia-smi -lms` 采样器成为**孤儿进程**（ppid=1）继续向 `20260915T0933_nccl_h3_half_r4_pcie.csv` 追加，直到 10:01:46 才被按 `/proc` 定位清掉，使该文件比首次提交时多 494 行（14750 → 15244，全为空闲态样本，不影响任何判定——该前缀本就不参与汇总）。**教训**：`kill` 父脚本不会终止脱离的后台采样器；收尾复核不能只查 `nvidia-smi --query-compute-apps`（采样器不占 GPU 计算位），必须遍历 `/proc/*/cmdline` 搜 `query-gpu`。已写入 HANDOFF §6 候选。
+
 **依据**：`scripts/nccl_shm_collapse_probe.sh`（EXP-021 §7 用过，10 轮无塌陷）扩到 60 轮 + 塌陷早停 + 每轮落 CSV。
 

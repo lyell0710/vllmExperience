@@ -59,6 +59,7 @@ D0 地基、B1–B4、C1–C3、D1–D5、EXT-1/2、P1（材料层）/P2/P3 全�
 - 功率帽：持续 prefill 降频 ~12%，同热工况才可比。
 - 大文件 push 慢（nsys rep 上百 MB），push 放后台跑。
 - **（9/15）`pkill -f '[v]llm serve …'` 与含 `vllm serve …` 字面量的启动命令写在同一条复合命令里仍会 exit 144**——方括号只保护 pattern 本身，不保护同一命令行里的其它字面量；启动与清理分两条命令投递。
+- **（9/15）`kill` 父脚本不会杀掉脱离的 `nvidia-smi -lms` 采样器**——它会成孤儿（ppid=1）继续写 raw 文件，且**不占 GPU 计算位**，`nvidia-smi --query-compute-apps` 查不出来。收尾复核必须遍历 `/proc/*/cmdline` 搜 `query-gpu`。
 - **（9/15）冷 page cache 下 v0.25.1 起栈约 613 s，`benchmark_moe.py` 的 `ray.init()` 会超时**（EXP-022 首跑作废）——GPU 任务前先热身模型文件或把预算按 10 分钟设。
 
 ## 7. 当前状态快照(2026-09-15,总览文档 + 四实验补跑批次)
