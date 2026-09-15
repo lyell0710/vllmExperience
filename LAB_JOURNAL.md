@@ -284,3 +284,15 @@
 - **关键数字**：①nsys_smoke 实为 4096³ matmul ×10 冒烟脚本 trace(非 vLLM 服务),GPU 窗口 idle 77.26% 的 99.65% 由单个 94.063 ms 冷启动懒加载空隙贡献(cuLibraryLoadData 等 API 交叠 48.278 ms/51.3%),稳态 sgemm 逐次 StdDev 仅 10.1 μs——77% 空闲是冷启动伪影不是稳态问题(`nsys_smoke_analysis.md`);②bs1 decode:gemvx 族 T=32.3% 第一大户、fused_moe 18.7%、GPU busy 96.4%(`d1_nsys_moe_bs1_analysis.md`);③bs32:fused_moe_kernel T=56.4% 一家独大、busy 99.0%,与 `moe_perf/derived/d1_kernel_share_bs32.csv` 及 EXP-014 既有结论同源一致(`d1_nsys_moe_bs32_analysis.md`);④两个 graphlevel rep 经 META_DATA_CAPTURE 实查 MODE=Graph:kernel 表仅 18.3 万/4.2 万行 vs node 版 517.7 万/134.6 万行,占比表整体降级「参考」,独立价值=graph 执行画像与 cudaGraphLaunch 均值 4.2× node 采集伪影对照(两份 `*_graphlevel_analysis.md`)——EXP-014 §7 的踩坑记录被 rep 元数据实证。
 - **产物路径**：`pd_disagg/profiling/nsys_smoke_analysis.md`、`moe_perf/raw/EXP-014/d1_nsys_moe_bs1_analysis.md`、`moe_perf/raw/EXP-014/d1_nsys_moe_bs1_graphlevel_analysis.md`、`moe_perf/raw/EXP-014/d1_nsys_moe_bs32_analysis.md`、`moe_perf/raw/EXP-014/d1_nsys_moe_bs32_graphlevel_analysis.md`,以及 `moe_perf/raw/EXP-014/d1_sweep_manifest.txt` 追注。
 - **下一步**：d1 同负载 ncu 复采两热点拿 ES——bs1 的 gemvx(T=32.3%)与 bs32 的 fused_moe_kernel(T=56.4%),按 G=ES×T 回填全局预估收益(两份 node 版报告的 P0 条目)。另记:HANDOFF §5 与 LEDGER D2 行的「PR 提交留用户」已过时——PR vllm-project/vllm#54372 已由用户本人于 2026-08-29 提交(gh 实查 OPEN 未合并,正文存档 `moe_perf/PR_BODY.txt`,commit 1252684);HANDOFF §5 本批次已勘,LEDGER 行在本批次改动授权范围外,留待下批次修。
+
+## 2026-09-15 总览技术文档 + 缺口清扫 + 四实验补跑
+
+**做了什么**：①写成 `docs/TECH_DOC_vllm_engineering.md`（原理 9 节 11 张 mermaid、项目说明、数据表、分析方法 7 条、140 道分类面试题、附录缺口审计/口径不一致/术语/补跑结果），挂进 README 与《怎么读》。②只读审计全仓 66 条缺口，文档滞后 14 处同步（PR #54372 状态、记录数、EXP-006/007/008 勘注回填、HANDOFF §8 编号、correctness 双口径括注）。③补跑四个挂账实验：EXP-020《NCCL 旋钮矩阵复现 1.78 GB/s》、EXP-021《NCCL allreduce dtype 扫描》、EXP-022《D2 大 M kernel A/B》、EXP-023《replica2@512 饱和复测（SAT_CONC=128）》，记录八节齐、raw 带 provenance。
+
+**为什么（决策依据）**：用户要一份"原理 + 项目 + 数据 + 分析方法 + 分类面试题"的总览文档，并要求把仓里没跑完的东西清掉。审计发现真正阻塞对外主张的只有 NCCL 带宽一条（约 20 处"待复核"挂在它上面），故 EXP-020 优先；EXP-022/023 是 EXP-015/007 §7 明写的复测项；ncu ES 复采因主力机无计数器权限跳过。
+
+**关键数字**：EXP-020 Socket 路径 1.51–1.70 GB/s 复现落窗 5/5，SHM 默认 9.07，但 SHM 亦见 1/28 次塌陷 2.1–2.3（H3）→ 定因不唯一；EXP-021 地板 13.5–14.4 µs 三 dtype 差 <7%，平台被 ±30% 运行间噪声盖住（未决）；EXP-022 tuned 在 M=512–4096 全段 EP −6.4~−14.0%、非 EP −2.8~−11.8%，8/8 > 2σ；EXP-023 replica2@512 conc128 20.87 vs 15.58（+34%），扩展效率 1.63×。PR #54372 gh 实查：OPEN、pre-run-check ×2 失败（缺 `ready` label / 作者 0 merged PR）、无人类 review。
+
+**产物路径**：`docs/TECH_DOC_vllm_engineering.md`；`records/EXP-020~023`；`pd_disagg/hw/20260915T*`、`hw/derived/20260915T*`；`moe_perf/raw/EXP-022/`、`moe_perf/derived/20260915T0304_exp022_bigM_ab.csv`；`pd_disagg/results/b1_matrix/raw/20260915T03*`、`runs.jsonl` +3 行；新脚本 `scripts/nccl_knob_matrix{.sh,_analyze.py}`、`scripts/nccl_size_scan_dtype.sh`、`scripts/nccl_dtype_scan_analyze.py`、`scripts/nccl_shm_collapse_probe.sh`、`scripts/nccl_h2_concurrent_load_probe{,_min}.sh`、`moe_perf/d2_bigM_ab.sh`、`moe_perf/d2_bigM_analyze.py`、`pd_disagg/scripts/replica2_stack.sh`。
+
+**下一步**：用户裁决 NCCL 带宽措辞（R0-1 停用 → 带路径引用？连带 EXP-005 §6 / RESUME_EVIDENCE / README 约 20 处）；用户去 vLLM Slack #pr-reviews 求 `ready` label；agent 侧：EXP-020 H3 长跑探针（≥50 轮带 PCIe 采样）、fig7 按 EXP-023 重算（排除污染行）；ncu ES 需采集主机。

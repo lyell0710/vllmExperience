@@ -94,6 +94,8 @@ git push myfork moe-config-4090-qwen15moe
 #    https://github.com/lyell0710/vllm/compare/main...moe-config-4090-qwen15moe
 ```
 
+> 注（2026-09-15）：本机 remote 名为 `origin`=lyell0710/vllm，无 myfork；实际执行的是 `git push origin moe-config-4090-qwen15moe`。
+
 提交前逐项确认：
 
 - [ ] 两个 JSON 的内容你已逐行看过（各 18 个 M 档，字段与上游一致）

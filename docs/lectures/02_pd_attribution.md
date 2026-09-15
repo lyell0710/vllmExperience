@@ -746,7 +746,7 @@ echo "D2_AB_DONE"
 
 **陷阱 · Triton 首跑 JIT 伪影**：装入新 config 后**首个** c32 bench 的 TTFT p50 是 1021 ms (default 176 ms)，而后跑的 c128 正常（363 vs 359 ms）——新 tile 形状第一次被流量命中触发现场编译，32 路并发同时阻塞。处理不是丢数据，而是 **warmup 后复测并两版并存**：c32 吞吐 1616 vs 1596、TPOT 17.76 vs 17.91；c128 吞吐 4178 vs 4233（噪声内）、TPOT 28.52 vs 28.78 (EXP-015 §5)。**读任何"换了实现之后第一次测"的数字，先问有没有 JIT/autotune 的一次性成本混在里面。**
 
-**交付物核对**：两个 JSON 各 **18 个 M 档** + 一个 `triton_version` 元键（仓内已更正一处计数错误： 曾把元键计入，误报 19 档）。元键不是装饰——上游加载时会 `tuned_config.pop("triton_version", None)` 再转 int 键（fused_moe.py：1155-1157），所以它**必须存在且必须被排除在 M 档之外**。correctness： `pytest tests/kernels/moe/test_moe.py::test_fused_moe` → **120 passed， 120 skipped， 0 failed**（skipped 为异平台/异 dtype 参数化）。PR 材料齐备，**提交动作留给本人，未提交**。
+**交付物核对**：两个 JSON 各 **18 个 M 档** + 一个 `triton_version` 元键（仓内已更正一处计数错误： 曾把元键计入，误报 19 档）。元键不是装饰——上游加载时会 `tuned_config.pop("triton_version", None)` 再转 int 键（fused_moe.py：1155-1157），所以它**必须存在且必须被排除在 M 档之外**。correctness： `pytest tests/kernels/moe/test_moe.py::test_fused_moe` → **120 passed， 120 skipped， 0 failed**（skipped 为异平台/异 dtype 参数化）。PR 材料齐备，**已提交为 vllm-project/vllm#54372（2026-08-29，OPEN 未合并）；未合并**。
 
 ### 5.4 两个 config JSON 怎么读:18 个档位不是 18 个独立结论
 

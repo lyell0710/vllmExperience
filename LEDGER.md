@@ -42,6 +42,10 @@
 | [EXP-017](records/EXP-017_d5_eplb_gate.md) | D5 EPLB gate（W4A16 不支持 / FP8 真实重排 + 对照组归因） | 8/23 | D5 | 完成 |
 | [EXP-018](records/EXP-018_nccl_allreduce_size_scan.md) | NCCL allreduce size 扫描（补 EXP-002 小消息缺口 + 复测大消息带宽） | 8/29 | R0-1 | 完成 |
 | [EXP-019](records/EXP-019_nccl_bw_discrepancy_rootcause.md) | 1.78 vs 6.2 GB/s 机制调查（环境 diff，先于 bench） | 8/30 | R0-1 | 完成 |
+| [EXP-020](records/EXP-020_nccl_knob_matrix_repro.md) | NCCL 旋钮矩阵复现 1.78 GB/s（EXP-019 §8 四步落地） | 9/15 | R0-1 | 完成（定因不唯一） |
+| [EXP-021](records/EXP-021_nccl_allreduce_dtype_scan.md) | NCCL allreduce dtype 扫描（half/bfloat16 vs float，补 EXP-018 §7 缺口） | 9/15 | R0-1 | 完成（未决，噪声主导） |
+| [EXP-022](records/EXP-022_d2_bigM_kernel_ab.md) | D2 大 M（512–4096）kernel A/B：tuned config 在 prefill 级 M 是否保持收益（补 EXP-015 §7 缺口） | 9/15 | D2 | 完成 |
+| [EXP-023](records/EXP-023_replica2_512_saturation_conc128.md) | replica2@512 饱和复测（SAT_CONC=128）：EXP-007 的欠饱和疑点追认或修正 | 9/15 | B1 | 完成 |
 
 ## 证据台账（勾一项 = 数据落盘 + 本表登记产物路径）
 
@@ -66,10 +70,14 @@
 | D1 MoE 分解 | ✅ 8/23 | **反转点发现**：MoE/dense 2.03×(bs=1)→0.97×(bs=8)→0.82×(bs=128);nsys node 级分解：fused_moe grouped GEMM 占 56.4%(bs=32)/ dense GEMV 40.9%(bs=1);D2/D3 目标由数据锁定 fused_moe | EXP-014、`moe_perf/`(figures+derived+raw) |
 | D4 FP8 vs W4A16 | ✅ 8/23 | **W4A16(Marlin)decode 全 regime 胜 23–48%**(TPOT 4.91 vs 7.10ms@bs1),FP8 仅 c128 TTFT 反超（497 vs 613ms,prefill 计算受限）+ PPL 优 3.3% 相对（7.663 vs 7.922，同 31212 token）;Ada 落地解释：oracle/fp8.py:103-122 capability 提升跳过 SM89 → TRITON block-scaled | EXP-016、`moe_perf/raw/EXP-016/` |
 | D5 EPLB gate | ✅ 8/23 判定完成 | **W4A16 拒**（`routed_experts.py:151` NotImplementedError，上游 TODO 指认工程缺口）；**FP8 臂 2 次真实重排**（balancedness 0.53–0.74 实测）+ **对照组**（无 EPLB 同负载逐字节一致）→ 输出分歧因果归属 EPLB（数值性定性）；按清单 gate 规则**不上简历，白板级保留** | EXP-017、`moe_perf/raw/EXP-017/` |
-| D2 config 调优 | ✅ 8/23 | **两个空缺 tuple JSON 交付**（E=30，N=1408 / E=60，N=704，各 18 M 档；8/24 勘正：曾误计 triton_version 元键为 19）；kernel A/B 两端改善（M=1 **-8.5%/-3.8%**，M≥128 -3.3~-3.9%，中段持平）；e2e TPOT **+0.8~1.2%** 一致（吞吐噪声内）；correctness 120 passed；**PR 分支+六件套齐备，提交留用户** | EXP-015、`moe_perf/raw/EXP-015/`、PR_DRAFT.md、分支 `moe-config-4090-qwen15moe` |
+| D2 config 调优 | ✅ 8/23 | **两个空缺 tuple JSON 交付**（E=30，N=1408 / E=60，N=704，各 18 M 档；8/24 勘正：曾误计 triton_version 元键为 19）；kernel A/B 两端改善（M=1 **-8.5%/-3.8%**，M≥128 -3.3~-3.9%，中段持平）；e2e TPOT **+0.8~1.2%** 一致（吞吐噪声内）；correctness 120 passed（`::test_fused_moe` 单函数；全文件子集 1041 passed / 127 skipped，EXP-015 §5.1）；**PR #54372 已提交（2026-08-29），OPEN 未合并，CI pre-run-check 待维护者加 `ready` label** | EXP-015、`moe_perf/raw/EXP-015/`、PR_DRAFT.md、分支 `moe-config-4090-qwen15moe` |
 | D3 kernel 优化 | ✅ 8/23 判定 | 依 D2 数据**转结论句**：tuned 与 default 在中段 M 打平 → Triton tile 空间已被启发式覆盖，config 即最优杠杆；不另做 kernel 改动（避免无数据支撑的"优化"） | EXP-015 §6 |
 | EXT-1 request 级关联 | ✅ 8/23 | 本地 patch（16 行，可还原）；KV 占 TTFT 54.2/62.5/64.2%；上游不投（#52859 在途，见 `ext1/DEDUP.md`） | EXP-013、`pd_disagg/ext1/` |
 | EXT-2 NixlPush | ✅ 8/22 | 推方向 8K TTFT -6.7%、吞吐 +10–13%，量级不变（方向救不了 PD） | EXP-011 |
+| EXP-020《NCCL 旋钮矩阵复现 1.78 GB/s》 | ✅ 9/15（定因不唯一） | Socket 路径 5 档平台 1.51–1.70 GB/s 复现落窗（5/5）；SHM 默认 9.07、P2P_LEVEL 五取值全走 SHM 6.1–9.1（零效应）；PROTO LL/LL128/Simple 2.97/4.51/6.10；负载期 PCIe Gen4 x16 占比 92–98%（"未升 Gen4"分支排除）；**SHM 亦见 1/28 次塌陷 2.1–2.3（形状更像 EXP-002）→ H3 候选，定因不唯一**；H2 并发负载两次 OOM 未检验。措辞：collective 带宽必须带路径（SHM ≥6 / Socket 1.5–1.7）+ 指针，1.78 不再裸引；R0-1 停用状态维持，追认与否待用户 | `pd_disagg/hw/20260915T0237_*`、`hw/derived/20260915T0237_nccl_knob_matrix.csv`、`hw/20260915T0252_nccl_shm_probe_*`、EXP-020 §5/附录 A/B |
+| EXP-021《NCCL allreduce dtype 扫描》 | ✅ 9/15（未决） | 延迟地板 float/half/bf16 14.40/13.77/13.53 µs（差 <7%，成立）；平台 half 6.06、bf16 6.39 vs float 4.83（float 两轮 7.50/2.15，运行间差 111% > dtype 差 25–32%，不可判）；bf16 平台 6.0–6.9 GB/s、地板 13.4–13.8 µs 入画像。措辞：EXP-018 float 结论可对 bf16 沿用，带宽报区间不报单值 | `pd_disagg/hw/20260915T0248_allreduce_size_scan_*`（12 份）、`hw/derived/20260915T0248_nccl_dtype_table.csv` |
+| EXP-022《D2 大 M kernel A/B》 | ✅ 9/15 | 3 轮交叉 mean±std（µs）：EP 512/1024/2048/4096 = 681.1→637.7 **−6.38%**、881.2→757.5 **−14.04%**、1381.0→1244.6 **−9.88%**、2432.4→2266.2 **−6.83%**；非 EP 630.0→612.4 **−2.79%**、708.6→666.2 **−5.99%**、912.9→805.2 **−11.80%**、1453.3→1303.1 **−10.34%**；8/8 \|Δ\| > 2×合并 std。措辞：PR #54372 大 M 档有独立复测；S3 可扩为「M=1 −8.2/−3.6%，M≥512 −2.8~−14.0%」；EXP-015 §6「config 之外空间有限」限定为 M≤256 | `moe_perf/raw/EXP-022/bigM_20260915T0304/`（12 份）、`moe_perf/derived/20260915T0304_exp022_bigM_ab.csv`；作废首跑 `bigM_20260915T0303/FAILED_NOTE.txt` |
+| EXP-023《replica2@512 饱和复测（SAT_CONC=128）》 | ✅ 9/15 | replica2@512 conc128 **20.87 req/s**（conc64 15.58，+34% > 阈值 +5% → 欠饱和确认），TTFT p50 771 ms、TPOT p50 36.8 ms、gate 通过；colocate@512 conc128（fresh）12.81（原 10.36，TPOT p50 67 ms 已破 SLO）；512 桶扩展效率同口径 **1.63×**（原 1.50×）；conc128 仍未封顶，只写「≥20.87 @conc128」。措辞：EXP-007 §5 的 15.58\*/1.50× 引用时改为 ≥20.87 @conc128 / 1.63×；fig7 重算需排除污染行 `20260915T0330_colocate_512x128_saturation`（前缀命中 8.9%） | `pd_disagg/results/b1_matrix/raw/20260915T0329_replica2_*`、`20260915T0333_colocate_*`、`runs.jsonl` 行 125–127、服务日志 `20260915T0312_replica2_conc128_server_*` |
 
 ## 措辞红线状态（写简历/报告前查此表）
 
@@ -81,7 +89,7 @@
 | telemetry 带宽表述 | 限定 | 只能称 telemetry-derived effective throughput；xferDuration 不与 postDuration 相加 |
 | 0.17 两 bug | 限定 | 只写"复现/定位/验证"，禁"发现/修复"；"吃透"→"梳理"。**动态复现已闭环（EXP-012）**：静态 file：line + 实机崩溃/挂死现场 + 实证修正，"复现/定位/验证"三词均有实测背书 |
 | A/B 版本对照 | 限定 | 只称 system-version comparison，标注传输方向不同 |
-| PR 状态 | 限定 | 未提交不写"提交"，未合并不写"合入" |
+| PR 状态 | 限定 | 已提交（#54372）可写"提交"；未合并不写"合入" |
 | D2 e2e +0.8~1.2% | 🚫 不作 headline | 低于跨会话漂移；主证据=kernel A/B（8/24 定档修正） |
 | EXT-1 patch 定性 | 限定 | "~16 行本地可观测性改动"，不得表述为 NIXL/Connector 核心改造 |
 
@@ -94,7 +102,7 @@
 ## 待办（仅用户本人可执行）
 
 1. **R0-6**：线上简历稿"发现/修复"→"复现/定位/验证"（待用户）。
-2. **D2 PR 提交**：分支 `moe-config-4090-qwen15moe`（/root/projects/vllm，两 JSON 已暂存） → 逐行 review → `git commit -s` → fork/push → 按 `moe_perf/PR_DRAFT.md` 开 PR（待用户）。
+2. **D2 PR #54372 跟进**：OPEN，pre-run-check 失败（缺 `ready` label / 作者 0 merged PR），需在 vLLM Slack #pr-reviews 求 reviewer 加 label（待用户）。
 3. 可选（9 月池）：AutoGPTQMoEMethod 补 supports_eplb（EXP-017 §8，先查重）； B4 报告终稿通读；简历 9 月投递版成稿。
 
 ## 备份与 push 校验

@@ -49,7 +49,7 @@
 - gate 判定已按精确指标名固化进 collect_point.py（跨端口求和；含 failed_notifications 与 external_kv_tokens 新字段）。
 
 ## 7. 异常、偏差与开放问题
-- **开放问题 → B2**：D 端实拉 7668 token/req（<8192；bytes 439.7MB/57344B=7668 与 ext_kv_tokens 245344/32=7667 两计数器独立互证）。疑与 block 取整/前缀缓存/ 最后 block 自算的记账规则相关，需读 D 端调度与 nixl connector 代码定论。在定论前，KV 量引用一律用 bytes 实测值，不用"input_len×57344"推算值。
+- **开放问题 → B2**：D 端实拉 7668 token/req（<8192；bytes 439.7MB/57344B=7668 与 ext_kv_tokens 245344/32=7667 两计数器独立互证）。疑与 block 取整/前缀缓存/ 最后 block 自算的记账规则相关，需读 D 端调度与 nixl connector 代码定论。在定论前，KV 量引用一律用 bytes 实测值，不用"input_len×57344"推算值。〔已关闭：见 pd_disagg/analysis/nixl_token_accounting.md（前缀缓存尾对齐裁剪）与 EXP-011 push 臂全量 469.8MB〕
 
 ## 8. 下游影响
 - R0-1 三数全部收尾（DECISION.md 硬件基线含大传输行）。

@@ -1,0 +1,18 @@
+# provenance: env=sys sha=717b683182 cmd="python3 scripts/nccl_knob_matrix_analyze.py 20260915T0237" date=2026-09-15T02:45:02+00:00 gpu="RTX 4090 x2" driver=610.57.04 exp=EXP-020 source=20260915T0237_nccl_knob_*.txt threshold="plateau(16M-256M mean) in [1.5,2.1] => A; >=5.0 => B"
+arm,NCCL_SHM_DISABLE,NCCL_P2P_LEVEL,NCCL_PROTO,extra_knob,busbw_1M_GBps,busbw_16M_GBps,busbw_256M_GBps,plateau_16M_256M_mean_GBps,avg_busbw_GBps,nccl_ch00_via,pcie_samples,pcie_loaded_samples,pcie_gen4_frac_loaded,pcie_width_loaded,sm_clock_max_MHz,verdict,raw_file
+extra_algoTree,0,DEF,DEF,NCCL_ALGO=Tree,7.17,8.92,9.0,8.882,8.81207,SHM/direct/direct,40,38,0.921,16,2835,HIGH>=5(B),pd_disagg/hw/20260915T0237_nccl_knob_extra_algoTree.txt
+extra_nchan1,0,DEF,DEF,NCCL_MAX_NCHANNELS=1,6.45,7.18,6.91,7.098,6.86624,SHM/direct/direct,46,43,0.953,16,2835,HIGH>=5(B),pd_disagg/hw/20260915T0237_nccl_knob_extra_nchan1.txt
+extra_shmcudamemcpy1,0,DEF,DEF,NCCL_SHM_USE_CUDA_MEMCPY=1,6.13,8.52,8.32,8.45,7.94096,SHM/CE/direct,42,38,0.947,16,2835,HIGH>=5(B),pd_disagg/hw/20260915T0237_nccl_knob_extra_shmcudamemcpy1.txt
+shm0_p2pDEF_protoDEF,0,DEF,DEF,,7.09,9.15,9.07,9.07,8.82058,SHM/direct/direct,40,37,0.919,16,2805,HIGH>=5(B),pd_disagg/hw/20260915T0237_nccl_knob_shm0_p2pDEF_protoDEF.txt
+shm0_p2pDEF_protoLL,0,DEF,LL,,2.94,2.96,2.96,2.968,2.90838,SHM/direct/direct,84,81,0.963,16,2835,OTHER(B),pd_disagg/hw/20260915T0237_nccl_knob_shm0_p2pDEF_protoLL.txt
+shm0_p2pDEF_protoLL128,0,DEF,LL128,,4.1,4.43,4.42,4.512,4.38352,SHM/direct/direct,60,58,0.948,16,2835,OTHER(B),pd_disagg/hw/20260915T0237_nccl_knob_shm0_p2pDEF_protoLL128.txt
+shm0_p2pDEF_protoSimple,0,DEF,Simple,,5.7,5.92,6.4,6.104,5.9755,SHM/direct/direct,50,47,0.957,16,2835,HIGH>=5(B),pd_disagg/hw/20260915T0237_nccl_knob_shm0_p2pDEF_protoSimple.txt
+shm0_p2pLOC_protoDEF,0,LOC,DEF,,7.17,9.16,9.07,9.138,8.94895,SHM/direct/direct,40,37,0.919,16,2805,HIGH>=5(B),pd_disagg/hw/20260915T0237_nccl_knob_shm0_p2pLOC_protoDEF.txt
+shm0_p2pPHB_protoDEF,0,PHB,DEF,,4.52,6.11,6.85,6.412,6.16696,SHM/direct/direct,46,42,0.952,16,2805,HIGH>=5(B),pd_disagg/hw/20260915T0237_nccl_knob_shm0_p2pPHB_protoDEF.txt
+shm0_p2pPIX_protoDEF,0,PIX,DEF,,7.48,8.64,7.81,8.572,8.29986,SHM/direct/direct,40,37,0.919,16,2805,HIGH>=5(B),pd_disagg/hw/20260915T0237_nccl_knob_shm0_p2pPIX_protoDEF.txt
+shm0_p2pSYS_protoDEF,0,SYS,DEF,,4.85,6.29,6.75,6.468,6.10282,SHM/direct/direct,48,45,0.933,16,2835,HIGH>=5(B),pd_disagg/hw/20260915T0237_nccl_knob_shm0_p2pSYS_protoDEF.txt
+shm1_p2pDEF_protoDEF,1,DEF,DEF,,1.22,1.63,1.69,1.672,1.58498,NET/Socket/0,132,130,0.977,16,2835,REPRO_1.78(A),pd_disagg/hw/20260915T0237_nccl_knob_shm1_p2pDEF_protoDEF.txt
+shm1_p2pLOC_protoDEF,1,LOC,DEF,,1.25,1.66,1.72,1.696,1.60352,NET/Socket/0,132,129,0.984,16,2835,REPRO_1.78(A),pd_disagg/hw/20260915T0237_nccl_knob_shm1_p2pLOC_protoDEF.txt
+shm1_p2pPHB_protoDEF,1,PHB,DEF,,1.21,1.68,1.71,1.688,1.58492,NET/Socket/0,136,133,0.985,16,2835,REPRO_1.78(A),pd_disagg/hw/20260915T0237_nccl_knob_shm1_p2pPHB_protoDEF.txt
+shm1_p2pPIX_protoDEF,1,PIX,DEF,,1.17,1.48,1.52,1.506,1.42713,NET/Socket/0,150,146,0.979,16,2835,REPRO_1.78(A),pd_disagg/hw/20260915T0237_nccl_knob_shm1_p2pPIX_protoDEF.txt
+shm1_p2pSYS_protoDEF,1,SYS,DEF,,1.22,1.65,1.71,1.682,1.59172,NET/Socket/0,132,129,0.977,16,2835,REPRO_1.78(A),pd_disagg/hw/20260915T0237_nccl_knob_shm1_p2pSYS_protoDEF.txt

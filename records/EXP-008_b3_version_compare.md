@@ -6,7 +6,7 @@
 |---|---|
 | 日期 | 2026-08-21（20:39–20:52Z） |
 | 环境 | ENV-A（PyPI 0.17.1, torch 2.10.0+cu130）vs ENV-B colocate v2 行 |
-| 状态 | 完成（有限范围：单实例；PD-vs-PD 对照因 R0-4 课程脚本缺席而后置） |
+| 状态 | 完成（有限范围：单实例；PD-vs-PD 对照因 R0-4 课程脚本缺席而后置；PD-vs-PD 对照已由 EXP-012 定稿为「0.17.1 PD 不可用 vs 0.25.1 NIXL 可用」） |
 | 关联清单项 | B3 |
 
 ## 1. 目的与假设
@@ -38,7 +38,7 @@ runs.jsonl arm=colocate_v0171 六行（在 b1_matrix 下，B3 未另设目录）
 - 启动时间 308→58s 是显著的工程体验差异（附带观察）。
 
 ## 7. 异常、偏差与开放问题
-- 本对照非 PD-vs-PD（0.17.1 P2pNccl 1P1D 需课程 proxy 脚本，R0-4 到位后可补）； P2pNccl 机理层面对照见 analysis/p2pnccl_bugs_id_chain.md（静态）。
+- 本对照非 PD-vs-PD（0.17.1 P2pNccl 1P1D 需课程 proxy 脚本，R0-4 到位后可补）； P2pNccl 机理层面对照见 analysis/p2pnccl_bugs_id_chain.md（静态）。〔勘注 2026-09-15：PD-vs-PD 对照已由 EXP-012 定稿为「0.17.1 PD 不可用 vs 0.25.1 NIXL 可用」〕
 - profiler 接口差异（env var→CLI）已在 EXP-003《profiling 工装验证》记录，为本对照的接口演化补充实例。
 
 ## 8. 下游影响

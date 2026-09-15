@@ -37,7 +37,7 @@ flowchart LR
 | TP2 仅加速 decode：decode 提速 42%（权重带宽分摊），prefill 零加速 | allreduce 受限于 NCCL collective 带宽（P2P 禁用；实测值待复核，见 EXP-018） | [EXP-005](records/EXP-005_replica2_tp2_powercap.md) / [EXP-002](records/EXP-002_hardware_baseline.md)、`pd_disagg/hw/all_reduce_perf.txt` |
 | PD 分离瓶颈定量：KV 等待占 TTFT **54.2 / 62.5 / 64.2%**（512/2K/8K，p50，request 级因果占比，每桶 n=11） | 六段分解闭环误差 p50 <0.1%；bytes 与 Prometheus 对账完全一致 | [EXP-013](records/EXP-013_ext1_request_level_kv_attribution.md)、`pd_disagg/ext1/derived/ext1_per_request.csv` |
 | MoE 的 decode 优势在 bs≈8 反转 | MoE/dense 2.03×(bs=1) -> 0.97×(bs=8) -> **0.82×**(bs=128)；nsys node 级归因：fused_moe grouped GEMM 占 GPU 时间 56.4%（bs=32） | [EXP-014](records/EXP-014_d1_moe_kernel_decomposition.md)、`moe_perf/derived/d1_scaling.csv`、`moe_perf/derived/d1_kernel_share_bs32.csv` |
-| 补齐两个社区空缺的 MoE tuning config | E=30,N=1408 / E=60,N=704（各 18 M 档）；kernel A/B：M=1 **-8.5% / -3.8%**，M≥128 -3.3~-3.9%；correctness 120 passed；PR 材料齐备（未提交） | [EXP-015](records/EXP-015_d2_moe_config_tuning.md)、`moe_perf/PR_DRAFT.md` |
+| 补齐两个社区空缺的 MoE tuning config | E=30,N=1408 / E=60,N=704（各 18 M 档）；kernel A/B：M=1 **-8.5% / -3.8%**，M≥128 -3.3~-3.9%；correctness 120 passed（`::test_fused_moe` 单函数；全文件子集 1041 passed / 127 skipped，EXP-015 §5.1）；PR 已提交（vllm-project/vllm#54372，OPEN 未合并） | [EXP-015](records/EXP-015_d2_moe_config_tuning.md)、`moe_perf/PR_DRAFT.md` |
 | 版本升级实测（system-version comparison，v0.17.1 至 v0.25.1） | 512 桶饱和吞吐 **+45%**（7.14 -> 10.36 req/s）；启动 308 -> 58s；计算受限桶零差异 | [EXP-008](records/EXP-008_b3_version_compare.md) |
 
 ![四臂饱和吞吐总览](pd_disagg/figures/fig7_saturation_overview.png)
@@ -68,7 +68,7 @@ flowchart LR
 
 ## 代码导览
 
-主要目录：`pd_disagg/`（部署选型：脚本、数据、图与报告 `pd_disagg/REPORT.md`）、`moe_perf/`（MoE 分解与调优）、`records/`（17 份八节实验记录）、`docs/theory/`（原理笔记）。
+主要目录：`pd_disagg/`（部署选型：脚本、数据、图与报告 `pd_disagg/REPORT.md`）、`moe_perf/`（MoE 分解与调优）、`records/`（23 份八节实验记录）、`docs/theory/`（原理笔记）、`docs/TECH_DOC_vllm_engineering.md`（总览级技术文档：原理 / 数据 / 分析 / 分类面试题）。
 
 其中最值得读的一处改动：约 16 行本地可观测性 patch，把「KV 传输占 TTFT」从对账推断升级为因果测量。四臂矩阵显示 PD 分离最低，但「KV 传输占 TTFT 多少」最初只能靠分量对账（拿 colocate 无负载 TTFT 近似 P 段）间接推断。EXT-1 把这约 16 行改动打在 vLLM 0.25.1 NIXL connector（逐行 `# EXT1` 标记、原件备份可还原），将其升级为逐请求因果测量——核心节选：
 
@@ -123,7 +123,7 @@ bash moe_perf/d1_sweep.sh
 
 ## 实验记录
 
-深度讲义（不跳步推导 + 代码逐段走读）见 [docs/lectures/](docs/lectures/)。
+深度讲义（不跳步推导 + 代码逐段走读）见 [docs/lectures/](docs/lectures/)。总览级技术文档（原理 + 数据 + 分析方法 + 140 道分类面试题）见 [docs/TECH_DOC_vllm_engineering.md](docs/TECH_DOC_vllm_engineering.md)。
 
 每个实验一份八节记录（目的、配置、步骤、原始数据、结果、分析、异常、下游影响）：
 
@@ -143,11 +143,15 @@ bash moe_perf/d1_sweep.sh
 | [EXP-012 vLLM 0.17.1 P2pNccl 两缺陷动态复现（1P1D 实机）](records/EXP-012_p2pnccl_dynamic_repro.md) | 实机复现 v0.17 P2pNccl 两 bug：connector：433 崩溃与 D 实例挂死，并实证修正静态分析 |
 | [EXP-013 EXT-1 request 级 KV-wait 关联(解锁"KV 占 TTFT%"红线)](records/EXP-013_ext1_request_level_kv_attribution.md) | request 级三段关联：KV 等待占 TTFT 54.2/62.5/64.2%，闭环误差 p50 <0.1% |
 | [EXP-014 D1 MoE decode 分解:吞吐-batch 曲线 + nsys kernel 占比](records/EXP-014_d1_moe_kernel_decomposition.md) | MoE decode 优势 2.03×(bs=1) -> 0.82×(bs=128) 反转；fused_moe 占 GPU 时间 56.4% |
-| [EXP-015 D2 MoE config 调优:4090 BF16 两个社区空缺 tuple + 六件套验证](records/EXP-015_d2_moe_config_tuning.md) | 两个空缺 config 交付：kernel M=1 -8.5%、correctness 120 passed、PR 材料齐备 |
+| [EXP-015 D2 MoE config 调优:4090 BF16 两个社区空缺 tuple + 六件套验证](records/EXP-015_d2_moe_config_tuning.md) | 两个空缺 config 交付：kernel M=1 -8.5%、correctness 120 passed（`::test_fused_moe` 单函数；全文件子集 1041 passed / 127 skipped，EXP-015 §5.1）、PR 材料齐备 |
 | [EXP-016 D4 FP8 vs W4A16 同卡对比(Qwen3-30B-A3B,Ada SM89)](records/EXP-016_d4_fp8_vs_w4a16.md) | W4A16 decode 全 regime 快 23–48%，FP8 仅高并发 prefill 反超——Ada 分派路径给出机理 |
 | [EXP-017 D5 EPLB gate(W4A16 不支持 / FP8 真实重排 + 对照组归因)](records/EXP-017_d5_eplb_gate.md) | EPLB：W4A16 被上游显式拒；FP8 真实重排 + 无 EPLB 对照组把输出分歧归因到重排 |
 | [EXP-018 NCCL allreduce size 扫描(补小消息缺口 + 复测大消息带宽)](records/EXP-018_nccl_allreduce_size_scan.md) | 无 P2P 下纯 NCCL allreduce 延迟地板 ~14µs；大消息平台 ~6.2 GB/s |
 | [EXP-019 1.78 vs 6.2 GB/s 机制调查(环境 diff,先于 bench)](records/EXP-019_nccl_bw_discrepancy_rootcause.md) | 计时口径干净(无 malloc 混入)；差异=传输路径(SHM 3.96 vs Socket 0.76 GB/s)；升级真实环境差异 |
+| [EXP-020 NCCL 旋钮矩阵复现 1.78 GB/s（EXP-019 §8 四步落地）](records/EXP-020_nccl_knob_matrix_repro.md) | 强制 Socket 路径时大消息平台 1.51–1.70 GB/s 落入 1.78 的解释窗；SHM 路径默认 9.07 GB/s，但 28 轮里也出现过 1 次 2.1–2.3 GB/s 的塌陷——1.78 的成因不唯一；PCIe 未升 Gen4 的分支排除 |
+| [EXP-021 NCCL allreduce dtype 扫描（half/bfloat16 vs float，补 EXP-018 §7 缺口）](records/EXP-021_nccl_allreduce_dtype_scan.md) | 延迟地板对 dtype 不敏感（13.5–14.4 µs，差 <7%）；大消息平台的 dtype 差异被 ±30% 的运行间抖动盖住，未决；bf16 平台 6.0–6.9 GB/s |
+| [EXP-022 D2 大 M（512–4096）kernel A/B：tuned config 在 prefill 级 M 是否保持收益（补 EXP-015 §7 缺口）](records/EXP-022_d2_bigM_kernel_ab.md) | 3 轮交叉次序：EP −6.4/−14.0/−9.9/−6.8%、非 EP −2.8/−6.0/−11.8/−10.3%（M=512/1024/2048/4096），8/8 档超 2 倍合并 std |
+| [EXP-023 replica2@512 饱和复测（SAT_CONC=128）：EXP-007 的欠饱和疑点追认或修正](records/EXP-023_replica2_512_saturation_conc128.md) | replica2@512 在并发 128 下 20.87 req/s（并发 64 时 15.58，+34%），原值确系欠饱和；同口径 colocate 12.81，512 桶扩展效率 1.63×（原 1.50×） |
 
 ## 测量方法
 

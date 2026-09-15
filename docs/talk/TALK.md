@@ -38,7 +38,7 @@
 - "e2e 才 +1% 值得吗" → e2e TPOT +0.8~1.2% 三档一致且与 kernel 增益×56.4% 占比折算自洽，但低于跨会话漂移（±5~8%），所以主证据=kernel A/B，e2e 只作防御层数字，不进简历句（8/24 定档修正，EXP-015 §5）。
 - "怎么排除 JIT 干扰" → 新 config 首跑 TTFT 1021ms 是 Triton 现场编译伪影， warmup 复测 225ms，PR 正文注明（EXP-015 §7）。
 - "为什么 EP/非 EP 两个 tuple" → EP 切专家（每卡 E=30，N=1408），非 EP 切 N (E=60，N=704)，GEMM 形状不同、tile 最优解不同（docs/theory/01）。
-- PR 状态措辞：材料六件套齐备、分支就绪，"提交留用户本人"——未提交不说"提交"。
+- PR 状态措辞：已提交 #54372（2026-08-29），未合并——可说"提交"，不说"合入"。
 
 ## 4. 量化选型(S4,EXP-016)
 
@@ -57,4 +57,4 @@ W4A16(GPTQ-Int4，Marlin)decode 全 regime 胜 FP8 23–48%(TPOT 4.91 vs 7.10ms@
 
 ## 6. 讲前红线自查
 
-LEDGER.md「措辞红线状态」表逐行过：两 bug 只"复现/定位/验证"；PR 未提交不说 "提交"；带宽只说 telemetry-derived；e2e +0.8~1.2% 不作 headline；EXT-1 patch 只说"~16 行本地可观测性改动"。
+LEDGER.md「措辞红线状态」表逐行过：两 bug 只"复现/定位/验证"；PR 已提交 #54372，未合并不说 "合入"；带宽只说 telemetry-derived；e2e +0.8~1.2% 不作 headline；EXT-1 patch 只说"~16 行本地可观测性改动"。

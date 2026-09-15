@@ -1,0 +1,5 @@
+# provenance: env=venvs/main sha=3805e40e17 cmd="bash moe_perf/d2_bigM_ab.sh all (STAMP_OVERRIDE=20260915T0303)" date=2026-09-15T03:05:00+00:00 gpu="2xRTX 4090" driver=610.57.04 exp=EXP-022
+本目录为 EXP-022 首次尝试（实际启动 2026-09-15T02:58:23Z，前缀 0303 是启动前预设、比实际早 5 分钟——命名偏差登记于 EXP-022 §7）。
+round1 default/ep 臂在 benchmark_moe.py 的 ray.init() 处超时（"The current node timed out during startup ... raylet failed to startup or the GCS has become overloaded"，
+伴随 vllm 冷导入 IO 压力 42%），未进入 kernel 测量；assert_log 未见「Using default MoE config」→ 该臂作废、脚本中止、trap 已复位 tuned JSON。
+本目录不含任何可用测量值，原地保留不删（铁律 3）。重跑目录见同级 bigM_<新 STAMP>。

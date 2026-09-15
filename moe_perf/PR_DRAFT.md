@@ -1,4 +1,4 @@
-# D2 PR 草稿(六件套对照)· 状态:数字已回填(2026-08-23),待用户 review + 签名提交
+# D2 PR 草稿(六件套对照)· 状态：已提交为 vllm-project/vllm#54372（2026-08-29），本文保留为提交前底稿
 
 > **提交前 hardening 清单（2026-08-24 增补，做完再提）**： 1. 核对 JSON：18 个 M 档 + triton_version 元键与上游既有 config 惯例一致； 2. correctness 重跑并保留**完整**日志（现仅存 tail 3 行）； 3. kernel A/B 补 ≥3 轮交叉（不同次序）取 mean±std； 4. `git fetch upstream && rebase` 到最新 main 后重验（7aa248fc 已滞后）； 5. e2e 数字在 PR 里只作 supporting（+0.8~1.2% < 会话漂移）， headline 用 kernel A/B 两端（M=1 -8.5%/-3.8%，M≥128 -3.3~-3.9%）。 **分支已就绪**：`/root/projects/vllm` 的 `moe-config-4090-qwen15moe` 分支， 两个 JSON 已 `git add` 暂存。你 review 后执行： `cd /root/projects/vllm && git commit -s -m "<下方标题>"`（-s 生成你的 Signed-off-by），然后 fork/push/开 PR。**不要用 agent 身份提交。**
 
@@ -102,10 +102,11 @@ AI assistance (Claude) was used to run the tuning harness, prepare benchmarks, a
 - #3 issue 先行：config 类先例多为直接 PR（如 #48309 无 issue）；沿例直接 PR， 正文引用运行时告警作为动机。
 
 ## 回填检查清单
-- [ ] configs_ep JSON 落盘 + 拷入 vllm/model_executor/layers/fused_moe/configs/
-- [ ] configs_noep JSON 同上
-- [ ] kernel A/B 数字（EXP-015《D2 MoE config 调优》 §5）
-- [ ] e2e 数字（EXP-015 §5）
-- [ ] correctness pytest 输出
-- [ ] 分支 commit（-s，本人身份）——由用户执行
-- [ ] 用户逐行 review 后自行 push + 开 PR
+- [x] configs_ep JSON 落盘 + 拷入 vllm/model_executor/layers/fused_moe/configs/
+- [x] configs_noep JSON 同上
+- [x] kernel A/B 数字（EXP-015《D2 MoE config 调优》 §5）
+- [x] e2e 数字（EXP-015 §5）
+- [x] correctness pytest 输出
+- [x] 分支 commit（-s，本人身份）——由用户执行
+- [x] 用户逐行 review 后自行 push + 开 PR
+- [ ] 维护者加 `ready` label / 人类 review（待外部）
