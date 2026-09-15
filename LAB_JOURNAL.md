@@ -332,3 +332,15 @@
 **产物路径**：`records/EXP-026_nixl_descriptor_granularity.md`；`pd_disagg/hw/exp026_20260915T1151/{D.csv,D.log,P.log}`（主运行 23 点）、`exp026_transport_20260915T1153/D.log`（传输取证）、`exp026_tls_20260915T1228/`（10 档筛选 + 汇总 CSV）；脚本 `scripts/nixl_desc_granularity_bench.py`、`scripts/nixl_ucx_tls_sweep.sh`；五个作废前缀原地保留并登记。
 
 **下一步**：① 给 vLLM 的 NIXL connector 打点，直接读真实 1P1D 里"请求 descCount vs 合并后 descCount"与 region 内块连续性 → 把 §6⑤ 的交叉验证升级为同构实测；② 补扫 `UCX_RNDV_THRESH` / `UCX_MAX_RNDV_RAILS` 与 NIXL 的 `backends=[...]`；③ 修完的工具 bug 中两条（无超时、CSV 逗号）建议进 CORE 本机坑。
+
+## 2026-09-15（续四）EXP-027 rr_proxy 开销拆分：把"代理"从 1.63× 的归因里划掉
+
+**做了什么**：EXP-025 把 replica2@512 推到 conc256（25.30 req/s）仍未见平台，而 512 桶扩展效率只有 1.63×，两个未拆分的候选之一就是 `rr_proxy.py`（单进程 uvicorn、逐请求转发、不做会话亲和）。设计上刻意把两臂的**并发形态对齐**——A 臂用**两个直连客户端同时**各打一个实例（600+600、各 conc64），B 臂用一个客户端经代理（1200、conc128）——否则差值里会混进"两实例同时跑 vs 单实例跑"的干扰。
+
+**为什么（决策依据）**：用户选"拆 rr_proxy 开销"为第二优先项，理由是这个变量在 EXP-024 §6⑥ 与 TECH_DOC C11 里被反复列为"未拆分"，而它恰好是"replica2 是这一族方案下限"这句措辞的支撑点。
+
+**关键数字**：直连合计 **22.280 req/s**（A1 11.140 + A2 11.253，墙钟 53.86/53.32s，两实例差 1.0%）vs 经代理 **21.820**（复跑 **21.862**，两次自身差 0.19%）→ **代理开销 R = 2.06%（保守）/ 2.56%（乐观）**，**判定 B（<5% 阈值）：缺口不来自代理**。附带：经代理臂 TTFT p50 更低（388 vs 594 ms）而 TPOT 略高（41.0 vs 38.8 ms），机制是并发分布不同（代理侧 128 vs 直连侧每实例 64）。prefix cache 全程 0，代理日志无 5xx。
+
+**产物路径**：`records/EXP-027_rr_proxy_overhead_split.md`；raw `pd_disagg/results/b1_matrix/raw/20260915T1239_exp027_{direct8100,direct8200,proxy}_bench.{json,log}`、`20260915T1244_exp027_proxy_r2_bench.{json,log}`、服务/代理日志 `raw/20260915T1239_replica2_conc128_*`；脚本 `pd_disagg/scripts/exp027_proxy_overhead.sh`。**不进 runs.jsonl**（是开销拆分，不是四臂点）。
+
+**下一步**：① 候选 1「两实例共享主机资源」的定量拆分——在**单实例**上把并发推到与双实例合计相同的总在飞量，看单实例能否复现 22.28 req/s（这会把 1.63× 的最后一块补上）；② 代理侧开销构成未拆（uvicorn 单 worker / httpx 连接池 / 流式转发拷贝次数）。
