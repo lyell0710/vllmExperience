@@ -8,7 +8,7 @@ date: 2026-08-24
 
 ## 1. 一句话结论
 
-MoE decode 的成本重心随 batch 从非 routed 部分（bs=1：dense GEMV 40.9%）迁移到 routed experts 的 grouped GEMM（bs=32:56.4%，EXP-014《D1 MoE decode 分解》），因此 4090 上这条链路的第一优化杠杆是 fused_moe 的 Triton tile config 而非 kernel 重写——EXP-015《D2 MoE config 调优》用 "中段 M 与默认启发式打平"实证了这一点。
+MoE decode 的成本重心随 batch 迁移：bs=1 时落在非 routed 部分（dense GEMV 占 40.9%），bs=32 时转到 routed experts 的 grouped GEMM（占 56.4%，EXP-014《D1 MoE decode 分解》）。所以 4090 上这条链路的第一优化杠杆是 fused_moe 的 Triton tile config，不是 kernel 重写。EXP-015《D2 MoE config 调优》用「中段 M 与默认启发式打平」实证了这一点。以下结论都限定在 2×RTX 4090、无 NVLink、P2P 驱动级禁用的平台，换平台需要重测。
 
 ## 2. 机制(自己的话)
 
@@ -20,21 +20,21 @@ MoE decode 的成本重心随 batch 从非 routed 部分（bs=1：dense GEMV 40.
 4. **unpermute / moe_sum**：按 routing 权重加权求和回 token 序；
 5. TP>1 时 **allreduce** 收尾（EXP-014 实测恒 ~14–15%，TP2 固定税）。
 
-config 文件键 = (E， N， device_name[， dtype])，E/N 由并行方式决定：EP 把 60 专家切到 2 卡（每卡 E=30，N=1408），非 EP 每卡持全部专家但 N 减半（E=60，N=704）—— GEMM 形状不同，tile 最优解不同，所以是两个独立 tuple。
+config 文件键 = (E， N， device_name[， dtype])，E/N 由并行方式决定。EP 把 60 专家切到 2 卡，每卡 E=30、N=1408；非 EP 每卡持全部专家，但 N 减半成 E=60、N=704。两者的 GEMM 形状不同，tile 最优解也不同，所以是两个独立 tuple。
 
 ## 3. 本项目实证(必须指自家 EXP 数字)
 
-- **EXP-014**（nsys node 级分解，`--cuda-graph-trace=node` 必需）：fused_moe grouped GEMM 占 GPU kernel 时间 18.7%(bs=1)→ **56.4%**(bs=32)；MoE/dense 吞吐比 **2.03×(bs=1)→0.97×（bs=8，反转点）→0.82×(bs=128)**；bs=1 roofline 对照：MoE 实测 221 tok/s / 理论 ~373(59%)，dense 109/~142(77%)。机理：top-4/60 下 batch 增大 → 每 step 命中专家并集趋全量（~28.6GB > dense 14.2GB），激活稀疏优势反转为读放大劣势。
-- **EXP-015**（1920 配置×18 M 档×2 tuple，8/24 勘正档数）：kernel A/B 两端改善——M=1：EP **-8.5%** / 非 EP -3.8%；M=128/256：-3.3~-3.9%；M=8–64 与默认持平；e2e TPOT +0.8~1.2% ≈ kernel 增益 × 56.4% 占比折算（自洽，但低于跨会话漂移，不作 headline）。
+- **EXP-014**（nsys node 级分解，`--cuda-graph-trace=node` 必需）：grouped GEMM 的占比从 18.7%(bs=1) 涨到 **56.4%**(bs=32)。MoE/dense 吞吐比随之反转：**2.03×(bs=1)→0.97×（bs=8，反转点）→0.82×(bs=128)**。bs=1 roofline 对照：MoE 实测 221 tok/s / 理论 ~373(59%)，dense 109/~142(77%)。机理是 top-4/60：batch 增大后每 step 命中的专家并集趋近全量（~28.6GB，超过 dense 的 14.2GB），激活稀疏的优势反转为读放大的劣势。
+- **EXP-015**（1920 配置×18 M 档×2 tuple，8/24 勘正档数）：kernel A/B 的收益集中在两端——M=1：EP **-8.5%** / 非 EP -3.8%；M=128/256：-3.3~-3.9%；M=8–64 与默认持平。e2e TPOT +0.8~1.2% 与 kernel 增益 × 56.4% 占比的折算自洽，但低于跨会话漂移，只作 supporting，不作 headline。
 - **EXP-009《C1 Qwen1.5-MoE-A2.7B 上卡（TP2+EP）+ C2 运行时证据》**（缺档告警原文）：fused_moe.py：1106 运行时点名 E=30，N=1408 缺失——"社区空缺"的三重闭环之一。
 - **EXP-016《D4 FP8 vs W4A16 同卡对比》**（相邻链路）：同为 MoE，quant 分派不同路径——W4A16 走 Marlin， FP8 在 Ada 只能走 Triton block-scaled，decode 全 regime W4A16 胜 23–48%。
 
 ## 4. 面试追问 Q&A
 
-- **Q：为什么 bs=1 时 MoE 有优势、大 batch 反而输？** A：decode 是权重读带宽受限。bs=1 每 step 只读激活专家 ~2.7GB/卡，dense 读 7.1GB/卡，roofline 比值即上限；batch 大了专家并集趋全量（28.6GB>14.2GB）， 读放大反超 dense——EXP-014 曲线在 bs≈8 处交叉。
+- **Q：为什么 bs=1 时 MoE 有优势、大 batch 反而输？** A：decode 是权重读带宽受限。bs=1 时每 step 只读激活专家 ~2.7GB/卡，dense 要读 7.1GB/卡，roofline 比值就是上限。batch 一大，专家并集趋全量（28.6GB>14.2GB），读放大反超 dense。EXP-014 的曲线在 bs≈8 处交叉。
 - **Q：中段 M 为什么调不动？** A：1920 配置搜索的最优在 M=8–64 与启发式默认打平——该区域 tile 选择已被默认覆盖；收益只在两端（极小 M 与 M≥128）。这也是 D3"不做 kernel 改动"的数据依据（EXP-015 §6）。
 - **Q：moe_align/permute 值得优化吗？** A：占比 ≤4.1% / ≤0.5%（EXP-014 分解表），本 regime(TP2+EP，bs≤128)不值得。
-- **Q：EPLB 在这条链路的哪里？** A：routing 之上的专家重排层。实测 FP8 臂 2 次真实重排（balancedness 0.53–0.74），W4A16 被上游显式拒（routed_experts.py：151）；重排改变 grouped GEMM 的专家分段与浮点归约顺序 → 数值性输出分歧（EXP-017《D5 EPLB gate》对照组归因）。
+- **Q：EPLB 在这条链路的哪里？** A：routing 之上的专家重排层。FP8 臂实测 2 次真实重排（balancedness 0.53–0.74）；W4A16 被上游显式拒（routed_experts.py：151）。重排会改变 grouped GEMM 的专家分段与浮点归约顺序，所以输出分歧是数值性的（EXP-017《D5 EPLB gate》用对照组归因）。
 
 ## 5. 延伸(源码/数据,file:line)
 

@@ -6,7 +6,7 @@ status: complete
 
 # 深度讲义 01 · 两张消费级 4090 该怎么用:四臂形态的资源账、互联墙与功率帽探案
 
-> 阅读前提：知道 prefill / decode 是两个阶段，会读 shell 与 Python；不要求分布式推理背景。引用规范：凡属论文或官方文档的论断一律给出处（标题 + arXiv/DOI 编号 + 章节号， 文档给 URL 路径 + 小节名）；凡本文从仓内 raw/derived 现算的量标注"本文现算"； 凡本文自己补出的推导标注"本讲义推导"；无法用检索确认的说法标注"未核实"。每个数字都带 EXP 锚，原始文件在 `pd_disagg/` 与 `records/data/` 下。
+> 阅读前提：知道 prefill / decode 是两个阶段，会读 shell 与 Python；不要求分布式推理背景。引用规范：凡属论文或官方文档的论断一律给出处（标题 + arXiv/DOI 编号 + 章节号，文档给 URL 路径 + 小节名）；凡本文从仓内 raw/derived 现算的量标注「本文现算」；凡本文自己补出的推导标注「本讲义推导」；无法用检索确认的说法标注「未核实」。每个数字都带 EXP 锚，原始文件在 `pd_disagg/` 与 `records/data/` 下。
 
 ## 目录
 
@@ -44,7 +44,13 @@ status: complete
 
 ## 1. 这一篇回答什么问题
 
-只有两张 RTX 4090（无 NVLink、P2P 被驱动禁用），单卡混部、双副本、张量并行 TP2、 Prefill-Decode 分离四种形态该选哪个，以及为什么在这台机器上答案是唯一的。读完你应当能： 手推 decode 的带宽 roofline 和 TP2 的收益/代价账（算式到 ms 级）；解释 collective 带宽、 0.26–0.27 GB/s、22.7 vs 0.6 GB/s 这三组互联数字各自代表哪条路径、怎么测出来； 面对"你的 SLO 阈值是不是挑出来的""replica2 凭什么不到 2× 也叫近线性"这类追问给出带证据锚点的回答。
+这一篇回答：只有两张 RTX 4090（无 NVLink、P2P 被驱动禁用）时，单卡混部、双副本、张量并行 TP2、Prefill-Decode 分离四种形态该选哪个，以及为什么在这台机器上答案是唯一的。
+
+读完你应当能：
+
+- 手推 decode 的带宽 roofline 和 TP2 的收益/代价账（算式到 ms 级）；
+- 解释 collective 带宽、0.26–0.27 GB/s、22.7 vs 0.6 GB/s 这三组互联数字各自代表哪条路径、怎么测出来；
+- 面对「你的 SLO 阈值是不是挑出来的」「replica2 凭什么不到 2× 也叫近线性」这类追问，给出带证据锚点的回答。
 
 ### 1.1 本篇要建立的六条能力
 
@@ -90,7 +96,7 @@ status: complete
 - tp2 = 两人同炒每一道菜：你切一半我切一半，但每道菜出锅前必须把两人的半成品合到一起；
 - pd1p1d = 一人只备菜、一人只掌勺：备好的菜要整盘从一号灶端到二号灶。
 
-类比的失效点必须点破：厨师之间"传菜"几乎免费，而 GPU 之间传数据在本机要走一条被禁用了直连（P2P）的 PCIe 路径——**合菜（allreduce）与端菜（KV 传输）的成本在这台机器上不是二阶小量，而是主项**。这是全篇的第一性原理：**部署形态的本质是"用通信换组织"，通信有多贵， 形态就有多少自由度。**
+类比的失效点必须点破：厨师之间「传菜」几乎免费，而 GPU 之间传数据在本机要走一条被禁用了直连（P2P）的 PCIe 路径。**合菜（allreduce）与端菜（KV 传输）的成本在这台机器上不是二阶小量，而是主项。** 这是全篇的第一性原理：**部署形态的本质是「用通信换组织」，通信有多贵，形态就有多少自由度。**
 
 三本资源账（每臂都要各记一遍，详细算式在 §3）：
 
@@ -270,7 +276,7 @@ Qwen2-7B-Instruct 的权重体积可以精确算出来，不必估。两条独�
 
 **prefill 侧（收益归零）**：prefill 是计算受限（8192 token 一批，GEMM 算术强度高）， 计算减半本应省约一半时间；但每层输出要做一次大消息 allreduce： $8192 \times 3584 \times 2\,\mathrm{B} = 58.7\,\mathrm{MB}$(hidden=3584，BF16)， 28 层合计 ~1.64 GB 通信量。若按大消息实测 1.85 GB/s 完全串行传输要 ~0.89 s——已超过实测 TTFT 693.7 ms(EXP-005)，说明真实执行存在计算-通信重叠/分块调度，该算式只能做 **量级判断**（推断，不是逐毫秒预测）：通信代价与计算减半的收益同量级，相互抵消。实测锚点： tp2 8K TTFT 693.7 ms ≈ 单卡冷态 ~700 ms(EXP-005)，**零加速**。另注：Megatron 式 TP 每层前向通常有注意力出投影、MLP 下投影两次 allreduce，仓内按每层一次做下界计数（EXP-005 §6 "28 层 × 58.7MB"），取哪个计数不改变量级结论。
 
-**汇总到吞吐**：饱和吞吐 tp2 相对 colocate 只有 +13~19%（512/2K/8K 桶：12.31/10.36、 4.16/3.63、1.02/0.90，EXP-007《B1 四臂 offered-load 扫描战役》）——decode 的 -42% 在批量化后被稀释（大 batch 下 decode 逐渐转向计算/调度约束），prefill 的 allreduce 墙成为主导。
+**汇总到吞吐**：饱和吞吐 tp2 相对 colocate 只有 +13~19%（512/2K/8K 桶：12.31/10.36、 4.16/3.63、1.02/0.90；EXP-007《B1 四臂 offered-load 扫描战役》，协议 v2、每点唯一 seed）——decode 的 -42% 在批量化后被稀释（大 batch 下 decode 逐渐转向计算/调度约束），prefill 的 allreduce 墙成为主导。
 
 #### 3.3.1 Megatron 切法:为什么每层前向恰好两次 allreduce
 
@@ -321,7 +327,7 @@ MLP 块 $Y=\mathrm{GeLU}(XA)$ 有两种切 $A$ 的方式。按行切 $A=[A_1;A_2
 
 ### 3.4 replica2:零通信的复制,近线性的扩展
 
-不切模型、不传 KV，唯一代价是权重显存翻倍（两卡各持 14.2 GB）与外置轮询代理（`pd_disagg/matrix/rr_proxy.py`）。因果链：零跨卡流量 → 互联质量与它无关 → 扩展效率只受负载均衡与客户端限制。实测 2K/8K 桶扩展 1.93×/1.98×(7.00/3.63、1.78/0.90， EXP-007)；512 桶 1.50×(15.58/10.36)带欠饱和疑点（EXP-007 §7：SAT_CONC=64 或代理上限，引用 512 扩展效率前须复测）。
+不切模型、不传 KV，唯一代价是权重显存翻倍（两卡各持 14.2 GB）与外置轮询代理（`pd_disagg/matrix/rr_proxy.py`）。因果链是：零跨卡流量 → 互联质量与它无关 → 扩展效率只受负载均衡与客户端限制。实测 2K/8K 桶扩展 1.93×/1.98×(7.00/3.63、1.78/0.90；EXP-007，协议 v2、每点唯一 seed)；512 桶 1.50×(15.58/10.36)带欠饱和疑点（EXP-007 §7：SAT_CONC=64 或代理上限，引用 512 扩展效率前须复测）。
 
 #### 3.4.1 论文其实早就写了这一条
 
@@ -783,7 +789,7 @@ Bidirectional P2P=Disabled Bandwidth Matrix (GB/s)
 | 2048 | 224.9 | 220.7 | 219.8 | 718.6 |
 | 8192 | 925.2 | 902.6 | 881.3 | 2718.7 |
 
-读法：非 PD 三臂几乎无差异（prefill 无并行收益，§3.3）；pd 的溢价 154/494/1793 ms 全部来自 KV 通路——它的因果拆解（54.2/62.5/64.2%，512/2K/8K，p50，request 级因果占比）在讲义 02。图表版：`pd_disagg/figures/fig7_saturation_overview.png`（总览）、 `fig1_goodput_curves.png`（曲线族，x=offered load，y=goodput，虚实线区分臂）——看曲线族先看**过峰后的下降段**，那是各臂的失效方式：replica2 缓降，pd 贴地。
+读法：非 PD 三臂几乎无差异（prefill 无并行收益，§3.3）；pd 的溢价 154/494/1793 ms 全部来自 KV 通路——它的因果拆解（54.2/62.5/64.2%，512/2K/8K，p50，request 级因果占比，每桶 n=11）在讲义 02。图表版：`pd_disagg/figures/fig7_saturation_overview.png`（总览）、 `fig1_goodput_curves.png`（曲线族，x=offered load，y=goodput，虚实线区分臂）——看曲线族先看**过峰后的下降段**，那是各臂的失效方式：replica2 缓降，pd 贴地。
 
 #### 5.3.1 第四张表:per-GPU 成本口径
 
@@ -948,7 +954,7 @@ Ada 白皮书 Appendix A Table 2 给 RTX 4090 的 TGP(Total Graphics Power)为 *
 | 8 | **PagedAttention §1/§3.1**：既有系统 KV 显存利用率仅 20.4%–38.2% | 本仓不测 KV 显存利用率 | **不适用**。本仓四臂全部跑在 vLLM（即 PagedAttention 之后），该浪费已被消除；论文的对照是 2023 年的 FasterTransformer/Orca |
 | 9 | **PagedAttention §7.1**：PagedAttention 的 attention kernel 比 FasterTransformer 慢 20–26% | 未测 | **不在范围**。本仓不做 kernel 级 attention 对标（那是 triton-kernels 线的题目）。列在这里是为了说明：**块化管理不是免费的**，它用 20–26% 的 kernel 开销换掉了 60–80% 的显存浪费 |
 | 10 | **Orca §3/§4.2**：iteration-level scheduling + selective batching；调度器每次迭代重选 batch，按 `max_bs` 与 `n_slots` 双约束 | 本仓不改调度器，只在**外部**用 offered load 扫描间接观察其行为 | **层次不同**。Orca 的 `n_rsrv`（按 `req.max_tokens` 预留 KV 槽位）在 vLLM 里被 PagedAttention 的按需分块取代，所以本仓的 `--ignore-eos` 固定输出长度不会触发 Orca 式的预留浪费 |
-| 11 | **Orca 摘要**：相对 FasterTransformer 同延迟下吞吐 36.9× | 本仓 EXP-008 测到 v0.17.1 → v0.25.1 的 512 桶饱和吞吐 +45%，计算受限桶零差异 | **不可比但可对读**。36.9× 是"有无连续批处理"的差距，+45% 是"连续批处理之后八个月的工程改进"的差距。**前者是范式差，后者是版本差**，两个数量级的差别本身就说明了范式改变的价值 |
+| 11 | **Orca 摘要**：相对 FasterTransformer 同延迟下吞吐 36.9× | 本仓 EXP-008 测到 v0.17.1 → v0.25.1 的 512 桶饱和吞吐 +45%（conc64 口径、system-version comparison），计算受限桶零差异 | **不可比但可对读**。36.9× 是「有无连续批处理」的差距，+45% 是「连续批处理之后八个月的工程改进」的差距。**前者是范式差，后者是版本差**，两个数量级的差别本身就说明了范式改变的价值 |
 | 12 | **Megatron §3**：每层前向"only two all-reduces in the forward path" | 仓内按每层 1 次做下界计数（EXP-005 §6） | **本仓保守**。按 2 次算通信量翻倍（1.64 → 3.29 GB），零加速结论只会更强。**取下界是为了让结论对计数方式不敏感** |
 | 13 | **Mooncake §5.1**：跨节点扩 TP 需"two expensive RDMA-based all-reduce operations per layer， significantly reducing the MFU" | 本机 tp2 prefill 零加速（§3.3） | **同一机理，不同尺度**。Mooncake 说的是跨节点 RDMA（数十 GB/s）已经贵到不值得；本机是 SHM 回退的低带宽。**结论方向一致，阈值差两个数量级** |
 | 14 | **Ada 白皮书 Table 2**：RTX 4090 boost 2520 MHz、1008 GB/s、L2 73728 KB、TGP 450 W | 遥测实测未节流 2820 MHz、峰值功率 444.65 W；memcpy 924 GB/s | **时钟高于规格 11.9%，功率贴帽 98.8%，带宽达规格 91.7%**。教训：白皮书 boost 是"典型值"不是硬上限（§3.3.4），而 TGP 是硬上限 |
@@ -967,7 +973,7 @@ Ada 白皮书 Appendix A Table 2 给 RTX 4090 的 TGP(Total Graphics Power)为 *
 - **replica2 的生产形态**：多副本 + 专业负载均衡（K8s service、cache-aware router）。本仓 rr_proxy 是最小实现（§4 段 7），不做会话亲和，**所以 replica2 的数字是这一族方案的下限**。
 - **TP 的生产语境**：NVLink 平台上 allreduce 带宽高两个数量级，TP2 prefill 不再零加速； vLLM 的 custom allreduce 小消息路径也依赖 P2P，本机禁用后只剩 NCCL SHM—— **同一份代码在不同互联上走的是不同分支**。
 - **调度层的缺口（本仓没做的一臂）**：Sarathi-Serve 的分块 prefill + stall-free 调度（arXiv：2403.02310）与 PD 分离解决同一个问题——prefill 长任务阻塞 decode——但它 **不需要跨卡传输任何东西**。在本机这种互联受限平台上，它在原理上就该优于 PD 分离。本仓的 colocate 臂跑在 vLLM 默认调度上，**没有做该特性的开关对照**，因此不能主张任何相关数字。这是四臂矩阵设计的一个真实缺口，补法很明确：加一臂 `colocate_no_chunked`，同协议重跑三桶。
-- **调度层的历史坐标**：Orca 的 iteration-level scheduling(OSDI 2022，§3)把调度粒度从"请求"降到"迭代"，解决"早完成的请求不能提前返回、新到的必须等整批跑完"； selective batching 把 Attention 之外的算子按 token 拉平成 $[\sum L, H]$、 Attention 逐请求单算。本仓所有臂都跑在这套范式之后的 vLLM 上，**享受它但不研究它**——EXP-008《B3 有限版本对照》的版本对照（+45%@512 桶）测的是范式之上的工程演进。
+- **调度层的历史坐标**：Orca 的 iteration-level scheduling(OSDI 2022，§3)把调度粒度从"请求"降到"迭代"，解决"早完成的请求不能提前返回、新到的必须等整批跑完"； selective batching 把 Attention 之外的算子按 token 拉平成 $[\sum L, H]$、 Attention 逐请求单算。本仓所有臂都跑在这套范式之后的 vLLM 上，**享受它但不研究它**——EXP-008《B3 有限版本对照》的版本对照（+45%@512 桶，conc64 口径、system-version comparison）测的是范式之上的工程演进。
 - **KV 管理层**：PagedAttention 的块表（arXiv：2309.06180，§4.2）让 KV 不必连续， 代价是 attention kernel 慢 20–26%(§7.1)，收益是消除 60–80% 的显存浪费（§1）。本仓的 PD 传输账（16 token/块）完全建立在这套机制之上。
 - **量化**：本仓 dense 臂只跑 BF16；生产普遍上 W8A8/W4A16。量化会同时改变 §3.2 的分子（$W$ 减半）与 §3.5 的 KV 账（FP8 KV cache），四臂排序可能变化——**本仓不外推**。
 

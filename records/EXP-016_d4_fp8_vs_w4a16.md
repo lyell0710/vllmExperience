@@ -4,8 +4,8 @@
 
 | 字段 | 值 |
 |---|---|
-| 日期 | 2026-08-23(09:27–10:20Z) |
-| 环境 | ENV-B(752a3a5044, vllm 0.25.1);TP2+EP;2×RTX 4090 |
+| 日期 | 2026-08-23（09:27–10:20Z） |
+| 环境 | ENV-B（752a3a5044, vllm 0.25.1）；TP2+EP；2×RTX 4090 |
 | 状态 | 完成 |
 | 关联清单项 | D4；S4 简历句解锁；C3 后续 |
 
@@ -15,7 +15,7 @@
 - **W4A16**:`Qwen/Qwen3-30B-A3B-GPTQ-Int4`（GPTQ,16G,Marlin 路径=EXP-010《C3 Qwen3-30B-A3B W4A16 上卡》确认）
 
 ## 2. 环境与配置
-`d4_fp8_w4a16.sh`：两臂同参数（TP2+EP、max-model-len 8192、util 0.88、每点唯一 seed、--save-result）；负载 attr512(512/128,conc1)+ c1/c32/c128(128/256)。PPL:`d4_ppl.py`——wikitext-2-raw test，窗 2048/ 步 1536（前 512 token 只作条件不计分），两臂**完全相同的计分 token 集**（同 Qwen3 tokenizer,31212 token）,vLLM offline prompt_logprobs=1。
+`d4_fp8_w4a16.sh`：两臂同参数（TP2+EP、max-model-len 8192、util 0.88、每点唯一 seed、--save-result）；负载 attr512(512/128,conc1)+ c1/c32/c128(128/256)。PPL：`d4_ppl.py`——wikitext-2-raw test，窗 2048/步 1536（前 512 token 只作条件不计分），两臂**完全相同的计分 token 集**（同 Qwen3 tokenizer,31212 token），vLLM offline prompt_logprobs=1。
 
 ## 3. 步骤
 fp8 臂 4 点 → w4a16 臂 4 点（首跑被脚本 10 分钟健康检查窗误杀，见 §7）→ PPL fp8 → PPL w4a16（首跑 OOM，见 §7）。
@@ -33,7 +33,7 @@ fp8 臂 4 点 → w4a16 臂 4 点（首跑被脚本 10 分钟健康检查窗误�
 | c32 | 1455.3 | 2160.0 | **+48%** | 19.93 | **13.77** | 258.3 | 241.1 |
 | c128 | 3574.0 | 4393.9 | **+23%** | 33.81 | **26.76** | **497.1** | 612.8 |
 
-**精度（wikitext-2 PPL，同 31212 计分 token）**:FP8 **7.663** vs W4A16 **7.922**（FP8 优 3.3% 相对）。权重体积：31G vs 16G。
+**精度（wikitext-2 PPL，同 31212 计分 token）**：FP8 **7.663** vs W4A16 **7.922**（FP8 优 3.3% 相对）。权重体积：31G vs 16G。
 
 **kernel 路径（SM89 实选，日志原文在案）**：
 - FP8:linear = `TritonFp8BlockScaledMMKernel`;MoE = `Using TRITON Fp8 MoE backend out of potential backends: ['AITER','FLASHINFER_TRTLLM', 'FLASHINFER_CUTLASS','DEEPGEMM','TRITON','MARLIN',...]`； 另 `symm_mem.py:66 Device capability 8.9 not supported`。

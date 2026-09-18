@@ -1,6 +1,6 @@
 # vLLM 推理部署与 MoE 优化 · 工程技术文档
 
-> **一句话结论**：在 2×RTX 4090（无 NVLink、P2P 驱动级禁用）上，四种部署形态的排序由三条跨卡路径的数字决定——replica2 零跨卡流量因而全桶最高，tp2 被每层 allreduce 的固定开销与带宽墙夹住只换来 13–19% 吞吐，pd1p1d 被 NIXL 0.26–0.27 GB/s 的 KV 通路钉死（KV 等待占 TTFT 54.2/62.5/64.2%，request 级因果占比）；MoE 线上 decode 的 bs=1 优势 2.03× 在 bs≈8 反转、fused_moe grouped GEMM 占 56.4%（bs=32），据此交付两个社区空缺的 config（kernel M=1 −8.5%/−3.8%）并已提交上游 PR #54372（EXP-002/005/007/013/014/015）。
+> **一句话结论**：在 2×RTX 4090（无 NVLink、P2P 驱动级禁用）上，四种部署形态的排序由三条跨卡路径的数字决定。replica2 零跨卡流量，所以全桶最高；tp2 被每层 allreduce 的固定开销与带宽墙夹住，只换来 13–19% 吞吐；pd1p1d 被 NIXL 0.26–0.27 GB/s 的 KV 通路钉死，KV 等待占 TTFT 54.2/62.5/64.2%（512/2K/8K，p50，request 级因果占比，每桶 n=11）。MoE 线上，decode 的 bs=1 优势 2.03× 在 bs≈8 反转（2.03×→0.97×→0.82×，bs=1/8/128）；fused_moe grouped GEMM 占 56.4%（bs=32）。据此我交付两个社区空缺的 config（kernel M=1 −8.5%/−3.8%），并已提交上游 PR #54372（OPEN 未合并；EXP-002/005/007/013/014/015）。
 
 ---
 
@@ -29,7 +29,7 @@
 
 # 第一部分 技术原理
 
-> 这一部分回答"机制是什么"。每节固定四段：**机制一句话 → 图 → 公式与数量关系 → 本项目在哪个 EXP 里验证了它**。数字尽量不出现，出现时只作量级锚点并带指针。
+> 这一部分回答「机制是什么」。每节固定四段：**机制一句话 → 图 → 公式与数量关系 → 我在哪个 EXP 里验证了它**。数字尽量不出现，出现时只作量级锚点并带指针。
 
 ## 1.1 推理的两个阶段：prefill 与 decode 落在 roofline 的两端
 
@@ -63,7 +63,7 @@ flowchart LR
 - 余量去处：KV 读取项 $n \times 57{,}344\,\mathrm{B}/BW_{mem}$ 随上下文线性增长；launch/调度；带宽达成率。bs=1 每层 7 次 GEMV + 若干逐元素算子，28 层就是几百次 launch——这是 CUDA Graph 存在的理由。
 - 指标定义：$\mathrm{TTFT} = T_{排队} + T_{prefill} + T_{首\,token}$；$\mathrm{TPOT} = (T_{总} - \mathrm{TTFT})/(N_{out}-1)$。TTFT 受 prefill 算力 + 排队 +（PD 时）KV 传输支配；TPOT 受权重带宽 + 主机侧派发支配。**同一个改动在两者上可以方向相反**。
 
-**本项目的验证**
+**我的验证**
 
 | 机制 | EXP | 看到了什么 |
 |---|---|---|
@@ -99,7 +99,7 @@ flowchart TB
 - block_size = 16 的出处：PagedAttention 论文 §7.2 的扫描——"large enough to efficiently utilize the GPU and small enough to avoid significant internal fragmentation"。代价：论文 §7.1 attention kernel 比 FasterTransformer 慢 20–26%，换掉 §1 的 60–80% 显存浪费。
 - D 端接远端 KV 的精确上界：`num_external_tokens = len(prompt) − 1 − num_computed_tokens`——最后一个 prompt token 必须由 D 本地算，因为需要它的 logit。prefix 可复用长度同理是 `input_len − 1`。
 
-**本项目的验证**：EXP-006《pd1p1d 指标探针 + 归因 + NIXL 大传输实测》里 9 token 的探针请求报出 917,504 B（一整块，向上取整实证）；EXP-013《EXT-1 request 级 KV-wait 关联（解锁"KV 占 TTFT%"红线）》全部 36 请求 bytes 求和 7,398,752,256 B 与 Prometheus 计数器分毫不差；EXP-007 协议 v2 每点唯一 seed，就是因为 block hash 会让同 seed 的短桶 prompt 命中长桶的前缀（2048 桶实测 25% 命中）。
+**我的验证**：EXP-006《pd1p1d 指标探针 + 归因 + NIXL 大传输实测》里，9 token 的探针请求报出 917,504 B（一整块，向上取整实证）。EXP-013《EXT-1 request 级 KV-wait 关联（解锁「KV 占 TTFT%」红线）》把全部 36 请求的 bytes 求和，得 7,398,752,256 B，与 Prometheus 计数器分毫不差。EXP-007 用协议 v2 每点唯一 seed，是因为 block hash 会让同 seed 的短桶 prompt 命中长桶的前缀——2048 桶实测 25% 命中。
 
 ## 1.3 vLLM v1 引擎：请求生命周期与连续批处理
 
@@ -136,7 +136,7 @@ flowchart TB
 - chunked prefill：把长 prompt 切成 token budget 大小的块跨 step 执行，与 decode 混批——防止长 prompt 独占一整轮 forward。
 - 三种测量模式对应三个排队学量：attribution（并发 1，调度器完全旁路，测服务时间 $1/\mu$）、saturation（测 $\mu_{max}$）、sweep（测 $\lambda < \mu$ 的响应曲线）。goodput = 同时满足 TTFT 与 TPOT 两条 SLO 的请求数 ÷ 墙钟。
 
-**本项目的验证**：EXP-007 的 attribution / saturation / sweep 三模式与 goodput 曲线的过峰下降段（replica2 缓降、pd 贴地）；EXP-008《B3 有限版本对照（v0.17.1 vs v0.25.1 单实例）》的 +45% 只在 512 桶——"每请求开销敏感 regime"，无负载延迟与 decode 速度不变；EXP-014《D1 MoE decode 分解：吞吐-batch 曲线 + nsys kernel 占比》证实 decode 步跑在 CUDA graph 内（nsys 必须 `--cuda-graph-trace=node`）；EXP-012《vLLM 0.17.1 P2pNccl 两缺陷动态复现（1P1D 实机）》的 bug1 正是 chunked prefill 假设被 connector 的 assert 焊死。
+**我的验证**：EXP-007 用 attribution / saturation / sweep 三模式跑出 goodput 曲线，过峰下降段是 replica2 缓降、pd 贴地。EXP-008《B3 有限版本对照（v0.17.1 vs v0.25.1 单实例）》的 +45% 只在 512 桶出现，口径为 conc64、system-version comparison——那是「每请求开销敏感 regime」，无负载延迟与 decode 速度都不变。EXP-014《D1 MoE decode 分解：吞吐-batch 曲线 + nsys kernel 占比》证实 decode 步跑在 CUDA graph 内，nsys 必须 `--cuda-graph-trace=node`。EXP-012《vLLM 0.17.1 P2pNccl 两缺陷动态复现（1P1D 实机）》的 bug1，正是 chunked prefill 假设被 connector 的 assert 焊死。
 
 ## 1.4 互联三条路径与两参数通信模型
 
@@ -167,7 +167,7 @@ flowchart LR
 - 路径三：软件栈最厚、粒度最碎（16 KiB descriptor），数字最小。从左到右，软件栈越厚、粒度越碎，数字越小。
 - 三条路径的 $\alpha$ 与 $m$ 都不同——把大消息的 $\beta$ 拿去预测小消息的吞吐，是公理 B 明确禁止的操作。
 
-**本项目的验证**：EXP-002 三个文件各排除一类替代解释（`topo -p2p r` = GNS；单向 D2D 0.60–0.91 vs 双向 22.6–22.8 GB/s；`all_reduce_perf` 曲线平坦）；EXP-018 补齐小消息端：延迟地板 ~14 µs（8 KiB 消息 13.79 µs），拐点结构 <16K 延迟主导 / 16K–256K 过渡 / ≥512K 带宽平台；EXP-006/007 反解路径三：0.26–0.27 GB/s 跨尺寸恒定。
+**我的验证**：EXP-002 用三个文件各排除一类替代解释——`topo -p2p r` = GNS，单向 D2D 0.60–0.91 vs 双向 22.6–22.8 GB/s，`all_reduce_perf` 曲线平坦。EXP-018 补齐小消息端：延迟地板 ~14 µs（8 KiB 消息 13.79 µs），拐点结构是 <16K 延迟主导、16K–256K 过渡、≥512K 带宽平台。EXP-006/007 反解路径三：0.26–0.27 GB/s 跨尺寸恒定。
 
 ## 1.5 张量并行 TP 的通信账
 
@@ -196,7 +196,7 @@ flowchart LR
 - vLLM 的 custom allreduce 小消息路径依赖 peer buffer 直接读写，本机 P2P 禁用后只剩 NCCL SHM——**同一份代码在不同互联上走的是不同分支**。
 - 微基准的 $\alpha$ 是下限：nccl-tests 是稳态循环，vLLM 的每步 allreduce 夹在 kernel 之间，真实系统里总是更大。本仓无 tp2 kernel 级 trace，这一条是登记在案的开放问题（讲义 01 §5.1.1）。
 
-**本项目的验证**：EXP-005 decode 16 → 9.3 ms（权重带宽分摊 − 通信税，账闭合）、8K prefill 零加速（28 层 × 58.7 MB 大消息）；EXP-007 tp2 饱和吞吐仅 +13–19%（decode 收益批量化后被稀释、prefill allreduce 墙成主导）；EXP-014 AllReduce 在 bs=1/32 下恒占 13.8%/15.0%（TP2 固定税）；EXP-018 延迟地板 ~14 µs 与 llm-engine#EXP-D22 的 88 µs 拆成 14 µs 传输 + 74 µs 调度/同步。
+**我的验证**：EXP-005 测到 decode 16 → 9.3 ms（权重带宽分摊 − 通信税，账闭合）、8K prefill 零加速（28 层 × 58.7 MB 大消息）。EXP-007 测到 tp2 饱和吞吐仅 +13–19%——decode 收益在批量化后被稀释，prefill 的 allreduce 墙成主导。EXP-014 测到 AllReduce 在 bs=1/32 下恒占 13.8%/15.0%（TP2 固定税）。EXP-018 的延迟地板 ~14 µs 与 llm-engine#EXP-D22 的 88 µs，可拆成 14 µs 传输 + 74 µs 调度/同步。
 
 ## 1.6 PD 分离全链路：NIXL pull 与 KV 传输时间模型
 
@@ -252,7 +252,7 @@ flowchart LR
 
 两端**独立推导**同一个 `request_id#layer` key 是隐式契约，InputProcessor 的随机后缀让 key 分叉；chunked prefill 则靠 `connector:433` 的 assert 焊死"P 上任何多步执行都是 prefill 续传"。正确形态是显式身份交接：由一端生成 rendezvous key 并显式传给另一端——这正是 NIXL 版 `kv_transfer_params` 的做法。
 
-**本项目的验证**：EXP-001《NIXL 1P1D smoke 与版本裁决》（smoke 点落在小传输延迟地板上）；EXP-006（有效吞吐跨尺寸恒定；bytes 反解与 ext_kv 计数器对账）；EXP-007（容量上限式在三桶的预测精度随输入长上升）；EXP-011（换方向只改常数项 −6.7%，量级不变）；EXP-012（bug1 原生 traceback、bug2 wchan 闭环）；EXP-013（request 级因果占比 54.2/62.5/64.2%；每 descriptor 耗时跨桶几乎恒定；首请求握手成本直接观测；打 patch 前后 TTFT 噪声内）。
+**我的验证**：EXP-001《NIXL 1P1D smoke 与版本裁决》的 smoke 点落在小传输延迟地板上。EXP-006 测得有效吞吐跨尺寸恒定，bytes 反解与 ext_kv 计数器对账。EXP-007 的容量上限式在三桶的预测精度随输入长上升。EXP-011 换方向只改常数项 −6.7%，量级不变。EXP-012 拿到 bug1 原生 traceback 与 bug2 wchan 闭环。EXP-013 测得 request 级因果占比 54.2/62.5/64.2%（512/2K/8K、p50、每桶 n=11）、每 descriptor 耗时跨桶几乎恒定、首请求握手成本直接观测，且打 patch 前后 TTFT 噪声内。
 
 ## 1.7 MoE：dispatch 链、fused_moe kernel 与 config tuple
 
@@ -291,7 +291,7 @@ flowchart LR
 - Amdahl 一阶：$\Delta_{e2e} \approx \Delta_{kernel} \times p$，$p$ 为 fused_moe 时间占比。前提：$p$ 口径一致、优化不改其余部分、kernel 加速在实际 M 分布上成立（离散基准与连续负载之间隔着一层查表）。
 - EP 的实现不是换 kernel，而是在索引层打标记：非本 rank 的 expert_ids 标 −1，kernel 里 `if off_experts == -1` 直接退出。
 
-**本项目的验证**：EXP-009《C1 Qwen1.5-MoE-A2.7B 上卡（TP2+EP）+ C2 运行时证据》抓到 `fused_moe.py:1106` 告警点名 `E=30,N=1408,device_name=NVIDIA_GeForce_RTX_4090.json` 缺失；EXP-014 反转点 bs≈8、fused_moe 18.7% → 56.4%、moe_align ≤4.1% 与 permute ≤0.5% 不值得动；EXP-015《D2 MoE config 调优：4090 BF16 两个社区空缺 tuple + 六件套验证》两端显著、中段打平，e2e +1.1–1.2% 与 $\Delta_{kernel} \times 56.4\%$ 折算自洽。
+**我的验证**：EXP-009《C1 Qwen1.5-MoE-A2.7B 上卡（TP2+EP）+ C2 运行时证据》抓到 `fused_moe.py:1106` 告警，点名 `E=30,N=1408,device_name=NVIDIA_GeForce_RTX_4090.json` 缺失。EXP-014 测到反转点 bs≈8、fused_moe 占比 18.7% → 56.4%（bs=32），而 moe_align ≤4.1% 与 permute ≤0.5% 不值得动。EXP-015《D2 MoE config 调优：4090 BF16 两个社区空缺 tuple + 六件套验证》两端显著、中段打平；e2e +1.1–1.2% 与 $\Delta_{kernel} \times 56.4\%$ 折算自洽，但只作 supporting。
 
 ## 1.8 量化在 Ada（SM89）上的分派路径
 
@@ -306,7 +306,7 @@ flowchart LR
   OR -- 否（SM89）--> TRI["TRITON block-scaled fused_moe"]
 ```
 
-**本项目的验证**：EXP-010《C3 Qwen3-30B-A3B W4A16 上卡》日志确认 `MarlinLinearKernel`；EXP-016 日志 `symm_mem.py:66 Device capability 8.9 not supported` + `TRITON Fp8 MoE backend`；decode W4A16 全 regime +23–48%（4-bit 读取量减半）、prefill c128 TTFT FP8 反超（Marlin 反量化开销在计算受限时显形）、PPL FP8 7.663 vs W4A16 7.922（同 31,212 计分 token）。
+**我的验证**：EXP-010《C3 Qwen3-30B-A3B W4A16 上卡》日志确认 `MarlinLinearKernel`。EXP-016 日志出现 `symm_mem.py:66 Device capability 8.9 not supported` + `TRITON Fp8 MoE backend`。decode 全 regime W4A16 +23–48%（4-bit 读取量减半）；prefill c128 TTFT FP8 反超（Marlin 反量化开销在计算受限时显形）；PPL FP8 7.663 vs W4A16 7.922（同 31,212 计分 token）。
 
 ## 1.9 EPLB：routing 之上的专家重排层
 
@@ -321,7 +321,7 @@ flowchart LR
   A --> OUT["后续 step 归约顺序改变 → 输出数值分歧（对照组可归因）"]
 ```
 
-**本项目的验证**：EXP-017《D5 EPLB gate（W4A16 不支持 / FP8 真实重排 + 对照组归因）》——W4A16 被 `NotImplementedError: EPLB is not supported AutoGPTQMoEMethod` 显式拒；FP8 臂 2 次真实重排、balancedness 0.53–0.74；输出分歧经无 EPLB 对照组（逐字节一致）归因 EPLB。判定：gate 不过、不上简历、白板级保留。
+**我的验证**：EXP-017《D5 EPLB gate（W4A16 不支持 / FP8 真实重排 + 对照组归因）》中，W4A16 被 `NotImplementedError: EPLB is not supported AutoGPTQMoEMethod` 显式拒；FP8 臂发生 2 次真实重排、balancedness 0.53–0.74；输出分歧经无 EPLB 对照组（逐字节一致）归因到 EPLB。判定：gate 不过、不上简历、白板级保留。
 
 ---
 
@@ -409,13 +409,13 @@ TTFT ≤ 328 / 891 / 4626 ms（512 / 2048 / 8192），TPOT ≤ 50 ms。v2 发现
 | tp2 | **12.30** / 4.16 / 1.02 | 10.18@11.8 / 2.51@2.7 / 0.60@0.81 |
 | pd1p1d | **8.15** / 2.12 / 0.54 | 1.59@5.2 / 0.16@1.8 / 0.11@0.45 |
 
-\* **本表 512 列为 conc128 口径**（EXP-023 + EXP-024 四臂统一补测：colocate 12.81 / replica2 20.87 / tp2 12.30 / pd1p1d 8.15），2048/8192 列仍为 conc64（EXP-007），图注同此。原 512 列 conc64 值 10.36 / 15.58 / 12.31 / 7.84 见 EXP-007 史料。**复测的实质**：colocate 与 replica2 确系欠饱和（+23.6% / +34.0%），而 tp2 在 conc64 就饱和（−0.1%）、pd1p1d 在 conc64 就撞传输墙（上限模型精确命中）；512 桶 `20.87/12.81 = 1.63×` 是**不同并发操作点相除**的产物（分子每卡 64 在飞、分母单卡 128 在飞）：**EXP-029 按每 GPU 在飞量对齐后实测 100.8%（每卡 64 在飞）/ 96.9%（每卡 128 在飞），第二张卡实为近线性加成，无主机级干扰**。**引用 512 与 2048/8192 的跨桶比较时必须说明并发档不同，且引用扩展效率时必须声明每 GPU 在飞量。**
+\* **本表 512 列为 conc128 口径**（EXP-023 + EXP-024 四臂统一补测：colocate 12.81 / replica2 20.87 / tp2 12.30 / pd1p1d 8.15），2048/8192 列仍为 conc64（EXP-007），图注同此；原 512 列 conc64 值 10.36 / 15.58 / 12.31 / 7.84 见 EXP-007 史料。**复测的实质**：colocate 与 replica2 确系欠饱和（+23.6% / +34.0%）；tp2 在 conc64 就饱和（−0.1%），pd1p1d 在 conc64 就撞传输墙，上限模型精确命中。注意 512 桶 `20.87/12.81 = 1.63×` 是**不同并发操作点相除**的产物（分子每卡 64 在飞、分母单卡 128 在飞）：**EXP-029 按每 GPU 在飞量对齐后实测 100.8%（每卡 64 在飞）/ 96.9%（每卡 128 在飞），第二张卡实为近线性加成，无主机级干扰**。**引用 512 与 2048/8192 的跨桶比较时必须说明并发档不同，引用扩展效率时必须声明每 GPU 在飞量。**
 
 ![四臂饱和吞吐总览](../pd_disagg/figures/fig7_saturation_overview.png)
 
 ![四臂 goodput 曲线](../pd_disagg/figures/fig1_goodput_curves.png)
 
-**读法**：replica2 全桶最高（长桶近完美 2×）；tp2 双卡只换来 13–19%（8K 归因仅 −5%）；pd1p1d 全负载段溃败——512 桶 66% 饱和度时 goodput 仅 1.59，8K 饱和 0.54 与 0.27 GB/s 传输墙理论上限 ~0.57 吻合。成本口径（GPU·s/req）colocate 单卡最优、replica2 打平、tp2/pd 负收益。选型结论：短请求 colocate×2（= replica2）；长上下文超单卡容量才考虑 tp2；**PD 在本互联上不可取**。
+**读法**：replica2 全桶最高，长桶接近完美 2×。tp2 双卡只换来 13–19%（8K 归因仅 −5%）。pd1p1d 全负载段溃败——512 桶 66% 饱和度时 goodput 仅 1.59，8K 饱和 0.54 与 0.27 GB/s 传输墙的理论上限 ~0.57 吻合。成本口径（GPU·s/req）上 colocate 单卡最优、replica2 打平、tp2/pd 负收益。选型结论：短请求 colocate×2（= replica2）；长上下文超单卡容量才考虑 tp2；**PD 在本互联上不可取**。
 
 ### 版本对照（EXP-008，v0.17.1 vs v0.25.1，单实例 colocate）
 
@@ -426,7 +426,7 @@ TTFT ≤ 328 / 891 / 4626 ms（512 / 2048 / 8192），TPOT ≤ 50 ms。v2 发现
 | 饱和 512 / 2048 / 8192（req/s） | 7.14 / 3.59 / 0.89 | 10.36 / 3.63 / 0.90 | **+45%** / ~0 / ~0 |
 | 启动（s） | ~308 | ~58 | −81% |
 
-只作 system-version comparison，不归因到单个组件（红线）。收益集中在每请求开销敏感 regime。
+只作 system-version comparison（512 桶、conc64 口径），不归因到单个组件（红线）。收益集中在每请求开销敏感 regime。
 
 ## 3.2 PD 分离
 
@@ -554,17 +554,17 @@ PPL（wikitext-2-raw，同 31,212 计分 token）：FP8 **7.663** vs W4A16 **7.9
 
 **原理**：一个数字只有放在它所属的层（roofline 位置、互联路径、软件栈厚度）里才有意义。三条跨卡路径的 $\alpha, m, \beta$ 各不相同，把路径二的 $\beta$ 拿去预测路径三的吞吐是公理 B 禁止的操作（§1.4）。
 
-**本仓怎么做**：EXP-002 一开始就测三个数而不是一个；EXP-006 拿到 0.26 GB/s 后先与 EXP-002 的单向裸拷贝 0.60–0.91 GB/s 比量级，判定"落在无 P2P 单向路径的下方一档、被 descriptor 碎片化再压一层"，而不是与双向 22.7 GB/s 比。
+**本仓怎么做**：EXP-002 一开始就测三个数而不是一个。EXP-006 拿到 0.26 GB/s 后，先与 EXP-002 的单向裸拷贝 0.60–0.91 GB/s 比量级，判定「落在无 P2P 单向路径的下方一档、被 descriptor 碎片化再压一层」，而不是与双向 22.7 GB/s 比。
 
 **反例**：用 PCIe 4.0 x16 的 31.5 GB/s 规格去算 KV 传输时间，会得出 8192 token 只要 15 ms——实测 1603 ms，差 100 倍。错在层级：规格是 $\beta$，实际付的是 $N_{desc} \times \alpha$。
 
 ## 4.2 归因的三级证据：分量对账 → request 级关联 → 闭环误差
 
-**原理**：把一个总量拆成分量有三个强度等级——(a) 用不同来源的分量凑总量（对账，推断级）；(b) 让每个分量与总量在同一 request identity、同一时钟域下逐条关联（因果级）；(c) 分量求和与总量的残差可具名、必然为正、小于测量分辨率（完整性检验）。**闭环误差是完整性检验，不是精度检验**——它证明没有漏掉的段，不证明每段测得准；测得准靠另外两条链。
+**原理**：把一个总量拆成分量有三个强度等级——(a) 用不同来源的分量凑总量（对账，推断级）；(b) 让每个分量与总量在同一 request identity、同一时钟域下逐条关联（因果级）；(c) 分量求和与总量的残差可具名、必然为正、小于测量分辨率（完整性检验）。**闭环误差是完整性检验，不是精度检验**——它只证明没有漏掉的段，不证明每段测得准；测得准靠另外两条链。
 
 **本仓怎么做**：EXP-006 先做（a）：8K TTFT 2685 ≈ P prefill ~900 + xfer 1603 + D 首步/代理，得"传输占 54–64%"，但红线只允许写推断。EXP-013 打 16 行 patch 做（b）+(c)：client 自定 `X-Request-Id` 原样贯穿 proxy/P/D，`perf_counter` 计时长、`time.time()` 跨进程对齐，六段求和残差 = proxy 内 `await request.json()`；三重互证——账目链（Σbytes = Prometheus）、边界链（kv_wait ≈ xferDuration）、完整链（闭环 <0.1%）——三条各留一个漏洞但互不重叠。这时红线才从 🚫 变 ✅，EXP-006 的对账值被"追认"。
 
-**反例**：只做（a） 就写"KV 传输占 TTFT 64%"，面试官追问"P 段的 900 ms 是同一批请求测的吗"就答不上——它来自另一次跑、另一个热工况。
+**反例**：只做（a）就写「KV 传输占 TTFT 64%」，面试官追问「P 段的 900 ms 是同一批请求测的吗」就答不上——它来自另一次跑、另一个热工况。
 
 ## 4.3 对照组与隐藏变量
 
@@ -583,7 +583,7 @@ PPL（wikitext-2-raw，同 31,212 计分 token）：FP8 **7.663** vs W4A16 **7.9
 
 **原理**：假设、判定阈值、SLO 在跑之前锁定并 commit，跑完不改——这是把"事后挑阈值"这个最常见的自欺关掉的唯一办法。负结果与被证伪的假设同样入账，因为它们同样是信息。
 
-**本仓怎么做**：EXP-004 的 SLO 按 colocate 基线 × 5 换算后 commit；v2 发现 2048 桶实为 3.96× 也**不回改**，只在敏感性附录（fig6，0.5–4×）覆盖。EXP-019 跑前写下"扣除混入物后收敛到 <10% → 计时口径问题；否则升级真实环境差异"。EXP-015 七条跑前预测四条成立、两条被推翻、照记。EXP-017 gate 不过就不上简历。EXP-012 实机发现裸直连先崩于 `:518` 而非静态分析预言的 `:433`——实证修正静态分析，照记。
+**本仓怎么做**：EXP-004 的 SLO 按 colocate 基线 × 5 换算后 commit；v2 发现 2048 桶实为 3.96× 也**不回改**，只在敏感性附录（fig6，0.5–4×）覆盖。EXP-019 跑前写下判据：「扣除混入物后收敛到 <10% → 计时口径问题；否则升级真实环境差异」。EXP-015 七条跑前预测四条成立、两条被推翻，照记。EXP-017 gate 不过就不上简历。EXP-012 实机发现裸直连先崩于 `:518` 而非静态分析预言的 `:433`——实证修正静态分析，照记。
 
 **反例**：EXP-002 的 1.78 GB/s 当时只写了 `env=n/a sha=n/a`，没记 NCCL 环境变量、PCIe 运行态、NCCL_DEBUG 日志——8 天后复测得 6.2 GB/s 就无法回溯定因。这条教训被写进记录 §7 并升级成硬约定："硬件测量的 provenance 必须记录 NCCL 环境变量、PCIe 运行态、NCCL_DEBUG 日志"。
 
@@ -591,13 +591,13 @@ PPL（wikitext-2-raw，同 31,212 计分 token）：FP8 **7.663** vs W4A16 **7.9
 
 **原理**：kernel 级加速比 $\Delta_{kernel}$ 进到端到端只剩 $\Delta_{kernel} \times p$（Amdahl 一阶），$p$ 是该 kernel 的时间占比。所以**优化对象必须由占比数据锁定，而不是预设**；而 $p$ 本身随 regime（batch、输入长）变化。
 
-**本仓怎么做**：EXP-014 先测占比（fused_moe 18.7% @ bs=1 → 56.4% @ bs=32；moe_align ≤4.1%、permute ≤0.5%），据此 EXP-015 只调 config；kernel M=1 −8.5% 折到 e2e 只剩 +1.1–1.2%，与 $\Delta \times 56.4\%$ 吻合——**折算自洽本身就是证据链的一环**。反过来，e2e +1.2% 低于跨会话漂移 ±5–8%，所以主证据是 kernel A/B（3 轮 mean±std），e2e 只作方向印证，不作 headline。
+**本仓怎么做**：EXP-014 先测占比（fused_moe 18.7% @ bs=1 → 56.4% @ bs=32；moe_align ≤4.1%、permute ≤0.5%），据此 EXP-015 只调 config。kernel M=1 −8.5% 折到 e2e 只剩 +1.1–1.2%，与 $\Delta \times 56.4\%$ 吻合——**折算自洽本身就是证据链的一环**。反过来，e2e +1.2% 低于跨会话漂移 ±5–8%，所以主证据是 kernel A/B（3 轮 mean±std），e2e 只作方向印证，不作 headline。
 
 **反例**：D1 之前的直觉是"MoE permute 该优化"（triton-kernels 仓做过 12.5×）；占比数据说它只有 0.5%——12.5× 折到 e2e 不到 0.5%。数据把这条路直接关掉了。
 
 ## 4.6 测量效度
 
-**原理**：先问"这个数测的是它宣称的那件事吗"，再问"它有多准"。效度问题不能靠多跑几轮解决。
+**原理**：先问「这个数测的是它宣称的那件事吗」，再问「它有多准」。效度问题不能靠多跑几轮解决。
 
 | 效度陷阱 | 本仓的规则 | EXP |
 |---|---|---|
@@ -669,7 +669,7 @@ block hash 命中免算。污染：固定 seed 下 512 桶 prompt 恰是 2048 �
 
 **A8 continuous batching 的原理？你研究了吗？**
 
-Orca 的 iteration-level scheduling 把调度粒度从"请求"降到"迭代"；selective batching 把 Attention 之外算子按 token 拉平、Attention 逐请求算。本仓所有臂都跑在这套范式之后的 vLLM 上，"享受它但不研究它"；EXP-008 的 +45%@512 测的是范式之上的工程演进。
+Orca 的 iteration-level scheduling 把调度粒度从「请求」降到「迭代」；selective batching 把 Attention 之外的算子按 token 拉平，Attention 逐请求算。本仓所有臂都跑在这套范式之后的 vLLM 上，「享受它但不研究它」。EXP-008 的 +45%@512 是 conc64 口径、system-version comparison，测的是范式之上的工程演进。
 
 **A9 一个 request_id 在 vLLM 里会被改写几次？**
 
@@ -679,7 +679,7 @@ Orca 的 iteration-level scheduling 把调度粒度从"请求"降到"迭代"；s
 
 **A10 vLLM 升级一个大版本能带来多少收益？（Q 卡）**
 
-我做了个有限范围的对照，先说口径：只称 system-version comparison，单实例、同 workload、同协议同 seed，不归因到任何单个组件——因为 0.17.1 到 0.25.1 之间 scheduler、API server、默认参数全变了。结果是：无负载延迟和 decode 速度八个月间几乎没动（TTFT Δ<1%、TPOT 16.00 → 15.87 ms），因为那是权重带宽和计算的物理上限；但 512 桶的饱和吞吐从 7.14 涨到 10.36 req/s，+45%——收益集中在每请求开销敏感的 regime，2048/8192 这两个计算受限桶是零差异。附带一个工程体验数字：服务启动 308 s → 58 s。另外这个对照做不成 PD-vs-PD，因为 0.17.1 的 P2pNccl 在默认配置下正常请求就会触发 D 实例挂死，它根本不构成可用的对照臂，所以那一维的结论只能写"不可用 vs 可用"。（EXP-008、EXP-012）
+我做了个有限范围的对照，先说口径：只称 system-version comparison，单实例、同 workload、同协议同 seed，不归因到任何单个组件——因为 0.17.1 到 0.25.1 之间 scheduler、API server、默认参数全变了。结果是：无负载延迟和 decode 速度八个月间几乎没动（TTFT Δ<1%、TPOT 16.00 → 15.87 ms），因为那是权重带宽和计算的物理上限；但 512 桶（conc64 口径）的饱和吞吐从 7.14 涨到 10.36 req/s，+45%——收益集中在每请求开销敏感的 regime，2048/8192 这两个计算受限桶是零差异。附带一个工程体验数字：服务启动 308 s → 58 s。另外这个对照做不成 PD-vs-PD，因为 0.17.1 的 P2pNccl 在默认配置下正常请求就会触发 D 实例挂死，它根本不构成可用的对照臂，所以那一维的结论只能写「不可用 vs 可用」。（EXP-008、EXP-012）
 
 - ② 为什么不归因？→ 红线明确禁止（有意不答而不是答不出）。③ 另一例版本差异？→ profiler 接口从 env var 改成 `--profiler-config.profiler`（EXP-003）。
 
@@ -691,7 +691,11 @@ Orca 的 iteration-level scheduling 把调度粒度从"请求"降到"迭代"；s
 
 **B1 PD 分离现在这么热，你为什么说它在你的平台上不可取？怎么证明瓶颈就是传输？（Q 卡）**
 
-先给量级：pd1p1d 在三个输入桶的饱和吞吐 7.84/2.12/0.54 req/s，8K 桶甚至低于单卡 colocate 的 0.90；8K 的 0.54 与 0.27 GB/s 传输墙推出的理论上限 ~0.57 吻合——传输带宽直接成了容量上限。再给因果：最初只能靠分量对账推断，我打了约 16 行本地可观测性 patch，在同一 request 身份（client 自定 X-Request-Id 贯穿 proxy/P/D）和同一时钟域（同机 perf_counter + epoch）下做逐请求三段关联，测得 KV 等待占 TTFT 54.2/62.5/64.2%，且给了三重互证：逐请求 bytes 求和与 Prometheus 计数器分毫不差、kv_wait 与 NIXL xferDuration 只差 0.3–1.9 ms、六段分解闭环误差 p50 <0.1%。还做了无扰动证明（patch 前后 TTFT 218/727/2738 vs 219/719/2719 ms）。注意这是选型边界结论而非"PD 不行"——PD 的前提是有足够互联带宽，我这台没有。（EXP-013/007/006）
+先给量级：pd1p1d 在三个输入桶的饱和吞吐 7.84/2.12/0.54 req/s，8K 桶甚至低于单卡 colocate 的 0.90。8K 的 0.54 与 0.27 GB/s 传输墙推出的理论上限 ~0.57 吻合——传输带宽直接成了容量上限。
+
+再给因果：最初只能靠分量对账推断。我打了约 16 行本地可观测性 patch，在同一 request 身份（client 自定 X-Request-Id 贯穿 proxy/P/D）和同一时钟域（同机 perf_counter + epoch）下做逐请求三段关联，测得 KV 等待占 TTFT 54.2/62.5/64.2%（512/2K/8K，p50，每桶 n=11）。三重互证是：逐请求 bytes 求和与 Prometheus 计数器分毫不差、kv_wait 与 NIXL xferDuration 只差 0.3–1.9 ms、六段分解闭环误差 p50 <0.1%。我还做了无扰动证明（patch 前后 TTFT 218/727/2738 vs 219/719/2719 ms）。
+
+注意这是选型边界结论，而非「PD 不行」——PD 的前提是有足够互联带宽，我这台没有。（EXP-013/007/006）
 
 - ② 换 400G IB 会怎样 → B12。③ 0.27 是不是描述符粒度而非互联 → B9。
 
@@ -799,7 +803,7 @@ KV 传输只发生在第一个 token 之前，传完后 D 就是普通单卡 dec
 
 **C1 手上多一张同型号消费卡，最该怎么用？直接开 TP=2 吗？（Q 卡，末句已按红线改口）**
 
-在无 NVLink、P2P 驱动级禁用的 2×4090 上，答案是双副本数据并行而不是 TP2——2K 输入桶饱和吞吐 replica2 7.00 vs tp2 4.16 vs 单卡 3.63 req/s，replica2 在 2K/8K 近完美 2× 扩展且全部负载段 goodput 最高。反直觉的一句话是：没有 NVLink 时最优互联策略是避免互联。TP2 的 decode 确实提速 42%（16 → 9.3 ms，每卡只读一半权重），但这份收益在批量化后被 prefill 的大消息 allreduce 天花板吃掉，双卡只换来 +13–19% 吞吐，per-GPU goodput 为负收益。这个结论不是拍脑袋，是被 EXP-002 的 collective 带宽受限画像（具体值待复核，见 EXP-018/019）当场预言、EXP-005 证实、EXP-007 在满负载下定量化的。
+在无 NVLink、P2P 驱动级禁用的 2×4090 上，答案是双副本数据并行而不是 TP2——2K 输入桶饱和吞吐 replica2 7.00 vs tp2 4.16 vs 单卡 3.63 req/s（协议 v2、每点唯一 seed），replica2 在 2K/8K 近完美 2× 扩展且全部负载段 goodput 最高。反直觉的一句话是：没有 NVLink 时最优互联策略是避免互联。TP2 的 decode 确实提速 42%（16 → 9.3 ms，每卡只读一半权重），但这份收益在批量化后被 prefill 的大消息 allreduce 天花板吃掉，双卡只换来 +13–19% 吞吐，per-GPU goodput 为负收益。这个结论不是拍脑袋，是被 EXP-002 的 collective 带宽受限画像（具体值待复核，见 EXP-018/019）当场预言、EXP-005 证实、EXP-007 在满负载下定量化的。
 
 - ② 可以在纸上算完不用买卡试？→ 六种并行通信量公式代进平台常数，8B decode 每 step 通信次数 DP 0 / PP 1 / TP 72；延迟受限平台上次数比量重要，实测排序 replica2 > tp2 > pd1p1d 完全符合。③ PP 呢？→ 没测过；通信量只有 TP 的 1/72，但 bs=1 decode 气泡率 50%，价值在 batch 大时。
 
@@ -869,7 +873,11 @@ TP 切 N（每专家半个，E=60，N=704）= 每 token 两 rank 都算、标准
 
 **D1 MoE 是不是一定比同规模 dense 快？（Q 卡）**
 
-只在小 batch 成立，而且我测出了反转点。同轴扫描 Qwen1.5-MoE-A2.7B(TP2+EP) vs Qwen2-7B(TP2)，MoE/dense 的 decode 吞吐比是 2.03×(bs=1) → 0.97×（bs=8，反转）→ 0.82×(bs=128)。机理是 top-4/60：bs=1 每 step 只读约 2.7 GB 激活专家，dense 要读全量；batch 增大后每 step 命中的专家并集趋向全量 60 个专家约 28.6 GB，反而超过 dense 的 14.2 GB，激活稀疏优势变成读放大劣势。nsys 分解印证了这条曲线——routed experts 的 grouped GEMM 占比从 18.7%(bs=1) 膨胀到 56.4%(bs=32)。所以"MoE 更省"这句话必须带 batch 限定。（EXP-014；bs=1 roofline：MoE 59%，dense 77%）
+只在小 batch 成立，而且我测出了反转点。同轴扫描 Qwen1.5-MoE-A2.7B(TP2+EP) vs Qwen2-7B(TP2)，MoE/dense 的 decode 吞吐比是 2.03×(bs=1) → 0.97×（bs=8，反转）→ 0.82×(bs=128)。
+
+机理是 top-4/60。bs=1 每 step 只读约 2.7 GB 激活专家，dense 要读全量；batch 增大后每 step 命中的专家并集趋向全量 60 个专家约 28.6 GB，反而超过 dense 的 14.2 GB，激活稀疏优势变成读放大劣势。nsys 分解印证了这条曲线——routed experts 的 grouped GEMM 占比从 18.7%(bs=1) 膨胀到 56.4%(bs=32)。
+
+所以「MoE 更省」这句话必须带 batch 限定。（EXP-014；bs=1 roofline：MoE 59%，dense 77%）
 
 - ② 反转点由什么决定 → D2。③ MoE 达成率为什么比 dense 低？→ 只有"routing/moe_align 有额外占比"的加总说法，没拆解（开放）。
 
@@ -889,7 +897,11 @@ TP 切 N（每专家半个，E=60，N=704）= 每 token 两 rank 都算、标准
 
 **D5 你调优 MoE config 拿到多少收益？（Q 卡）**
 
-如实说：不是全面大胜，是两端显著、中段打平。kernel A/B 上 M=1 的 decode 档 EP 臂 −8.2~−8.5%、非 EP −3.6~−3.8%，M≥128 的 prefill 档 −3.3~−3.9%，而 M=8–64 与默认启发式持平。关键是我证明了中段的"打平"是真零不是噪声——做了 3 轮交叉次序重测（奇偶轮互换 A/B 先后以抵消热漂移），轮间 std ≤0.5 µs，而中段差值只有 0.1–0.7 µs 且方向不一致。这个负结果本身就是结论：Triton tile 空间在该形状已被启发式覆盖，config 就是最优杠杆，所以我主动放弃了原计划的 kernel 级改动——知道什么时候不做优化，比硬凑一个提升重要。e2e 层面 TPOT 一致 +1.1~1.2%，与"kernel 增益 × fused_moe 56.4% 占比"折算自洽，但低于跨会话漂移 ±5~8%，所以按红线不作 headline，只当防御层数字。（EXP-015；correctness 1041 passed / 127 skipped / 0 failed）搜索规模：1920 配置 × 18 M 档 × 2 tuple，EP 8916 s / 非 EP 4097 s，ray 双卡；三级验证 correctness / kernel A/B / e2e。
+如实说：不是全面大胜，是两端显著、中段打平。kernel A/B 上 M=1 的 decode 档 EP 臂 −8.2~−8.5%、非 EP −3.6~−3.8%，M≥128 的 prefill 档 −3.3~−3.9%，而 M=8–64 与默认启发式持平。
+
+关键是我证明了中段的「打平」是真零不是噪声——做了 3 轮交叉次序重测（奇偶轮互换 A/B 先后以抵消热漂移），轮间 std ≤0.5 µs，而中段差值只有 0.1–0.7 µs 且方向不一致。这个负结果本身就是结论：Triton tile 空间在该形状已被启发式覆盖，config 就是最优杠杆，所以我主动放弃了原计划的 kernel 级改动——知道什么时候不做优化，比硬凑一个提升重要。
+
+e2e 层面 TPOT 一致 +1.1~1.2%，与「kernel 增益 × fused_moe 56.4%（bs=32）占比」折算自洽，但低于跨会话漂移 ±5~8%，所以按红线不作 headline，只当 supporting。（EXP-015；correctness 1041 passed / 127 skipped / 0 failed）搜索规模：1920 配置 × 18 M 档 × 2 tuple，EP 8916 s / 非 EP 4097 s，ray 双卡；三级验证 correctness / kernel A/B / e2e。
 
 **D6 M=1 为什么反而是收益最大的一档？**
 

@@ -4,7 +4,7 @@
 
 ## 嵌套仓说明
 
-独立嵌套 git 仓库（外层 vllm 源码仓通过 `.git/info/exclude` 忽略本目录，互不干扰）。 **所有能进简历/报告的数字、图表、trace 的唯一权威存放地。** 简历句与证据的对应关系见 [RESUME_EVIDENCE.md](RESUME_EVIDENCE.md)；接手/交接从 [HANDOFF.md](HANDOFF.md) 读起。
+独立嵌套 git 仓库（外层 vllm 源码仓通过 `.git/info/exclude` 忽略本目录，互不干扰）。**所有能进简历/报告的数字、图表、trace 的唯一权威存放地都在这里。**简历句与证据的对应关系见 [RESUME_EVIDENCE.md](RESUME_EVIDENCE.md)；接手/交接从 [HANDOFF.md](HANDOFF.md) 读起。
 
 ## 硬约定（所有新数据必须遵守）
 

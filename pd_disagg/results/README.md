@@ -59,7 +59,7 @@ results/b1_matrix/
 
 ## 规则
 
-1. `gates.pass=false` 的行**保留在 runs.jsonl**（诚实记录），但绝不进 derived/、 figures/ 与报告。
+1. `gates.pass=false` 的行**保留在 runs.jsonl**（诚实记录），但绝不进 derived/、figures/ 与报告。
 2. **SLO 定义**（goodput 用）——**代码内唯一事实源 = `scripts/collect_point.py` 的 `SLO_TTFT_MS_BY_BUCKET` / `SLO_TPOT_MS_DEFAULT`**（`make_figures.py` 从这里 import，不再各留一份）。饱和/归因模式下若不显式传 `--slo-*`，`collect_point.py` 按输入桶自动缺省（512→328、2048→891、8192→4626 ms；TPOT 50 ms）；桶不在表里则 goodput 记 `null`。EXP-028《工装：`goodput_slo_rps` 在饱和模式下不再为空》验证了缺省路径与 EXP-025 的手算逐位一致。——方案 2026-08-21 锁定（DistServe 式相对 SLO）：
    - **TPOT ≤ 50 ms** 固定（=20 tok/s，约为人类阅读速度 3 倍，体验锚点，与硬件无关）
    - **TTFT ≤ 5 × 该输入桶的无负载基线**（基线 = colocate 臂 attribution 跑、并发 1 的 p50）
@@ -80,4 +80,4 @@ results/b1_matrix/
 
 ## B3 版本对照数据
 
-同 schema，`provenance.env=ENV-A`。**实际落点（8/23 勘正）**：数据并入 `b1_matrix/`(arm=colocate_v0171)，`b3_version_compare/` 目录未启用；结论只能称 **system-version comparison**（scheduler/kernel/默认配置/传输方向均不同）。
+同 schema，`provenance.env=ENV-A`。**实际落点（8/23 勘正）**：数据并入 `b1_matrix/`（arm=colocate_v0171），`b3_version_compare/` 目录未启用；结论只能称 **system-version comparison**（scheduler/kernel/默认配置/传输方向均不同）。

@@ -38,12 +38,11 @@ hidden_states [T, 2048]           T = batch 内 token 数
 
 ## 为什么 decode 快、饱和不快(EXP-009 数字的机理)
 
-- bs=1 decode：激活参数 2.7B ≪ dense 7B → 权重读取量小 → TPOT 4.62 vs 9.26ms(2.0×)。GDDR6X ~1008GB/s 是这条路的物理上限（D1 理论线）。
-- 饱和（大 batch）：11.50 vs 12.31 req/s——dispatch/align/散射的固定开销
-  + 专家负载不均 + 通信，把权重优势吃回去（D1 nsys 分解就是量化这一句）。
+- bs=1 decode：激活参数 2.7B ≪ dense 7B → 权重读取量小 → TPOT 4.62 vs 9.26ms（2.0×）。GDDR6X ~1008GB/s 是这条路的物理上限（D1 理论线）。
+- 饱和（大 batch）：11.50 vs 12.31 req/s——dispatch/align/散射的固定开销 + 专家负载不均 + 通信，把权重优势吃回去（D1 nsys 分解就是量化这一句）。
 
 ## MoE 概念三段式
 
-- **专家路由的执行方式**：朴素实现=每专家一次小 GEMM（kernel 启动 60 次）； vLLM=moe_align 分桶后一个 grouped GEMM kernel 吃掉全部专家，tile 内按 expert_ids 换权重指针；为什么：decode 的 T 小，60 次 launch + 小矩阵打不满 SM，分桶合并是唯一能贴近 roofline 的形状。
+- **专家路由的执行方式**：朴素实现=每专家一次小 GEMM（kernel 启动 60 次）；vLLM=moe_align 分桶后一个 grouped GEMM kernel 吃掉全部专家，tile 内按 expert_ids 换权重指针；为什么：decode 的 T 小，60 次 launch + 小矩阵打不满 SM，分桶合并是唯一能贴近 roofline 的形状。
 - **EP vs TP 切法**：TP 切 N（每专家半个）= 每 token 两 rank 都算、通信是标准 allreduce；EP 切专家 = token 只去本地专家、部分和归并；为什么：EP 让单专家 GEMM 形状完整（N=1408 非 704），tile 效率高，代价是负载不均衡暴露（→ D5 EPLB 的存在理由）。
-- **config JSON**：Triton kernel 的 tile(BLOCK_M/N/K， num_warps...)按（E，N，dtype，M） 查表；缺表 = 默认参数，官方注释"Performance might be sub-optimal"；为什么：MoE 的 M（每专家实际 token 数）随 batch/路由漂移， 静态启发式很难对所有形状最优 → 上游用 benchmark_moe.py 离线调优落 JSON。
+- **config JSON**：Triton kernel 的 tile(BLOCK_M/N/K，num_warps...)按（E，N，dtype，M）查表；缺表 = 默认参数，官方注释"Performance might be sub-optimal"；为什么：MoE 的 M（每专家实际 token 数）随 batch/路由漂移，静态启发式很难对所有形状最优 → 上游用 benchmark_moe.py 离线调优落 JSON。

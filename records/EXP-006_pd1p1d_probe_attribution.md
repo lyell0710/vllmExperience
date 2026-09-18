@@ -7,10 +7,10 @@
 | 日期 | 2026-08-21（16:49–16:58Z） |
 | 环境 | ENV-B（752a3a5044, vllm 0.25.1）；模型 Qwen/Qwen2-7B-Instruct |
 | 状态 | 完成 |
-| 关联清单项 | B1（attribution， pd1p1d 臂）；R0-1 NIXL 大传输收尾；B2 前置 |
+| 关联清单项 | B1（attribution，pd1p1d 臂）；R0-1 NIXL 大传输收尾；B2 前置 |
 
 ## 1. 目的与假设
-① 摸清 v0.25.1 NIXL prometheus 指标名与暴露侧（P/D），固化 gate 判定； ② pd1p1d 归因基线；③ 大传输下的 NIXL 实测（R0-1 第三数收尾）。
+① 摸清 v0.25.1 NIXL prometheus 指标名与暴露侧（P/D），固化 gate 判定；② pd1p1d 归因基线；③ 大传输下的 NIXL 实测（R0-1 第三数收尾）。
 
 ## 2. 环境与配置
 - P：`CUDA_VISIBLE_DEVICES=0 UCX_NET_DEVICES=all VLLM_NIXL_SIDE_CHANNEL_PORT=5600 vllm serve Qwen/Qwen2-7B-Instruct --port 8100 --max-model-len 16384 --kv-transfer-config '{"kv_connector":"NixlConnector","kv_role":"kv_producer","kv_load_failure_policy":"fail"}'`
@@ -27,7 +27,7 @@
 - `results/b1_matrix/runs.jsonl` 第 10–12 行；`raw/`、`snapshots/` 同前缀 + `raw/pd_{P,D,proxy}.log`
 
 ## 5. 结果
-**探针（指标体系）**：传输计数全在 **D 端**（Pull 语义）： `vllm:nixl_bytes_transferred_{sum,count}`、`nixl_xfer_time_seconds_sum`、 `nixl_post_time_seconds_sum`、`nixl_num_descriptors_sum`、 `prompt_tokens_by_source_total{source="external_kv_transfer"}`（逐 token 记账远端 KV）； P 端仅 `nixl_num_failed_{transfers,notifications}_total`、`nixl_num_kv_expired_reqs_total`； `_created` 系列是时间戳非计数器。单请求（~9 token prompt）：bytes=917504 = 16 tokens×57344B（block=16 取整），ext_kv_tokens=8（=9-1，D 自算最后一 token）。
+**探针（指标体系）**：传输计数全在 **D 端**（Pull 语义）：`vllm:nixl_bytes_transferred_{sum,count}`、`nixl_xfer_time_seconds_sum`、`nixl_post_time_seconds_sum`、`nixl_num_descriptors_sum`、`prompt_tokens_by_source_total{source="external_kv_transfer"}`（逐 token 记账远端 KV）；P 端仅 `nixl_num_failed_{transfers,notifications}_total`、`nixl_num_kv_expired_reqs_total`；`_created` 系列是时间戳非计数器。单请求（~9 token prompt）：bytes=917504 = 16 tokens×57344B（block=16 取整），ext_kv_tokens=8（=9-1，D 自算最后一 token）。
 
 **归因（p50，32 请求/点）**：
 | 输入桶 | TTFT (ms) | TPOT (ms) | GPU·s/req |
@@ -44,7 +44,8 @@
 | 8192 | 14.069GB | 439.7 | 51.29s | 1602.7ms | 714ms | 26834 | 245344 | 0.27GB/s |
 
 ## 6. 分析与结论
-- **有效吞吐 0.26–0.27GB/s 跨尺寸恒定**：descriptor ≈16KB/个（=每 block 每层单发，56 desc/block=28 层×K，V）→ 碎片化小拷贝，量级与 EXP-002《硬件三数》单向无 P2P 路径一致。措辞红线：只可称 telemetry-derived effective throughput， xfer 时间不与 post 相加（post 已含）。
+- **有效吞吐 0.26–0.27GB/s 跨尺寸恒定**：descriptor ≈16KB/个（=每 block 每层单发，56 desc/block=28 层×K，V）→ 碎片化小拷贝，量级与 EXP-002《硬件三数》单向无 P2P 路径一致。
+- 措辞红线：这一项只可称 telemetry-derived effective throughput，xfer 时间不与 post 相加（post 已含）。
 - PD TTFT 分量对账：8K 的 2685 ≈ P prefill（~900，热态） + xfer(1603) + D 首步/代理—— 吻合。
 - gate 判定已按精确指标名固化进 collect_point.py（跨端口求和；含 failed_notifications 与 external_kv_tokens 新字段）。
 

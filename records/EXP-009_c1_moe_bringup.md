@@ -22,7 +22,7 @@ MoE 模型在 TP=2 + expert parallel 下上卡可用；顺带抓取 fused_moe �
 raw/c1_moe_server.log（含告警原文）；runs.jsonl arm=moe_tp2ep 三有效行（另有两行 MODEL 未设导致 404 的失败行，保留，gate_pass=false，教训见 §7）。
 
 ## 5. 结果
-- **C2 运行时铁证**（日志原文）： `WARNING [fused_moe.py:1106] Using default MoE config. Performance might be sub-optimal! Config file not found at .../fused_moe/configs/ E=30,N=1408,device_name=NVIDIA_GeForce_RTX_4090.json`——目标 tuple 与 C2 判定完全一致（TP2+EP ⇒ 每 rank 30 专家、N=1408）。
+- **C2 运行时铁证**（日志原文）：`WARNING [fused_moe.py:1106] Using default MoE config. Performance might be sub-optimal! Config file not found at .../fused_moe/configs/ E=30,N=1408,device_name=NVIDIA_GeForce_RTX_4090.json`——目标 tuple 与 C2 判定完全一致（TP2+EP ⇒ 每 rank 30 专家、N=1408）。
 - smoke 通过（0-shot 补全正常）。
 - **未调优基线**（默认 config）：
   | 点 | 数值 |
@@ -40,4 +40,4 @@ TP2+EP 路径可用；D2 调优的 A/B 框架就绪（before=默认 config 的�
 - 2048 桶 saturation 与 8192 桶未跑（C1 只要求上卡；D1 网格另行设计）。
 
 ## 8. 下游影响
-C1 ✅；C2 证据链三重闭环（本地目录判定 + 远端查重 + 运行时告警）； D2 的 benchmark_moe.py 调优可以随时开工（baseline 在案）。
+C1 ✅；C2 证据链三重闭环（本地目录判定 + 远端查重 + 运行时告警）；D2 的 benchmark_moe.py 调优可以随时开工（baseline 在案）。

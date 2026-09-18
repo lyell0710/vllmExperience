@@ -19,7 +19,7 @@
 ## 裁决
 
 - **结果**：**v0.25.1 (release)**
-- **理由**：三项平手，按规则平手取 release——报告可复现、读者有版本锚点； main 无独占测量件（metrics/failure_policy 两版行为一致）。
+- **理由**：三项平手，按规则平手取 release——报告可复现、读者有版本锚点；main 无独占测量件（metrics/failure_policy 两版行为一致）。
 - **时间**：2026-08-21T09:15Z
 - **锁定后规则**：矩阵全程用 ~/venvs/v0.25.1，provenance 行必须与之一致； main 环境保留用于 MoE tuning 开发，不参与矩阵；0.17.1 仅作 system-version 对照。
 
@@ -31,9 +31,9 @@
 
 ## 硬件基线(2026-08-21 实测,原始文件在 hw/,均带 provenance 行)
 
-- nccl-tests all_reduce_perf -g 2（TP collective 路径参考，不代表 KV 通路）: collective 带宽实测值待复核（旧值 1.78 GB/s 已停用，见 EXP-018）→ `hw/all_reduce_perf.txt`
-- p2pBandwidthLatencyTest: P2P connectivity=0（GeForce 禁用，`topo -p2p r`=GNS）； 单向 D2D 0.60–0.91 GB/s（cudaMemcpyPeer 无 P2P 分段中转），**双向 22.6–22.8 GB/s**, GPU 间延迟 14.5–15.9 µs，本卡内 memcpy ~924 GB/s → `hw/p2p_bandwidth_latency.txt`
-- PCIe： 双卡均 Gen4 x16（空闲降 Gen1），bus C1/E1；`topo -m` 在本容器不可用（hwloc 无 PU 信息），以 `topo -p2p r`+PCIe link 替代 → `hw/topo.txt`
-- NIXL KV 通路初值（来自 R0-3 smoke，小传输、延迟主导）： avg 0.188 MB/transfer，avg xfer 14.1 ms，13.3 MB/s → `smoke/smoke_v0.25.1_result.txt`
-- NIXL KV 通路大传输实测（B1 pd1p1d attribution，2026-08-21,7B/BF16）： **telemetry-derived effective throughput ≈ 0.26–0.27 GB/s，跨尺寸恒定**（29.4/88.1/439.7 MB/xfer @ 512/2K/8K 输入；8K avg xfer 1602.7ms； descriptor 粒度 ~16KB/个 = 每 block 每层单发 → 碎片化小拷贝跑不满 PCIe， 与 p2p 测试"无 P2P 分段中转"路径一致） → `results/b1_matrix/runs.jsonl` pd1p1d 行
-- **功率帽节流（8/21 发现）**：持续 8K prefill 使 SM 频率 2820→~2475MHz（SW Power Cap 0x4，~440W/450W，温度仅 63°C 非热因）、TTFT p50 700→925ms； 单点遥测已进 run_point.sh 工装（runs.jsonl gpu_telemetry 字段）
+- nccl-tests all_reduce_perf -g 2（TP collective 路径参考，不代表 KV 通路）：collective 带宽实测值待复核（旧值 1.78 GB/s 已停用，见 EXP-018）→ `hw/all_reduce_perf.txt`
+- p2pBandwidthLatencyTest：P2P connectivity=0（GeForce 禁用，`topo -p2p r`=GNS）；单向 D2D 0.60–0.91 GB/s（cudaMemcpyPeer 无 P2P 分段中转），**双向 22.6–22.8 GB/s**，GPU 间延迟 14.5–15.9 µs，本卡内 memcpy ~924 GB/s → `hw/p2p_bandwidth_latency.txt`
+- PCIe：双卡均 Gen4 x16（空闲降 Gen1），bus C1/E1；`topo -m` 在本容器不可用（hwloc 无 PU 信息），以 `topo -p2p r`+PCIe link 替代 → `hw/topo.txt`
+- NIXL KV 通路初值（来自 R0-3 smoke，小传输、延迟主导）：avg 0.188 MB/transfer，avg xfer 14.1 ms，13.3 MB/s → `smoke/smoke_v0.25.1_result.txt`
+- NIXL KV 通路大传输实测（B1 pd1p1d attribution，2026-08-21，7B/BF16）：**telemetry-derived effective throughput ≈ 0.26–0.27 GB/s，跨尺寸恒定**（29.4/88.1/439.7 MB/xfer @ 512/2K/8K 输入；8K avg xfer 1602.7ms；descriptor 粒度 ~16KB/个 = 每 block 每层单发 → 碎片化小拷贝跑不满 PCIe，与 p2p 测试「无 P2P 分段中转」路径一致）→ `results/b1_matrix/runs.jsonl` pd1p1d 行
+- **功率帽节流（8/21 发现）**：持续 8K prefill 使 SM 频率 2820→~2475MHz（SW Power Cap 0x4，~440W/450W，温度仅 63°C 非热因）、TTFT p50 700→925ms；单点遥测已进 run_point.sh 工装（runs.jsonl gpu_telemetry 字段）

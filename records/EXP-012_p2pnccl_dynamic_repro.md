@@ -10,7 +10,7 @@
 | 关联清单项 | R0-4（动态复现，升级 [analysis/p2pnccl_bugs_id_chain.md](../pd_disagg/analysis/p2pnccl_bugs_id_chain.md) 的静态定位）；解锁 B3 完整版前置；S2 简历句 |
 
 ## 1. 目的与假设
-把 [EXP-012 静态源码分析](../pd_disagg/analysis/p2pnccl_bugs_id_chain.md) 定位的两个缺陷从"复现级机理" 升级为**实机动态复现**，坐实崩溃/挂死现场。可证伪假设：
+把 [EXP-012 静态源码分析](../pd_disagg/analysis/p2pnccl_bugs_id_chain.md) 定位的两个缺陷从「复现级机理」升级为**实机动态复现**，坐实崩溃/挂死现场。可证伪假设：
 - **H1（缺陷 1）**：P 实例上出现 `max_tokens>1` 的请求 → `p2p_nccl_connector.py:433` `assert req_id in self.chunked_prefill` 失败 → EngineCore 崩溃（整实例）。
 - **H2（缺陷 2）**：PUT_ASYNC 默认模式下，经 proxy 的正常请求因 P/D 各自 InputProcessor 追加不同随机后缀 → connector key 分叉 → D 在 `p2p_nccl_engine.py:317` 无超时 `recv_store_cv.wait()` 死等 → D 整实例挂死、不自愈，而 P 无恙。
 
@@ -18,7 +18,7 @@
 - 硬件：2×RTX 4090（cuda：0=P，cuda：1=D），无 NVLink、P2P 驱动禁用。
 - 栈：`pd_disagg/p2pnccl_repro/launch_1p1d.sh`（从 v0.17.1 tag 提取官方 xPyD proxy+脚本精简）。
   - proxy：`disagg_proxy_p2p_nccl_xpyd.py`（quart，http 10001 / zmq ROUTER 30001）。
-  - P：Qwen2-7B-Instruct fp16，http 20003 / kv zmq 21001，`kv_role=kv_producer`， `kv_buffer_size=1e1`，`send_type=PUT_ASYNC`，enforce-eager，chunked prefill 默认开。
+  - P：Qwen2-7B-Instruct fp16，http 20003 / kv zmq 21001，`kv_role=kv_producer`，`kv_buffer_size=1e1`，`send_type=PUT_ASYNC`，enforce-eager，chunked prefill 默认开。
   - D：同模型，http 20005 / kv zmq 22001，`kv_role=kv_consumer`，`kv_buffer_size=8e9`，PUT_ASYNC。
 - `VLLM_DISABLE_REQUEST_ID_RANDOMIZATION` 未设（默认 False）→ 随机后缀默认开启（H2 前置条件成立）。
 
@@ -30,7 +30,7 @@
    + max_tokens=16 + 9-token prompt（单步 prefill）。
 
 ## 4. 原始数据
-raw 主体在 `pd_disagg/p2pnccl_repro/raw/EXP-012/`；provenance 登记以目录级 `raw/EXP-012/manifest.txt` 为权威（8/24 补建；6 文件中 5 个自带首行 provenance， `20260823T024038Z_bug2_curl.txt` 无首行 provenance——由 manifest 统一登记，raw 本体不改）：
+raw 主体在 `pd_disagg/p2pnccl_repro/raw/EXP-012/`；provenance 登记以目录级 `raw/EXP-012/manifest.txt` 为权威（8/24 补建；6 文件中 5 个自带首行 provenance，`20260823T024038Z_bug2_curl.txt` 无首行 provenance——由 manifest 统一登记，raw 本体不改）：
 - `20260822T110420Z_preflight_state.txt`— 8/22 复现环境搭建期 preflight 快照。
 - `20260823T023833Z_live_preflight.txt`— 复现前 GPU/端口状态。
 - `20260823T024038Z_bug2_curl.txt`— 首次 bug2 复现尝试的 curl 退出码记录（内容仅 CURL_EXIT=0；provenance 见 manifest）。
@@ -38,7 +38,7 @@ raw 主体在 `pd_disagg/p2pnccl_repro/raw/EXP-012/`；provenance 登记以目�
 - `20260823T062224Z_bug1_Pdirect_crash.txt`— 路径 A 完整 traceback（connector:518 ValueError）。
 - `20260823T062538Z_bug1_L433_assert.txt`— 路径 B 完整 traceback（connector:433 AssertionError）。
 - 服务端全量日志 `repro_prefill.log` / `repro_decode.log`（在 `pd_disagg/p2pnccl_repro/` 根目录，非 raw/ 内——历史落位如实登记；NCCL 握手、崩溃/挂起原文）。
-- **证据等级说明**：bug1 两条均有 EngineCore 原生 traceback（一级证据）；bug2 为行为学（双请求挂死、零 decode 日志、D 存活 util 0）+ 内核 wchan（全线程 futex_wait_queue）； py-spy 精确 Python 栈帧**未取**——容器 `ptrace_scope=1` 且 `/proc` 只读、无 CAP_SYS_PTRACE， gdb 未装。故 bug2 的：317 定位由"wchan + 行为学 + 静态 file：line"三方闭环，非直接栈帧。
+- **证据等级说明**：bug1 两条均有 EngineCore 原生 traceback（一级证据）；bug2 为行为学（双请求挂死、零 decode 日志、D 存活 util 0）+ 内核 wchan（全线程 futex_wait_queue）；py-spy 精确 Python 栈帧**未取**——容器 `ptrace_scope=1` 且 `/proc` 只读、无 CAP_SYS_PTRACE，gdb 未装。故 bug2 的：317 定位由「wchan + 行为学 + 静态 file：line」三方闭环，非直接栈帧。
 
 ## 5. 结果
 | 触发路径 | 崩溃/挂起点 | 现象 | 实例结局 |

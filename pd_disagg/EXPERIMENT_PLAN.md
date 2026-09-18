@@ -1,6 +1,6 @@
 # 主线实验计划（修订版 v2 · 2026-08-31 报告）
 
-> ⚠ 本文为计划文档（v2 锚点）；执行进展与最终结论见 REPORT.md（v2 定稿）、 HANDOFF.md 与 LEDGER.md 台账；其中"main=交付"段已被 DECISION.md 取代。
+> ⚠ 本文为计划文档（v2 锚点）；执行进展与最终结论见 REPORT.md（v2 定稿）、HANDOFF.md 与 LEDGER.md 台账；其中"main=交付"段已被 DECISION.md 取代。
 
 > 本版按评审意见逐条修订；所有引用均针对当前 checkout `main@7aa248fcfe` 核验。结论：主线判断成立。定位为：**0.17.1 = 两小时历史基线；main（当前 checkout）= 新版交付；失败分析（带 trace）= 兜底。**
 
@@ -75,7 +75,7 @@
 - 近似同构比较时：补一个 `NixlPush` 单点。
 
 ### 4.5 指标与基准
-- **不写「KV transfer 占 TTFT 百分比」**（NIXL 异步传输，聚合 xfer time ÷ TTFT 无因果意义）。
+- **不写「KV transfer 占 TTFT 百分比」**（NIXL 异步传输，聚合 xfer time ÷ TTFT 无因果意义）。〔勘注 2026-08-23：**该约束已被 EXP-013 解锁取代**——《EXT-1 request 级 KV-wait 关联》用 request 级三段关联（同身份同时钟域）做出了因果占比 54.2/62.5/64.2%（512/2K/8K，p50），闭环误差 ≤0.08%；本行作为计划的原始锚点保留，现行口径见 LEDGER 的「措辞红线状态」表。〕
 - 先报原生 `xfer/post time`、`bytes`、`descriptor 数`、`失败数`、`有效带宽`（metrics 字段见 `nixl_connector_usage.md:422` 起）。
 - 百分比只从 **request 级 trace 的关键路径**计算。
 - 基准固定 **`kv_load_failure_policy=fail`**，避免失败后重算伪装成正常请求。

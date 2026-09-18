@@ -1,6 +1,6 @@
 # MoE config PR 查重记录 (2026-08-21)
 
-目标： NVIDIA_GeForce_RTX_4090 的 Qwen1.5-MoE-A2.7B 配置
+目标：NVIDIA_GeForce_RTX_4090 的 Qwen1.5-MoE-A2.7B 配置
 - E=30，N=1408 (TP2+EP， BF16)— 全库无任何 E=30 文件
 - E=60,N=704（TP2 非 EP, BF16）— 仅 MI300X 有
 
@@ -10,9 +10,9 @@
 - "moe config RTX 4090" → 9 条，唯一相关： #48309
 
 #48309 (2026-07-11, open): 给 RTX 4090**D** 加 E=8,N=3584/7168 fp8 配置。
-不构成重复： ① 4090D 是独立 device_name，vLLM 按精确名查表，两者文件不通用（该 PR 正文自己确认）； ② shape 无交集（E=8 vs E=30/60）； ③ dtype 不同（fp8 vs BF16）。 PR 正文将引用 #48309 作为"相邻先例"，并说明以上区别。
+不构成重复：① 4090D 是独立 device_name，vLLM 按精确名查表，两者文件不通用（该 PR 正文自己确认）；② shape 无交集（E=8 vs E=30/60）；③ dtype 不同（fp8 vs BF16）。PR 正文将引用 #48309 作为「相邻先例」，并说明以上区别。
 
-结论： 无重复，可开工。
+结论：无重复，可开工。
 
 ## 远端复核（2026-08-21 ~15:45Z，gh 直连，最终）
 
@@ -25,9 +25,9 @@
 
 ## SGLang 侧同构空缺(2026-08-24 侦察,未动工)
 
-- SGLang 全库 363 个 fused MoE config（按 Triton 版本分目录）， `NVIDIA_GeForce_RTX_4090` 仅 2 个旧 fp8 文件（与 vLLM 同源搬运）； **E=30，N=1408 与 E=60，N=704 全 Triton 版本目录均缺失**。
+- SGLang 全库 363 个 fused MoE config（按 Triton 版本分目录），`NVIDIA_GeForce_RTX_4090` 仅 2 个旧 fp8 文件（与 vLLM 同源搬运）；**E=30，N=1408 与 E=60，N=704 全 Triton 版本目录均缺失**。
 - 远端查重（gh api，三组关键词）：无 NVIDIA 4090 BF16 MoE config 类 PR/issue（仅 AMD 消费卡请求 #30245/#30599，不冲突）。
-- 判定：**第二 PR 机会开放**。其 fused_moe_triton 与 vLLM 同源， EXP-015《D2 MoE config 调优》已调优的两个 JSON 大概率直接可用（须在 sglang 运行时 A/B 验证后再提）。源码已 clone 至 /root/repos/sglang(shallow)； sglang venv 未安装（用户暂停，待指示）。
+- 判定：**第二 PR 机会开放**。其 fused_moe_triton 与 vLLM 同源，EXP-015《D2 MoE config 调优》已调优的两个 JSON 大概率直接可用（须在 sglang 运行时 A/B 验证后再提）。源码已 clone 至 /root/repos/sglang（shallow）；sglang venv 未安装（用户暂停，待指示）。
 
 ## 复验（rebase 后，2026-08-29，针对 cacc429f62）
 

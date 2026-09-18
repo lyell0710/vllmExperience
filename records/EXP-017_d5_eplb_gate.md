@@ -4,8 +4,8 @@
 
 | 字段 | 值 |
 |---|---|
-| 日期 | 2026-08-23(09:58–10:40Z) |
-| 环境 | ENV-B(752a3a5044, vllm 0.25.1);Qwen3-30B-A3B(GPTQ-Int4 / FP8);TP2+EP+EPLB |
+| 日期 | 2026-08-23（09:58–10:40Z） |
+| 环境 | ENV-B（752a3a5044, vllm 0.25.1）；Qwen3-30B-A3B（GPTQ-Int4 / FP8）；TP2+EP+EPLB |
 | 状态 | 完成（gate 判定齐；按清单 D5 不上简历，白板级保留） |
 | 关联清单项 | D5；S5（维持默认不上简历） |
 
@@ -14,17 +14,17 @@
 
 ## 2. 环境与配置
 - 服务：TP2+EP+`--enable-eplb`,max-model-len 4096,util 0.88。
-- 探针：8 条固定 prompt，greedy(temperature=0， seed=7， max_tokens=48)， 重排前后各一轮；中间 256 请求负载（128/128， conc16）推进 engine steps。
+- 探针：8 条固定 prompt，greedy（temperature=0，seed=7，max_tokens=48），重排前后各一轮；中间 256 请求负载（128/128，conc16）推进 engine steps。
 - **对照组**(`d5_control.sh`)：同 FP8 服务器同负载，**EPLB 关闭**，同探针。
 
 ## 3. 步骤
 w4a16 臂 → 失败取证 → fp8 臂（gate 1/2）→ 对照组（gate 2 归因）。
 
 ## 4. 原始数据
-`moe_perf/raw/EXP-017/` 按臂列（8/23 审计修正，此前"各臂"统述不准确）：
-- `fp8/`（全套 7 类）：server.log（含 2852 条 balancedness 逐 step 记录）、 probe_{before，after}.txt、probe_diff.txt、rearrange_evidence.txt（注：摘录仅含 profile 行，两次真实重排行在 server.log 10:09:38/10:10:19）、load.log、manifest。
+`moe_perf/raw/EXP-017/` 按臂列（8/23 审计修正，此前「各臂」统述不准确）：
+- `fp8/`（全套 7 类）：server.log（含 2852 条 balancedness 逐 step 记录）、probe_{before，after}.txt、probe_diff.txt、rearrange_evidence.txt（注：摘录仅含 profile 行，两次真实重排行在 server.log 10:09:38/10:10:19）、load.log、manifest。
 - `w4a16/`（启动即抛 NotImplementedError，无探针阶段）：server.log、manifest。
-- `control_noeplb/`（probe 逐字节一致故无 diff；关 EPLB 故无重排证据）： server.log、probe_{before，after}.txt、load.log、manifest。
+- `control_noeplb/`（probe 逐字节一致故无 diff；关 EPLB 故无重排证据）：server.log、probe_{before，after}.txt、load.log、manifest。
 
 ## 5. 结果
 **GATE3（W4A16 兼容性）= 上游显式不支持**：
@@ -46,7 +46,7 @@ NotImplementedError: EPLB is not supported AutoGPTQMoEMethod.
 ## 6. 分析与结论
 - 按清单规则（任一 gate 不过 → 整条砍掉）：**D5 不上简历**（S5 默认维持）。
 - 白板/面试素材反而完整：①真实重排 + balancedness 数据；②对照组方法学（先证明测量协议在无处理组时稳定，再归因）；③量化×EPLB 支持矩阵的 file：line（GPTQ 拒于 routed_experts.py：151，FP8 过 supports_eplb 门， eplb 通信组建立与 EPLB rank 分配日志在案）；④"输出一致性"作为 EPLB gate 的判据反思——EP 布局变化天然破坏 bitwise 复现，更合理的判据是 logprob 漂移幅度或专家权重校验和。
-- 2-rank 下 EPLB 的适用性：重排能触发、能执行、开销可测（profile 0.15s）， 但收益空间受限（64 专家/rank，线性放置）——与"小 rank 数适用边界"预期一致。
+- 2-rank 下 EPLB 的适用性：重排能触发、能执行、开销可测（profile 0.15s），但收益空间受限（64 专家/rank，线性放置）——与「小 rank 数适用边界」预期一致。
 
 ## 7. 异常、偏差与开放问题
 - 首次 w4a16 臂失败曾与我方进程清理竞态重叠（两日志字节数相同、同 traceback， 复跑排除干扰后确认同因）——事故经过与排除法记录于 LAB_JOURNAL §19。

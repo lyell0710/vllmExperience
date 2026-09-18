@@ -1,6 +1,6 @@
 # vLLM 0.17.1 P2pNcclConnector 两个已知缺陷的源码级机理分析
 
-> provenance： 2026-08-21 静态源码分析（AI 辅助，全部 file：line 已在本机两个 venv 核对）。依据：V17=/root/venvs/v0.17.1/.../vllm（0.17.1， g95c0f928c），V25=/root/venvs/v0.25.1/.../vllm。性质：R0-4 路径——**复现级机理定位**，措辞红线：复现/定位/验证，非"发现/修复"。 **动态复现已完成（2026-08-23，EXP-012《vLLM 0.17.1 P2pNccl 两缺陷动态复现》）**：实机 1P1D 坐实——bug1 精确命中 `connector:433` AssertionError、bug2 D 整实例挂死（全线程 futex_wait + P /health 恒 200）；并**实证修正**了缺陷 1 的触发条件（见下"⚑实测修正"）。原始崩溃/挂死日志见 `p2pnccl_repro/raw/EXP-012/`。关联：S2 简历句、B4 报告第 2/3 段、records/EXP-012。
+> provenance：2026-08-21 静态源码分析（AI 辅助，全部 file：line 已在本机两个 venv 核对）。依据：V17=/root/venvs/v0.17.1/.../vllm（0.17.1，g95c0f928c），V25=/root/venvs/v0.25.1/.../vllm。性质：R0-4 路径——**复现级机理定位**，措辞红线：复现/定位/验证，非"发现/修复"。 **动态复现已完成（2026-08-23，EXP-012《vLLM 0.17.1 P2pNccl 两缺陷动态复现》）**：实机 1P1D 坐实——bug1 精确命中 `connector:433` AssertionError、bug2 D 整实例挂死（全线程 futex_wait + P /health 恒 200）；并**实证修正**了缺陷 1 的触发条件（见下"⚑实测修正"）。原始崩溃/挂死日志见 `p2pnccl_repro/raw/EXP-012/`。关联：S2 简历句、B4 报告第 2/3 段、records/EXP-012。
 
 **KV 发送粒度（两缺陷共同的设计根源）**：P2pNccl 的传输单元是 **"一个请求 × 一个注意力层"的一次性完整张量**。P 端每层 attention 前向结束时由钩子 `maybe_transfer_kv_layer` 调 `save_kv_layer`（`V17/model_executor/layers/attention/ kv_transfer_utils.py:56`），按 `request_id + "#" + layer_name` 作 `tensor_id` 整体 send（connector：306）；wire protocol 只有 `{"cmd":"PUT","tensor_id","shape","dtype"}`（engine：510-515），**没有 chunk 序号、块偏移、引擎身份字段**。D 端 `inject_kv_into_layer`（connector：163-193）按序写本地 block。所以：①同一 tensor_id 只能承载一份完整 KV → chunked prefill 的多步产出必须发送前攒齐；②跨实例匹配完全依赖两端字符串 key 逐字节相等 → request_id 任何单边改写即分叉。
 

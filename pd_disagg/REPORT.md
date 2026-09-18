@@ -53,7 +53,7 @@
 | TPOT (ms) | 15.9–16.4 | 15.9–16.4 | **9.3–9.5** | 15.9–16.4 |
 
 - 非 PD 三臂 TTFT 无实质差异（prefill 无并行收益：TP2 的计算减半被 allreduce 吃光）。
-- PD 的 TTFT 溢价全部来自传输——**request 级因果占比（EXT-1，EXP-013）**：本地最小 patch 使 P / D / NIXL 三段在同一 request 身份 + 同一时钟域下逐请求关联，测得 **D 等待远端 KV 占 TTFT 54.2% / 62.5% / 64.2%**（512/2K/8K，p50， p10–p90 带宽 ±2% 内），六段分解闭环误差 p50 <0.1%（最差桶 0.084%）；占比随输入长饱和于 ~64%（P 段与传输同为 O（输入长），比值趋常数；短输入被 ~40ms 固定开销稀释）。 v1 的分量对账（fig4，54–64%）被逐请求数据追认。kv_wait 与 NIXL xferDuration 仅差 0.3–1.9ms——等待窗口就是传输本身，不在调度轮询。
+- PD 的 TTFT 溢价全部来自传输——**request 级因果占比（EXT-1，EXP-013）**：本地最小 patch 使 P / D / NIXL 三段在同一 request 身份 + 同一时钟域下逐请求关联，测得 **D 等待远端 KV 占 TTFT 54.2% / 62.5% / 64.2%**（512/2K/8K，p50，p10–p90 带宽 ±2% 内），六段分解闭环误差 p50 <0.1%（最差桶 0.084%）；占比随输入长饱和于 ~64%（P 段与传输同为 O（输入长），比值趋常数；短输入被 ~40ms 固定开销稀释）。v1 的分量对账（fig4，54–64%）被逐请求数据追认。kv_wait 与 NIXL xferDuration 仅差 0.3–1.9ms——等待窗口就是传输本身，不在调度轮询。
 
 ### 2.3 负载扫描（headline，fig1/fig2）
 | 桶 | 饱和 req/s：colo/repl/tp2/pd | goodput 峰值 rps |
@@ -68,12 +68,12 @@
 - **replica2**：2K/8K 桶 1.93/1.98× 扩展——无跨卡通信的复制在受限互联上是 "免费"的并行。
 - **tp2**：双卡只换 13–19% 吞吐。decode 提速在批量化后失去分量（大 batch 下 decode 转向计算/调度约束），prefill 的 allreduce 墙成为主导。
 - **pd1p1d**：饱和 0.54 req/s@8K 与传输墙理论上限吻合（0.27GB/s ÷ 470MB/req ≈ 0.57）；**传输带宽即容量**。低负载区也无立足点：传输延迟（114–1730ms）直接吃光 SLO 余量，512 桶 66% 饱和度时 goodput 已仅 1.59（fig1 黄线贴地）。
-- 成本口径（fig3）：per-GPU 峰值 goodput colocate 8.57/2.41/0.43， replica2 6.37*/2.48/0.45，tp2 5.09/1.25/0.30，pd 0.80/0.08/0.05。
+- 成本口径（fig3）：per-GPU 峰值 goodput colocate 8.57/2.41/0.43，replica2 6.37*/2.48/0.45，tp2 5.09/1.25/0.30，pd 0.80/0.08/0.05。
 
 ### 2.4 对 PD 分离的公平陈述
 PD 分离的价值主张（消除 prefill 对 decode 的干扰、独立扩缩 P/D 池）在 **跨节点大集群 + 高速互联（NVLink/IB/RDMA NIC）**下成立。本实验证明的是其 **适用边界**：当 KV 通路只有 ~0.27GB/s 时，1P1D 在任何负载与任何输入长度下都无法收回传输成本。这不是 NIXL 的缺陷——是部署形态与互联能力的错配。
 
-**传输方向对照（EXT-2，EXP-011）**：用 NixlPushConnector 专用 push proxy（P 端 NIXL WRITE 推送，与 pull 的 D 端 READ 相反）同 seed 复测 512/8192 单点：推方向略优——8K TTFT 2537 vs 2718ms（-6.7%），有效吞吐 0.278–0.305 vs 0.26–0.27 GB/s（+10–13%），机理是 WRITE 免去请求-应答回合且 P 完成 prefill 即推、与 D 调度解耦；但**量级不变，两个方向同贴互联墙**——"形态与互联能力错配"的结论对推/拉同时成立。附带机制对照：push 模式 D 端注册全部本地块、 P 全量推送（8K 全量 469.8MB/req），不做 pull 侧的前缀缓存尾对齐裁剪； WRITE 的 posting 成本在 P 端显著更高（71–149ms vs pull 的 ~4ms）。
+**传输方向对照（EXT-2，EXP-011）**：用 NixlPushConnector 专用 push proxy（P 端 NIXL WRITE 推送，与 pull 的 D 端 READ 相反）同 seed 复测 512/8192 单点：推方向略优——8K TTFT 2537 vs 2718ms（-6.7%），有效吞吐 0.278–0.305 vs 0.26–0.27 GB/s（+10–13%），机理是 WRITE 免去请求-应答回合且 P 完成 prefill 即推、与 D 调度解耦；但**量级不变，两个方向同贴互联墙**——"形态与互联能力错配"的结论对推/拉同时成立。附带机制对照：push 模式 D 端注册全部本地块、P 全量推送（8K 全量 469.8MB/req），不做 pull 侧的前缀缓存尾对齐裁剪；WRITE 的 posting 成本在 P 端显著更高（71–149ms vs pull 的 ~4ms）。
 
 ## 3. P2pNccl → NIXL：架构演化（三句话定稿版展开）
 
@@ -98,9 +98,9 @@ PD 分离的价值主张（消除 prefill 对 decode 的干扰、独立扩缩 P/
 ## 5. 归因方法论（可信度声明）
 
 - 每测量点：provenance 行 + gate 字段同行存储 + before/after /metrics 快照（直抓引擎，代理不可信）+ GPU 遥测（频率/功率/节流位）。
-- NIXL 数字只称 telemetry-derived effective throughput；xferDuration 含 posting，不与 postDuration 相加。**"KV 传输占 TTFT X%"为因果占比声明（EXT-1 解锁）**，依据三重互证：① 逐请求 bytes 求和与 Prometheus 计数器分毫不差； ② kv_wait（墙钟）≈ xferDuration（telemetry，差 0.3–1.9ms）；③ 六段全链分解 vs client TTFT 闭环误差 p50 <0.1%（最差桶 0.084%）。观测无扰动：打 patch 后 TTFT 218/727/2738 vs 矩阵 219/719/2719（噪声内）。patch 上游化已查重放弃（#52859 在途， `ext1/DEDUP.md`）。
+- NIXL 数字只称 telemetry-derived effective throughput；xferDuration 含 posting，不与 postDuration 相加。**"KV 传输占 TTFT X%"为因果占比声明（EXT-1 解锁）**，依据三重互证：① 逐请求 bytes 求和与 Prometheus 计数器分毫不差；② kv_wait（墙钟）≈ xferDuration（telemetry，差 0.3–1.9ms）；③ 六段全链分解 vs client TTFT 闭环误差 p50 <0.1%（最差桶 0.084%）。观测无扰动：打 patch 后 TTFT 218/727/2738 vs 矩阵 219/719/2719（噪声内）。patch 上游化已查重放弃（#52859 在途，`ext1/DEDUP.md`）。
 - token 记账双计数器互证（bytes vs prompt_tokens_by_source）分毫不差；缺口逐块对账到前缀缓存命中（analysis/nixl_token_accounting.md）——测量体系自洽性的独立证明。
-- 已知偏差全部登记：tp2 gpu-util 0.88（OOM 规避）、replica2@512 欠饱和疑点、 SLO 基线含 v1 缓存污染（敏感性附录覆盖）、~3% 运行率的客户端瞬断（重跑处理）。
+- 已知偏差全部登记：tp2 gpu-util 0.88（OOM 规避）、replica2@512 欠饱和疑点、SLO 基线含 v1 缓存污染（敏感性附录覆盖）、~3% 运行率的客户端瞬断（重跑处理）。
 
 ## 附录
 - A. SLO 敏感性：fig6（0.5–4× 排序稳定）

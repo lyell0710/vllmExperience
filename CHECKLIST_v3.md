@@ -74,4 +74,4 @@
 
 ## 勘注（2026-09-15）
 
-- 上文 D2 行"提交动作留用户"、P1 行"由用户执行"、闭环对照注"仅用户可操作"三处原文保留不改。PR 已由用户本人于 2026-08-29 提交为 vllm-project/vllm#54372（gh 实查：OPEN 未合并；CI pre-run-check ×2 失败——缺 `ready` label 且作者 0 merged PR；无人类 review）。状态权威见 HANDOFF.md §5；红线不变：可写"提交"，未合并不写"合入"。
+- 上文 D2 行"提交动作留用户"、P1 行"由用户执行"、闭环对照注"仅用户可操作"三处原文保留不改。PR 已由用户本人于 2026-08-29 提交为 vllm-project/vllm#54372。gh 实查：OPEN 未合并；CI pre-run-check ×2 失败（缺 `ready` label 且作者 0 merged PR）；无人类 review。状态权威见 HANDOFF.md §5；红线不变：可写"提交"，未合并不写"合入"。

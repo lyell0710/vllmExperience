@@ -2,11 +2,15 @@
 
 *消费级双卡平台上的部署形态基准与 MoE kernel 级分解*
 
-本仓库在 2×RTX 4090（无 NVLink、P2P 驱动禁用）的消费级平台上回答两个工程问题：多出一张卡该怎么用；MoE 推理慢在哪、还能快多少。消费级多卡是中小规模部署的常态，但公开评测几乎都基于 NVLink 互联的数据中心卡，互联受限时教科书结论是否仍然成立缺少定量答案。本仓库对 vLLM 的四种双卡部署形态（单卡混部、双实例数据并行、TP2、Prefill-Decode 分离）做全矩阵基准并把差距归因到硬件瓶颈，再对 MoE 推理路径做 kernel 级分解，交付两个社区空缺的 Triton 调优 config。全部表格与图可由脚本从仓内原始数据重算（本目录为独立嵌套 git 仓库，与外层 vLLM 源码仓互不干扰）。
+我要在 2×RTX 4090（无 NVLink、P2P 驱动禁用）的消费级平台上回答两个工程问题：多出一张卡该怎么用；MoE 推理慢在哪、还能快多少。消费级多卡是中小规模部署的常态，公开评测却几乎都基于 NVLink 互联的数据中心卡 —— 互联受限时教科书结论还成不成立，缺定量答案。
+
+我的做法是全矩阵基准加逐层归因：对 vLLM 的四种双卡部署形态（单卡混部、双实例数据并行、TP2、Prefill-Decode 分离）同协议对比，把差距归因到硬件瓶颈；再对 MoE 推理路径做 kernel 级分解，交付两个社区空缺的 Triton 调优 config。全部表格与图可由脚本从仓内原始数据重算（本目录为独立嵌套 git 仓库，与外层 vLLM 源码仓互不干扰）。
+
+结论的边界就是这套硬件：无 NVLink、P2P 驱动禁用。四臂中仅 tp2 与 pd1p1d 产生跨卡流量，这一差异在 P2P 禁用的平台上直接决定结果排序；换个平台，排序需要重测。
 
 ## 概述
 
-实验矩阵覆盖同一硬件上的四种部署形态，在统一负载协议下（三个输入长度桶，每个测量点唯一 seed）对比饱和吞吐、SLO goodput 与延迟分解。四臂中仅 tp2 与 pd1p1d 产生跨卡流量，这一差异在 P2P 禁用的平台上直接决定结果排序。MoE 部分以 Qwen1.5-MoE 与 Qwen3-30B-A3B 为对象，从 serving 指标向下钻到 nsys node 级 kernel 分解与 Triton config 调优。
+实验矩阵覆盖同一硬件上的四种部署形态，在统一负载协议下（三个输入长度桶，每个测量点唯一 seed）对比饱和吞吐、SLO goodput 与延迟分解。MoE 部分以 Qwen1.5-MoE 与 Qwen3-30B-A3B 为对象，从 serving 指标向下钻到 nsys node 级 kernel 分解与 Triton config 调优。
 
 ```mermaid
 flowchart LR
@@ -33,44 +37,44 @@ flowchart LR
 
 | 结论 | 关键数字 | 证据 |
 |---|---|---|
-| 两卡选型：数据并行优于 TP2 与 PD 分离 | 饱和吞吐（req/s，2K 输入桶）：replica2 **7.00**、tp2 4.16、pd1p1d 2.12、colocate 单卡基线 3.63 | [EXP-007](records/EXP-007_b1_sweep_campaign.md)、`pd_disagg/results/b1_matrix/runs.jsonl` |
-| TP2 仅加速 decode：decode 提速 42%（权重带宽分摊），prefill 零加速 | allreduce 受限于 NCCL collective 带宽（P2P 禁用；实测值待复核，见 EXP-018） | [EXP-005](records/EXP-005_replica2_tp2_powercap.md) / [EXP-002](records/EXP-002_hardware_baseline.md)、`pd_disagg/hw/all_reduce_perf.txt` |
-| PD 分离瓶颈定量：KV 等待占 TTFT **54.2 / 62.5 / 64.2%**（512/2K/8K，p50，request 级因果占比，每桶 n=11） | 六段分解闭环误差 p50 <0.1%；bytes 与 Prometheus 对账完全一致 | [EXP-013](records/EXP-013_ext1_request_level_kv_attribution.md)、`pd_disagg/ext1/derived/ext1_per_request.csv` |
+| 两卡怎么选：数据并行赢过 TP2 与 PD 分离 | 饱和吞吐（req/s，2K 输入桶）：replica2 **7.00**、tp2 4.16、pd1p1d 2.12、colocate 单卡基线 3.63 | [EXP-007](records/EXP-007_b1_sweep_campaign.md)、`pd_disagg/results/b1_matrix/runs.jsonl` |
+| TP2 只加速 decode：decode 提速 42%（权重带宽分摊），prefill 零加速 | allreduce 受限于 NCCL collective 带宽（P2P 禁用；实测值待复核，见 EXP-018） | [EXP-005](records/EXP-005_replica2_tp2_powercap.md) / [EXP-002](records/EXP-002_hardware_baseline.md)、`pd_disagg/hw/all_reduce_perf.txt` |
+| PD 分离的瓶颈：KV 等待占 TTFT **54.2 / 62.5 / 64.2%**（512/2K/8K，p50，request 级因果占比，每桶 n=11） | 六段分解闭环误差 p50 <0.1%；bytes 与 Prometheus 对账完全一致 | [EXP-013](records/EXP-013_ext1_request_level_kv_attribution.md)、`pd_disagg/ext1/derived/ext1_per_request.csv` |
 | MoE 的 decode 优势在 bs≈8 反转 | MoE/dense 2.03×(bs=1) -> 0.97×(bs=8) -> **0.82×**(bs=128)；nsys node 级归因：fused_moe grouped GEMM 占 GPU 时间 56.4%（bs=32） | [EXP-014](records/EXP-014_d1_moe_kernel_decomposition.md)、`moe_perf/derived/d1_scaling.csv`、`moe_perf/derived/d1_kernel_share_bs32.csv` |
 | 补齐两个社区空缺的 MoE tuning config | E=30,N=1408 / E=60,N=704（各 18 M 档）；kernel A/B：M=1 **-8.5% / -3.8%**，M≥128 -3.3~-3.9%；correctness 120 passed（`::test_fused_moe` 单函数；全文件子集 1041 passed / 127 skipped，EXP-015 §5.1）；PR 已提交（vllm-project/vllm#54372，OPEN 未合并） | [EXP-015](records/EXP-015_d2_moe_config_tuning.md)、`moe_perf/PR_DRAFT.md` |
 | 版本升级实测（system-version comparison，v0.17.1 至 v0.25.1） | 512 桶饱和吞吐 **+45%**（7.14 -> 10.36 req/s，两侧同为 conc64 口径）；启动 308 -> 58s；计算受限桶零差异 | [EXP-008](records/EXP-008_b3_version_compare.md) |
 
 ![四臂饱和吞吐总览](pd_disagg/figures/fig7_saturation_overview.png)
 
-*图 1：数据并行（replica2）的饱和吞吐在三个输入桶全部最高，PD 分离最低。（数据：`pd_disagg/results/b1_matrix/runs.jsonl`，协议 v2、每点唯一 seed；脚本：`pd_disagg/scripts/make_fig7_overview.py`）*
+*图 1：三个输入桶里，数据并行（replica2）的饱和吞吐全部最高，PD 分离最低。（数据：`pd_disagg/results/b1_matrix/runs.jsonl`，协议 v2、每点唯一 seed；脚本：`pd_disagg/scripts/make_fig7_overview.py`）*
 
 ![四臂 goodput 曲线](pd_disagg/figures/fig1_goodput_curves.png)
 
-*图 2：SLO goodput 随 offered load 变化，replica2 在全部负载段最高，PD 分离在全部负载段受传输延迟制约。（数据：`pd_disagg/results/b1_matrix/runs.jsonl`，84 个通过质量门的测量点；脚本：`pd_disagg/scripts/make_figures.py`）*
+*图 2：SLO goodput 随 offered load 怎么变：replica2 在全部负载段最高，PD 分离在全部负载段被传输延迟压住。（数据：`pd_disagg/results/b1_matrix/runs.jsonl`，84 个通过质量门的测量点；脚本：`pd_disagg/scripts/make_figures.py`）*
 
 ![PD TTFT 分解](pd_disagg/figures/fig4_pd_ttft_decompose.png)
 
-*图 3：PD 分离的 TTFT 分解，KV 传输占 54–64%，各分量与独立遥测对账吻合；request 级因果版见 [EXP-013](records/EXP-013_ext1_request_level_kv_attribution.md)。（数据：`pd_disagg/results/b1_matrix/runs.jsonl`；脚本：`pd_disagg/scripts/make_figures.py`）*
+*图 3：PD 分离的 TTFT 分解 —— KV 传输占 54–64%，各分量与独立遥测对账吻合；request 级因果版见 [EXP-013](records/EXP-013_ext1_request_level_kv_attribution.md)。（数据：`pd_disagg/results/b1_matrix/runs.jsonl`；脚本：`pd_disagg/scripts/make_figures.py`）*
 
 ![MoE decode 反转点](moe_perf/figures/d1_fig1_decode_scaling.png)
 
-*图 4：MoE 的 decode 优势在 bs≈8 反转，2.03×(bs=1) -> 0.82×(bs=128)；小 batch 受益于激活参数量，大 batch 受制于专家权重搬运。（数据：`moe_perf/raw/EXP-014/`，并发 1–128、每点唯一 seed；脚本：`moe_perf/d1_analyze.py`）*
+*图 4：MoE 的 decode 优势在 bs≈8 反转：2.03×(bs=1) -> 0.82×(bs=128)。小 batch 靠激活参数量占便宜，大 batch 被专家权重搬运卡住。（数据：`moe_perf/raw/EXP-014/`，并发 1–128、每点唯一 seed；脚本：`moe_perf/d1_analyze.py`）*
 
 ## 关键发现
 
-**没有 NVLink 时，最优互联策略是避免互联。** 本平台 P2P 在驱动层被禁用，任何跨卡通信都要经过 NCCL collective 路径的带宽上限（实测值待复核，见 EXP-018）。数据并行（replica2）零跨卡通信，因此在三个输入桶均取得最高饱和吞吐与 goodput；TP2 的 decode 能提速 42%——每张卡只读一半权重，权重带宽被分摊——但 prefill 的大消息 allreduce 直接受限于上述带宽上限，整体只换来 +13~19% 吞吐；PD 分离受影响最大：NIXL KV 通路受 ~16KB/descriptor 碎片化拖累，有效吞吐恒定在 0.26–0.27 GB/s（telemetry-derived），测量显示 KV 等待占 TTFT 的 54–64%（request 级因果占比）——传输方向反转（push）也仅挽回 6.7% TTFT，量级不变。结论：互联受限平台上部署形态的选择被硬件测量唯一确定。
+**没有 NVLink 时，最优互联策略是避免互联。** 这台机器的 P2P 在驱动层被禁用，任何跨卡通信都要过 NCCL collective 路径的带宽上限（实测值待复核，见 EXP-018）。数据并行（replica2）零跨卡通信，三个输入桶的饱和吞吐与 goodput 都最高。TP2 的 decode 能提速 42% —— 每张卡只读一半权重，权重带宽被分摊 —— 但 prefill 的大消息 allreduce 直接撞上这条带宽上限，整体只换来 +13~19% 吞吐。PD 分离受影响最大：NIXL KV 通路被 ~16KB/descriptor 的碎片化拖累，有效吞吐恒定在 0.26–0.27 GB/s（telemetry-derived），KV 等待占 TTFT 的 54–64%（request 级因果占比）；传输方向反转（push）也只挽回 6.7% TTFT，量级不变。互联受限的平台上，部署形态的选择由硬件测量唯一确定。
 
-**MoE 的 decode 优势是激活参数量的优势，且随 batch 递减直至反转。** bs=1 时 MoE 每 token 只读 ~2.7B 激活参数，dense 7B 要读全量——带宽受限的 decode 因此快 2.03×；batch 增大后每 step 命中的专家数上升，权重读取量趋向全量 28.6GB，优势在 bs≈8 归零、bs=128 反转为 0.82×。nsys node 级分解（CUDA graph 内 kernel 必须 node 级 trace 才可见）把热点定位到 fused_moe grouped GEMM：占 serving batch GPU 时间 56.4%。这决定了优化杠杆是 Triton config 调优；而调优结果显示中段 M 与默认启发式打平——于是不做无数据支撑的 kernel 改动，收益集中在两端（decode M=1 -8.5%）。
+**MoE 的 decode 优势来自激活参数量，且随 batch 递减，直到反转。** bs=1 时 MoE 每 token 只读 ~2.7B 激活参数，dense 7B 要读全量 —— 带宽受限的 decode 因此快 2.03×。batch 一增大，每 step 命中的专家数上升，权重读取量趋向全量 28.6GB，优势在 bs≈8 归零、bs=128 反转为 0.82×。nsys node 级分解（CUDA graph 内 kernel 必须 node 级 trace 才可见）把热点定位到 fused_moe grouped GEMM：占 serving batch GPU 时间 56.4%。优化杠杆于是落在 Triton config 调优上；调优结果中段 M 与默认启发式打平 —— 所以不做无数据支撑的 kernel 改动，收益集中在两端（decode M=1 -8.5%）。
 
-**消费卡的功率帽是隐藏变量。** 450W SW Power Cap 使持续 prefill 降频约 12%（2820 -> 2475MHz，遥测证实非热节流），TTFT 膨胀 +30%。这意味着不同臂必须在同热工况下对比、每个测量点用唯一 seed 防前缀缓存污染——否则臂间差异会被功率状态淹没。
+**消费卡的功率帽是隐藏变量。** 450W SW Power Cap 让持续 prefill 降频约 12%（2820 -> 2475MHz，遥测证实不是热节流），TTFT 膨胀 +30%。所以不同臂必须在同热工况下对比，每个测量点用唯一 seed 防前缀缓存污染 —— 否则臂间差异会被功率状态淹没。
 
-**Ada 上的量化选型由硬件分派路径决定。** Qwen3-30B-A3B 上 W4A16（Marlin）decode 全 regime 快 23–48%（TPOT 4.91 vs 7.10ms @bs1）且权重减半；FP8 只在高并发 prefill（计算受限段）TTFT 反超，并以 wikitext PPL 相对占优 3.3%（同 31k 计分 token）。机理：vLLM 按 SM capability 分派 FP8 kernel，SM89（Ada）进不了 Hopper 快路径、只能走 Triton block-scaled——量化收益表因此不能跨代泛化。
+**Ada 上的量化选型由硬件分派路径决定。** Qwen3-30B-A3B 上，W4A16（Marlin）decode 在全 regime 快 23–48%（TPOT 4.91 vs 7.10ms @bs1），权重还减半；FP8 只在高并发 prefill（计算受限段）TTFT 反超，并以 wikitext PPL 相对占优 3.3%（同 31k 计分 token）。原因是 vLLM 按 SM capability 分派 FP8 kernel：SM89（Ada）进不了 Hopper 快路径，只能走 Triton block-scaled —— 量化收益表因此不能跨代泛化。
 
 ## 代码导览
 
 主要目录：`pd_disagg/`（部署选型：脚本、数据、图与报告 `pd_disagg/REPORT.md`）、`moe_perf/`（MoE 分解与调优）、`records/`（29 份八节实验记录）、`docs/theory/`（原理笔记）、`docs/TECH_DOC_vllm_engineering.md`（总览级技术文档：原理 / 数据 / 分析 / 分类面试题）。
 
-其中最值得读的一处改动：约 16 行本地可观测性 patch，把「KV 传输占 TTFT」从对账推断升级为因果测量。四臂矩阵显示 PD 分离最低，但「KV 传输占 TTFT 多少」最初只能靠分量对账（拿 colocate 无负载 TTFT 近似 P 段）间接推断。EXT-1 把这约 16 行改动打在 vLLM 0.25.1 NIXL connector（逐行 `# EXT1` 标记、原件备份可还原），将其升级为逐请求因果测量——核心节选：
+这里最值得看的一处改动：约 16 行本地可观测性 patch，把「KV 传输占 TTFT」从对账推断升级成因果测量。四臂矩阵里 PD 分离最低，但「KV 传输占 TTFT 多少」最初只能靠分量对账间接推断（拿 colocate 无负载 TTFT 近似 P 段）。EXT-1 把这约 16 行打在 vLLM 0.25.1 NIXL connector 上（逐行 `# EXT1` 标记、原件备份可还原），把它升级成逐请求因果测量。核心节选：
 
 ```python
 # pull_worker.start_load_kv —— D 端 connector 首见请求：记双时钟起点
@@ -141,7 +145,7 @@ bash moe_perf/d1_sweep.sh
 | [EXP-010 C3 Qwen3-30B-A3B W4A16 上卡](records/EXP-010_c3_w4a16_bringup.md) | Qwen3-30B-A3B GPTQ-Int4（Marlin）部署成功：TPOT 4.93ms，与 2.7B BF16 相当 |
 | [EXP-011 EXT-2 NixlPush 单点（推 vs 拉方向对照）](records/EXP-011_ext2_nixl_push.md) | 传输方向反转（push）仅挽回 6.7% TTFT——方向优化改变不了 PD 分离的量级 |
 | [EXP-012 vLLM 0.17.1 P2pNccl 两缺陷动态复现（1P1D 实机）](records/EXP-012_p2pnccl_dynamic_repro.md) | 实机复现 v0.17 P2pNccl 两 bug：connector：433 崩溃与 D 实例挂死，并实证修正静态分析 |
-| [EXP-013 EXT-1 request 级 KV-wait 关联(解锁"KV 占 TTFT%"红线)](records/EXP-013_ext1_request_level_kv_attribution.md) | request 级三段关联：KV 等待占 TTFT 54.2/62.5/64.2%，闭环误差 p50 <0.1% |
+| [EXP-013 EXT-1 request 级 KV-wait 关联（KV 占 TTFT% 的因果归因）](records/EXP-013_ext1_request_level_kv_attribution.md) | request 级三段关联：KV 等待占 TTFT 54.2/62.5/64.2%，闭环误差 p50 <0.1% |
 | [EXP-014 D1 MoE decode 分解:吞吐-batch 曲线 + nsys kernel 占比](records/EXP-014_d1_moe_kernel_decomposition.md) | MoE decode 优势 2.03×(bs=1) -> 0.82×(bs=128) 反转；fused_moe 占 GPU 时间 56.4% |
 | [EXP-015 D2 MoE config 调优:4090 BF16 两个社区空缺 tuple + 六件套验证](records/EXP-015_d2_moe_config_tuning.md) | 两个空缺 config 交付：kernel M=1 -8.5%、correctness 120 passed（`::test_fused_moe` 单函数；全文件子集 1041 passed / 127 skipped，EXP-015 §5.1）、PR 材料齐备 |
 | [EXP-016 D4 FP8 vs W4A16 同卡对比(Qwen3-30B-A3B,Ada SM89)](records/EXP-016_d4_fp8_vs_w4a16.md) | W4A16 decode 全 regime 快 23–48%，FP8 仅高并发 prefill 反超——Ada 分派路径给出机理 |
