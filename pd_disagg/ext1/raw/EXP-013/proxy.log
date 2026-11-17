@@ -1,0 +1,81 @@
+INFO:     Started server process [278853]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://127.0.0.1:8192 (Press CTRL+C to quit)
+Initialized 1 prefill clients and 1 decode clients.
+INFO:     127.0.0.1:44680 - "POST /v1/completions HTTP/1.1" 200 OK
+EXT1_PROXY {"request_id": "ext1-512-000-953685", "t_recv": 1787471542.430325, "t_p_send": 1787471542.4305081, "t_p_done": 1787471542.5227733, "t_d_send": 1787471542.5230553, "t_first_chunk": 1787471542.9995525, "t_last_chunk": 1787471543.4881716}
+INFO:     127.0.0.1:44680 - "POST /v1/completions HTTP/1.1" 200 OK
+EXT1_PROXY {"request_id": "ext1-512-001-9a2a8b", "t_recv": 1787471543.500225, "t_p_send": 1787471543.500431, "t_p_done": 1787471543.5662112, "t_d_send": 1787471543.5666842, "t_first_chunk": 1787471543.7039711, "t_last_chunk": 1787471544.1924949}
+INFO:     127.0.0.1:44680 - "POST /v1/completions HTTP/1.1" 200 OK
+EXT1_PROXY {"request_id": "ext1-512-002-fec344", "t_recv": 1787471544.2044692, "t_p_send": 1787471544.204645, "t_p_done": 1787471544.2690785, "t_d_send": 1787471544.2695124, "t_first_chunk": 1787471544.4204514, "t_last_chunk": 1787471544.9089317}
+INFO:     127.0.0.1:44680 - "POST /v1/completions HTTP/1.1" 200 OK
+EXT1_PROXY {"request_id": "ext1-512-003-b7922d", "t_recv": 1787471544.9213169, "t_p_send": 1787471544.9214928, "t_p_done": 1787471544.985056, "t_d_send": 1787471544.9854848, "t_first_chunk": 1787471545.1296568, "t_last_chunk": 1787471545.6183834}
+INFO:     127.0.0.1:44680 - "POST /v1/completions HTTP/1.1" 200 OK
+EXT1_PROXY {"request_id": "ext1-512-004-8ab423", "t_recv": 1787471545.6301894, "t_p_send": 1787471545.6303754, "t_p_done": 1787471545.6939085, "t_d_send": 1787471545.6943572, "t_first_chunk": 1787471545.8481886, "t_last_chunk": 1787471546.3369095}
+INFO:     127.0.0.1:44680 - "POST /v1/completions HTTP/1.1" 200 OK
+EXT1_PROXY {"request_id": "ext1-512-005-3885a1", "t_recv": 1787471546.3487372, "t_p_send": 1787471546.3489122, "t_p_done": 1787471546.4125073, "t_d_send": 1787471546.4129126, "t_first_chunk": 1787471546.5687065, "t_last_chunk": 1787471547.0578225}
+INFO:     127.0.0.1:44680 - "POST /v1/completions HTTP/1.1" 200 OK
+EXT1_PROXY {"request_id": "ext1-512-006-47fa5a", "t_recv": 1787471547.070034, "t_p_send": 1787471547.0702088, "t_p_done": 1787471547.1357815, "t_d_send": 1787471547.1361794, "t_first_chunk": 1787471547.28716, "t_last_chunk": 1787471547.776027}
+INFO:     127.0.0.1:44680 - "POST /v1/completions HTTP/1.1" 200 OK
+EXT1_PROXY {"request_id": "ext1-512-007-8a063d", "t_recv": 1787471547.7878075, "t_p_send": 1787471547.7880256, "t_p_done": 1787471547.8497894, "t_d_send": 1787471547.8501737, "t_first_chunk": 1787471548.0056193, "t_last_chunk": 1787471548.494793}
+INFO:     127.0.0.1:44680 - "POST /v1/completions HTTP/1.1" 200 OK
+EXT1_PROXY {"request_id": "ext1-512-008-0cb8d8", "t_recv": 1787471548.5065184, "t_p_send": 1787471548.5066872, "t_p_done": 1787471548.5705137, "t_d_send": 1787471548.570891, "t_first_chunk": 1787471548.7311924, "t_last_chunk": 1787471549.2117782}
+INFO:     127.0.0.1:44680 - "POST /v1/completions HTTP/1.1" 200 OK
+EXT1_PROXY {"request_id": "ext1-512-009-c445cc", "t_recv": 1787471549.2238283, "t_p_send": 1787471549.2240024, "t_p_done": 1787471549.2900414, "t_d_send": 1787471549.2904987, "t_first_chunk": 1787471549.4434838, "t_last_chunk": 1787471549.932458}
+INFO:     127.0.0.1:44680 - "POST /v1/completions HTTP/1.1" 200 OK
+EXT1_PROXY {"request_id": "ext1-512-010-4f88a5", "t_recv": 1787471549.9441886, "t_p_send": 1787471549.9443772, "t_p_done": 1787471550.0082176, "t_d_send": 1787471550.0086153, "t_first_chunk": 1787471550.1594589, "t_last_chunk": 1787471550.6485991}
+INFO:     127.0.0.1:44680 - "POST /v1/completions HTTP/1.1" 200 OK
+EXT1_PROXY {"request_id": "ext1-512-011-3c2918", "t_recv": 1787471550.6607628, "t_p_send": 1787471550.6610017, "t_p_done": 1787471550.7248864, "t_d_send": 1787471550.7252698, "t_first_chunk": 1787471550.8758538, "t_last_chunk": 1787471551.364875}
+INFO:     127.0.0.1:44680 - "POST /v1/completions HTTP/1.1" 200 OK
+EXT1_PROXY {"request_id": "ext1-2048-000-c1b42c", "t_recv": 1787471551.4043698, "t_p_send": 1787471551.4048119, "t_p_done": 1787471551.6245575, "t_d_send": 1787471551.624986, "t_first_chunk": 1787471552.137959, "t_last_chunk": 1787471552.6275592}
+INFO:     127.0.0.1:44680 - "POST /v1/completions HTTP/1.1" 200 OK
+EXT1_PROXY {"request_id": "ext1-2048-001-06fe4e", "t_recv": 1787471552.667102, "t_p_send": 1787471552.6674156, "t_p_done": 1787471552.8892193, "t_d_send": 1787471552.889771, "t_first_chunk": 1787471553.4267, "t_last_chunk": 1787471553.916172}
+INFO:     127.0.0.1:44680 - "POST /v1/completions HTTP/1.1" 200 OK
+EXT1_PROXY {"request_id": "ext1-2048-002-dadae5", "t_recv": 1787471553.9554818, "t_p_send": 1787471553.9557734, "t_p_done": 1787471554.1763945, "t_d_send": 1787471554.176806, "t_first_chunk": 1787471554.707728, "t_last_chunk": 1787471555.196903}
+INFO:     127.0.0.1:44680 - "POST /v1/completions HTTP/1.1" 200 OK
+EXT1_PROXY {"request_id": "ext1-2048-003-b59bf0", "t_recv": 1787471555.2358384, "t_p_send": 1787471555.236132, "t_p_done": 1787471555.4552796, "t_d_send": 1787471555.4558065, "t_first_chunk": 1787471555.964417, "t_last_chunk": 1787471556.4542124}
+INFO:     127.0.0.1:44680 - "POST /v1/completions HTTP/1.1" 200 OK
+EXT1_PROXY {"request_id": "ext1-2048-004-2b9610", "t_recv": 1787471556.4938512, "t_p_send": 1787471556.4941416, "t_p_done": 1787471556.7160432, "t_d_send": 1787471556.7164588, "t_first_chunk": 1787471557.219134, "t_last_chunk": 1787471557.7103765}
+INFO:     127.0.0.1:44680 - "POST /v1/completions HTTP/1.1" 200 OK
+EXT1_PROXY {"request_id": "ext1-2048-005-15de63", "t_recv": 1787471557.7504244, "t_p_send": 1787471557.7507343, "t_p_done": 1787471557.9726305, "t_d_send": 1787471557.9730945, "t_first_chunk": 1787471558.4677837, "t_last_chunk": 1787471558.9589646}
+INFO:     127.0.0.1:44680 - "POST /v1/completions HTTP/1.1" 200 OK
+EXT1_PROXY {"request_id": "ext1-2048-006-89d227", "t_recv": 1787471558.9987648, "t_p_send": 1787471558.9990597, "t_p_done": 1787471559.2207744, "t_d_send": 1787471559.221173, "t_first_chunk": 1787471559.7138925, "t_last_chunk": 1787471560.205066}
+INFO:     127.0.0.1:44680 - "POST /v1/completions HTTP/1.1" 200 OK
+EXT1_PROXY {"request_id": "ext1-2048-007-cfe063", "t_recv": 1787471560.2445407, "t_p_send": 1787471560.2448406, "t_p_done": 1787471560.4671185, "t_d_send": 1787471560.4675736, "t_first_chunk": 1787471560.950465, "t_last_chunk": 1787471561.4415946}
+INFO:     127.0.0.1:44680 - "POST /v1/completions HTTP/1.1" 200 OK
+EXT1_PROXY {"request_id": "ext1-2048-008-422684", "t_recv": 1787471561.480973, "t_p_send": 1787471561.4812713, "t_p_done": 1787471561.7030284, "t_d_send": 1787471561.7034683, "t_first_chunk": 1787471562.1948586, "t_last_chunk": 1787471562.6864464}
+INFO:     127.0.0.1:44680 - "POST /v1/completions HTTP/1.1" 200 OK
+EXT1_PROXY {"request_id": "ext1-2048-009-3767ec", "t_recv": 1787471562.7252502, "t_p_send": 1787471562.725636, "t_p_done": 1787471562.9464648, "t_d_send": 1787471562.9468887, "t_first_chunk": 1787471563.4387047, "t_last_chunk": 1787471563.9302573}
+INFO:     127.0.0.1:44680 - "POST /v1/completions HTTP/1.1" 200 OK
+EXT1_PROXY {"request_id": "ext1-2048-010-860e52", "t_recv": 1787471563.96872, "t_p_send": 1787471563.9690416, "t_p_done": 1787471564.1887271, "t_d_send": 1787471564.1891284, "t_first_chunk": 1787471564.698533, "t_last_chunk": 1787471565.1886742}
+INFO:     127.0.0.1:44680 - "POST /v1/completions HTTP/1.1" 200 OK
+EXT1_PROXY {"request_id": "ext1-2048-011-9c358e", "t_recv": 1787471565.227883, "t_p_send": 1787471565.2282093, "t_p_done": 1787471565.4480927, "t_d_send": 1787471565.4485526, "t_first_chunk": 1787471565.9758995, "t_last_chunk": 1787471566.4480007}
+INFO:     127.0.0.1:44680 - "POST /v1/completions HTTP/1.1" 200 OK
+EXT1_PROXY {"request_id": "ext1-8192-000-04a5e4", "t_recv": 1787471566.5481687, "t_p_send": 1787471566.5487225, "t_p_done": 1787471567.46512, "t_d_send": 1787471567.4656286, "t_first_chunk": 1787471569.34661, "t_last_chunk": 1787471569.8476303}
+INFO:     127.0.0.1:44680 - "POST /v1/completions HTTP/1.1" 200 OK
+EXT1_PROXY {"request_id": "ext1-8192-001-db0d37", "t_recv": 1787471569.9441586, "t_p_send": 1787471569.9448802, "t_p_done": 1787471570.8193905, "t_d_send": 1787471570.8198466, "t_first_chunk": 1787471572.6257958, "t_last_chunk": 1787471573.121819}
+INFO:     127.0.0.1:44680 - "POST /v1/completions HTTP/1.1" 200 OK
+EXT1_PROXY {"request_id": "ext1-8192-002-9464ed", "t_recv": 1787471573.2216406, "t_p_send": 1787471573.2219899, "t_p_done": 1787471574.1031716, "t_d_send": 1787471574.1037016, "t_first_chunk": 1787471575.905755, "t_last_chunk": 1787471576.403788}
+INFO:     127.0.0.1:44680 - "POST /v1/completions HTTP/1.1" 200 OK
+EXT1_PROXY {"request_id": "ext1-8192-003-d6c621", "t_recv": 1787471576.500781, "t_p_send": 1787471576.5015073, "t_p_done": 1787471577.4013445, "t_d_send": 1787471577.4022934, "t_first_chunk": 1787471579.1907675, "t_last_chunk": 1787471579.6874504}
+INFO:     127.0.0.1:44680 - "POST /v1/completions HTTP/1.1" 200 OK
+EXT1_PROXY {"request_id": "ext1-8192-004-3fa530", "t_recv": 1787471579.808767, "t_p_send": 1787471579.8095875, "t_p_done": 1787471580.707788, "t_d_send": 1787471580.7082562, "t_first_chunk": 1787471582.5081813, "t_last_chunk": 1787471583.0054252}
+INFO:     127.0.0.1:44680 - "POST /v1/completions HTTP/1.1" 200 OK
+EXT1_PROXY {"request_id": "ext1-8192-005-f431c7", "t_recv": 1787471583.102397, "t_p_send": 1787471583.1029105, "t_p_done": 1787471584.007597, "t_d_send": 1787471584.0080528, "t_first_chunk": 1787471585.823581, "t_last_chunk": 1787471586.3252745}
+INFO:     127.0.0.1:44680 - "POST /v1/completions HTTP/1.1" 200 OK
+EXT1_PROXY {"request_id": "ext1-8192-006-46f9d1", "t_recv": 1787471586.4266555, "t_p_send": 1787471586.4270449, "t_p_done": 1787471587.3268702, "t_d_send": 1787471587.3273423, "t_first_chunk": 1787471589.2044826, "t_last_chunk": 1787471589.7064314}
+INFO:     127.0.0.1:44680 - "POST /v1/completions HTTP/1.1" 200 OK
+EXT1_PROXY {"request_id": "ext1-8192-007-db7cc6", "t_recv": 1787471589.8067205, "t_p_send": 1787471589.8074467, "t_p_done": 1787471590.7072053, "t_d_send": 1787471590.7077413, "t_first_chunk": 1787471592.577471, "t_last_chunk": 1787471593.073978}
+INFO:     127.0.0.1:44680 - "POST /v1/completions HTTP/1.1" 200 OK
+EXT1_PROXY {"request_id": "ext1-8192-008-fac577", "t_recv": 1787471593.1788557, "t_p_send": 1787471593.1795456, "t_p_done": 1787471594.080595, "t_d_send": 1787471594.0810719, "t_first_chunk": 1787471595.9156544, "t_last_chunk": 1787471596.417848}
+INFO:     127.0.0.1:44680 - "POST /v1/completions HTTP/1.1" 200 OK
+EXT1_PROXY {"request_id": "ext1-8192-009-031a44", "t_recv": 1787471596.5194309, "t_p_send": 1787471596.519824, "t_p_done": 1787471597.4192824, "t_d_send": 1787471597.4198077, "t_first_chunk": 1787471599.287881, "t_last_chunk": 1787471599.7849715}
+INFO:     127.0.0.1:44680 - "POST /v1/completions HTTP/1.1" 200 OK
+EXT1_PROXY {"request_id": "ext1-8192-010-77752d", "t_recv": 1787471599.8728094, "t_p_send": 1787471599.87329, "t_p_done": 1787471600.7698069, "t_d_send": 1787471600.7701514, "t_first_chunk": 1787471602.6885564, "t_last_chunk": 1787471603.1892784}
+INFO:     127.0.0.1:44680 - "POST /v1/completions HTTP/1.1" 200 OK
+EXT1_PROXY {"request_id": "ext1-8192-011-84a5b0", "t_recv": 1787471603.275168, "t_p_send": 1787471603.2756493, "t_p_done": 1787471604.1746364, "t_d_send": 1787471604.1750758, "t_first_chunk": 1787471606.0445507, "t_last_chunk": 1787471606.5459256}
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [278853]

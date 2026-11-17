@@ -1,0 +1,107 @@
+provenance: EXP-012 P-direct crash evidence, 20260823T062224Z, HEAD 30b4df03700d16af2681dd8c1f8aae2706575f49, venv v0.17.1
+trigger: 直连 P(20003) 发 max_tokens=16 的普通请求(无 proxy, 裸 request_id)
+结果: EngineCore fatal error, HTTP 500, /health 转 503
+
+== 真实崩溃点(≠预期的 connector:433 assert) ==
+ValueError at p2p_nccl_connector.py:518 (parse_request_id), 由 save_kv_layer(connector:301) 在 prefill 首步调用
+message: Request id cmpl-b2716ee850f92719-0-b5a34497 does not contain hostname and port
+
+== 对静态分析的实证修正 ==
+文档缺陷1 称'直接压测P + max_tokens>1 -> connector:433 assert'. 实测:直连 P 的裸 request_id
+缺少 proxy 注入的 ___prefill_addr_..._decode_addr_...___ 地址串, P 在 prefill 首步 save_kv_layer
+调 parse_request_id(connector:518) 即抛 ValueError 崩溃, 早于任何 decode 步, 故根本走不到 :433 assert.
+=> 触发真正 :433 assert 的前置条件应为: 带地址串的 proxy 格式 request_id + max_tokens>1 (下一步用手工 id 复现).
+
+== 崩溃 traceback 关键帧 ==
+EngineCore encountered a fatal error.
+Traceback (most recent call last):
+  File "/root/venvs/v0.17.1/lib/python3.12/site-packages/vllm/v1/engine/core.py", line 1093, in run_engine_core
+    engine_core.run_busy_loop()
+  File "/root/venvs/v0.17.1/lib/python3.12/site-packages/vllm/v1/engine/core.py", line 1128, in run_busy_loop
+    self._process_engine_step()
+  File "/root/venvs/v0.17.1/lib/python3.12/site-packages/vllm/v1/engine/core.py", line 1165, in _process_engine_step
+    outputs, model_executed = self.step_fn()
+                              ^^^^^^^^^^^^^^
+  File "/root/venvs/v0.17.1/lib/python3.12/site-packages/vllm/v1/engine/core.py", line 501, in step_with_batch_queue
+    exec_model_fut.result()
+  File "/usr/local/miniconda3/envs/py312/lib/python3.12/concurrent/futures/_base.py", line 449, in result
+    return self.__get_result()
+           ^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/miniconda3/envs/py312/lib/python3.12/concurrent/futures/_base.py", line 401, in __get_result
+    raise self._exception
+  File "/root/venvs/v0.17.1/lib/python3.12/site-packages/vllm/v1/executor/uniproc_executor.py", line 80, in collective_rpc
+    result = run_method(self.driver_worker, method, args, kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/venvs/v0.17.1/lib/python3.12/site-packages/vllm/v1/serial_utils.py", line 459, in run_method
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/root/venvs/v0.17.1/lib/python3.12/site-packages/vllm/v1/worker/worker_base.py", line 365, in execute_model
+    return self.worker.execute_model(scheduler_output)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/venvs/v0.17.1/lib/python3.12/site-packages/torch/utils/_contextlib.py", line 124, in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/root/venvs/v0.17.1/lib/python3.12/site-packages/vllm/v1/worker/gpu_worker.py", line 728, in execute_model
+    output = self.model_runner.execute_model(
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/venvs/v0.17.1/lib/python3.12/site-packages/torch/utils/_contextlib.py", line 124, in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/root/venvs/v0.17.1/lib/python3.12/site-packages/vllm/v1/worker/gpu_model_runner.py", line 3639, in execute_model
+    model_output = self._model_forward(
+                   ^^^^^^^^^^^^^^^^^^^^
+  File "/root/venvs/v0.17.1/lib/python3.12/site-packages/vllm/v1/worker/gpu_model_runner.py", line 3152, in _model_forward
+    return self.model(
+           ^^^^^^^^^^^
+  File "/root/venvs/v0.17.1/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1776, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/venvs/v0.17.1/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1787, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/venvs/v0.17.1/lib/python3.12/site-packages/vllm/model_executor/models/qwen2.py", line 583, in forward
+    hidden_states = self.model(
+                    ^^^^^^^^^^^
+  File "/root/venvs/v0.17.1/lib/python3.12/site-packages/vllm/compilation/decorators.py", line 389, in __call__
+    return self.forward(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/venvs/v0.17.1/lib/python3.12/site-packages/vllm/model_executor/models/qwen2.py", line 442, in forward
+    hidden_states, residual = layer(positions, hidden_states, residual)
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/venvs/v0.17.1/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1776, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/venvs/v0.17.1/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1787, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/venvs/v0.17.1/lib/python3.12/site-packages/vllm/model_executor/models/qwen2.py", line 298, in forward
+    hidden_states = self.self_attn(
+                    ^^^^^^^^^^^^^^^
+  File "/root/venvs/v0.17.1/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1776, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/venvs/v0.17.1/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1787, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/venvs/v0.17.1/lib/python3.12/site-packages/vllm/model_executor/models/qwen2.py", line 228, in forward
+    attn_output = self.attn(q, k, v)
+                  ^^^^^^^^^^^^^^^^^^
+  File "/root/venvs/v0.17.1/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1776, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/venvs/v0.17.1/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1787, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/venvs/v0.17.1/lib/python3.12/site-packages/vllm/model_executor/layers/attention/attention.py", line 464, in forward
+    torch.ops.vllm.unified_attention_with_output(
+  File "/root/venvs/v0.17.1/lib/python3.12/site-packages/torch/_ops.py", line 1209, in __call__
+    return self._op(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/venvs/v0.17.1/lib/python3.12/site-packages/vllm/model_executor/layers/attention/kv_transfer_utils.py", line 56, in wrapper
+    connector.save_kv_layer(layer_name, kv_cache, attn_metadata)
+  File "/root/venvs/v0.17.1/lib/python3.12/site-packages/vllm/distributed/kv_transfer/kv_connector/v1/p2p/p2p_nccl_connector.py", line 301, in save_kv_layer
+    ip, port = self.parse_request_id(request_id, True)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/venvs/v0.17.1/lib/python3.12/site-packages/vllm/distributed/kv_transfer/kv_connector/v1/p2p/p2p_nccl_connector.py", line 518, in parse_request_id
+    raise ValueError(f"Request id {request_id} does not contain hostname and port")
+ValueError: Request id cmpl-b2716ee850f92719-0-b5a34497 does not contain hostname and port

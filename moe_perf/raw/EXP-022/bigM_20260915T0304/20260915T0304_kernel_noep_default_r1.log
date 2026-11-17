@@ -1,0 +1,13 @@
+# provenance: env=venvs/main sha=3805e40e17 cmd="/root/venvs/main/bin/python /root/projects/vllm/benchmarks/kernels/benchmark_moe.py --model Qwen/Qwen1.5-MoE-A2.7B-Chat -tp 2  --seed 0 --batch-size 512 1024 2048 4096" date=2026-09-15T03:05:22Z gpu="2xRTX 4090" driver=610.57.04 arm=default round=1 exp=EXP-022 bs_list="512 1024 2048 4096"
+2026-09-15 03:05:36,771	INFO worker.py:2024 -- Started a local Ray instance.
+Namespace(model='Qwen/Qwen1.5-MoE-A2.7B-Chat', tp_size=2, enable_expert_parallel=False, dtype='auto', use_deep_gemm=False, save_dir='./', seed=0, batch_size=[512, 1024, 2048, 4096], tune=False, trust_remote_code=False, model_prefix=None)
+[36m(BenchmarkWorker pid=107082)[0m WARNING 09-15 03:05:48 [fused_moe.py:1167] Using default MoE config. Performance might be sub-optimal! Config file not found at /root/projects/vllm/vllm/model_executor/layers/fused_moe/configs/E=60,N=704,device_name=NVIDIA_GeForce_RTX_4090.json
+Batch size: 512, config: {'BLOCK_SIZE_M': 64, 'BLOCK_SIZE_N': 128, 'BLOCK_SIZE_K': 64, 'GROUP_SIZE_M': 1, 'SPLIT_K': 1, 'num_warps': 8, 'num_stages': 3}
+Kernel time: 629.91 us
+Batch size: 1024, config: {'BLOCK_SIZE_M': 128, 'BLOCK_SIZE_N': 128, 'BLOCK_SIZE_K': 64, 'GROUP_SIZE_M': 1, 'SPLIT_K': 1, 'num_warps': 8, 'num_stages': 3}
+Kernel time: 709.22 us
+Batch size: 2048, config: {'BLOCK_SIZE_M': 128, 'BLOCK_SIZE_N': 128, 'BLOCK_SIZE_K': 64, 'GROUP_SIZE_M': 1, 'SPLIT_K': 1, 'num_warps': 8, 'num_stages': 3}
+Kernel time: 913.04 us
+Batch size: 4096, config: {'BLOCK_SIZE_M': 128, 'BLOCK_SIZE_N': 128, 'BLOCK_SIZE_K': 64, 'GROUP_SIZE_M': 1, 'SPLIT_K': 1, 'num_warps': 8, 'num_stages': 3}
+Kernel time: 1444.93 us
+[36m(BenchmarkWorker pid=107080)[0m WARNING 09-15 03:05:48 [fused_moe.py:1167] Using default MoE config. Performance might be sub-optimal! Config file not found at /root/projects/vllm/vllm/model_executor/layers/fused_moe/configs/E=60,N=704,device_name=NVIDIA_GeForce_RTX_4090.json

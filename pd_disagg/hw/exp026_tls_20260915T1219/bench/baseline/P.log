@@ -1,0 +1,12 @@
+2026-09-15 12:23:55 NIXL INFO    _api.py:390 Backend UCX was instantiated
+2026-09-15 12:23:55 NIXL INFO    _api.py:268 Initialized NIXL agent: EXP026_P
+[12:23:55] P ready: addr=123341797064704 region=134.2 MB ... 等 D 结束
+[12:24:12] P 收到 stop，退出
+[1789475034.749163] [cpod-1u8o0xv30sr6:223606:0]     ucp_context.c:2659 UCX  INFO  Version 1.21.0 (loaded from /root/venvs/v0.25.1/lib/python3.12/site-packages/nixl_cu13/../.nixl_cu13.mesonpy.libs/plugins/../../nixl_cu13.libs/libucp-1da16952.so.0.0.0)
+[1789475035.514572] [cpod-1u8o0xv30sr6:223606:0]          parser.c:2364 UCX  INFO  UCX_* env variable: UCX_LOG_LEVEL=info
+[1789475035.566777] [cpod-1u8o0xv30sr6:223606:0]      ucp_worker.c:1984 UCX  INFO    ucp_context_0 self cfg#1 rma_am(tcp/eth0)  amo_am(tcp/eth0)  device(cuda_ipc/cuda)  am(tcp/eth0 cma/memory cuda_ipc/cuda)  ka(tcp/eth0)
+[1789475035.593599] [cpod-1u8o0xv30sr6:223606:0]      ucp_worker.c:1984 UCX  INFO    ucp_context_0 intra-node cfg#1 rma_am(tcp/eth0)  amo_am(tcp/eth0)  device(cuda_ipc/cuda)  am(tcp/eth0 cma/memory cuda_ipc/cuda)  ka(tcp/eth0)
+[1789475035.614501] [cpod-1u8o0xv30sr6:223606:0]      ucp_worker.c:1984 UCX  INFO    ucp_context_0 intra-node cfg#1 rma_am(tcp/eth0)  amo_am(tcp/eth0)  device(cuda_ipc/cuda)  am(tcp/eth0 cma/memory cuda_ipc/cuda)  ka(tcp/eth0)
+[1789475035.633429] [cpod-1u8o0xv30sr6:223606:0]      ucp_worker.c:1984 UCX  INFO    ucp_context_0 intra-node cfg#1 rma_am(tcp/eth0)  amo_am(tcp/eth0)  device(cuda_ipc/cuda)  am(tcp/eth0 cma/memory cuda_ipc/cuda)  ka(tcp/eth0)
+[1789475035.652522] [cpod-1u8o0xv30sr6:223606:0]      ucp_worker.c:1984 UCX  INFO    ucp_context_0 intra-node cfg#1 rma_am(tcp/eth0)  amo_am(tcp/eth0)  device(cuda_ipc/cuda)  am(tcp/eth0 cma/memory cuda_ipc/cuda)  ka(tcp/eth0)
+[1789475038.978077] [cpod-1u8o0xv30sr6:223606:1]      ucp_worker.c:1984 UCX  INFO    ucp_context_0 intra-node cfg#2 rma_am(tcp/eth0)  amo_am(tcp/eth0)  device(cuda_ipc/cuda)  am(tcp/eth0 cma/memory cuda_ipc/cuda)  ka(tcp/eth0)

@@ -1,0 +1,8 @@
+Traceback (most recent call last):
+  File "/root/projects/vllm/experiments/scripts/nixl_desc_granularity_bench.py", line 312, in <module>
+    main()
+  File "/root/projects/vllm/experiments/scripts/nixl_desc_granularity_bench.py", line 308, in main
+    (role_p if args.role == "P" else role_d)(args)
+  File "/root/projects/vllm/experiments/scripts/nixl_desc_granularity_bench.py", line 166, in role_d
+    raise TimeoutError(
+TimeoutError: 等 P_ready 超时 60.0s —— P 侧可能初始化失败，看 pd_disagg/hw/exp026_tls_20260915T1228/screen/cuda_ipc_cuda_copy_shm/P.log

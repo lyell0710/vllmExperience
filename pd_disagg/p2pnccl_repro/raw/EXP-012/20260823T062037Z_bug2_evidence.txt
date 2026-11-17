@@ -1,0 +1,30 @@
+provenance: EXP-012 bug2 LIVE evidence, 20260823T062037Z, HEAD 30b4df03700d16af2681dd8c1f8aae2706575f49, venv v0.17.1 (0.17.1 g95c0f928c)
+config: 1P1D P2pNccl PUT_ASYNC, Qwen2-7B-Instruct fp16, proxy 10001, P http20003/zmq21001, D http20005/zmq22001
+
+== 症状链 ==
+1. NCCL 握手成功: P 21001👉22001 / D 22001👈21001 (见 repro_prefill/decode.log 02:40:38)
+2. P 端 prefill(proxy clamp max_tokens=1): 'POST /v1/completions 200 OK' — P 正常, KV 已 send
+3. 客户端: 请求1 空 body(+200/连接关闭), 请求2 20s 挂死被 SIGTERM(exit 143)
+4. D 端: 两次请求均零 decode 日志(卡在出 token 前), 无 recv 命中
+5. D 存活 util 0%, 全部线程 wchan=futex_wait_queue (Condition 底层 futex) — 整实例挂死不自愈
+6. P /health 始终 200 — 单边(D)故障, 非全链路崩溃
+
+== 机理(静态 file:line 闭环) ==
+proxy 传统一外部 id (disagg_proxy:157-160) -> P/D 各自 input_processor.py:212 追加不同 8 位随机后缀
+-> connector key request_id#layer 分叉 -> PUT_ASYNC 下张量以 P端key 落 D recv_store,
+   D 按 D端key 在 p2p_nccl_engine.py:313-317 'while tid not in recv_store: cv.wait()' 无超时死等.
+
+== 取证限制(诚实标注) ==
+py-spy dump 被容器 ptrace 限制阻断(ptrace_scope=1 且 /proc 只读, 无 CAP_SYS_PTRACE);
+gdb 未安装. 故 Python 精确栈帧未取; 以 wchan(全线程 futex_wait) + 双请求行为学 + 静态定位构成证据闭环.
+
+== D EngineCore(261478) 线程 wchan 快照 ==
+tid=261478 wchan=futex_wait_queue
+tid=261506 wchan=futex_wait_queue
+tid=261507 wchan=futex_wait_queue
+tid=261508 wchan=futex_wait_queue
+tid=261509 wchan=futex_wait_queue
+tid=261510 wchan=futex_wait_queue
+tid=261511 wchan=futex_wait_queue
+tid=261512 wchan=futex_wait_queue
+(全部 futex_wait_queue)

@@ -1,0 +1,54 @@
+=== hardening 开始 2026-08-26T11:01:18Z  输出: /root/projects/vllm/experiments/moe_perf/raw/EXP-015/hardening_20260826T1101
+--- round 1 (次序: default tuned)
+  [11:06:16] ep/default r1 rc=0 -> 20260826T1101_kernel_ep_default_r1.log
+d2_hardening.sh: line 33: /root/projects/vllm/experiments/moe_perf/raw/EXP-015/hardening_20260826T1101/20260826T1101_kernel_noep_default_r1.log: No such file or directory
+d2_hardening.sh: line 34: /root/projects/vllm/experiments/moe_perf/raw/EXP-015/hardening_20260826T1101/20260826T1101_kernel_noep_default_r1.log: No such file or directory
+  [11:06:16] noep/default r1 rc=0 -> 20260826T1101_kernel_noep_default_r1.log
+d2_hardening.sh: line 33: /root/projects/vllm/experiments/moe_perf/raw/EXP-015/hardening_20260826T1101/20260826T1101_kernel_ep_tuned_r1.log: No such file or directory
+d2_hardening.sh: line 34: /root/projects/vllm/experiments/moe_perf/raw/EXP-015/hardening_20260826T1101/20260826T1101_kernel_ep_tuned_r1.log: No such file or directory
+  [11:06:16] ep/tuned r1 rc=0 -> 20260826T1101_kernel_ep_tuned_r1.log
+d2_hardening.sh: line 33: /root/projects/vllm/experiments/moe_perf/raw/EXP-015/hardening_20260826T1101/20260826T1101_kernel_noep_tuned_r1.log: No such file or directory
+d2_hardening.sh: line 34: /root/projects/vllm/experiments/moe_perf/raw/EXP-015/hardening_20260826T1101/20260826T1101_kernel_noep_tuned_r1.log: No such file or directory
+  [11:06:16] noep/tuned r1 rc=0 -> 20260826T1101_kernel_noep_tuned_r1.log
+--- round 2 (次序: tuned default)
+d2_hardening.sh: line 33: /root/projects/vllm/experiments/moe_perf/raw/EXP-015/hardening_20260826T1101/20260826T1101_kernel_ep_tuned_r2.log: No such file or directory
+d2_hardening.sh: line 34: /root/projects/vllm/experiments/moe_perf/raw/EXP-015/hardening_20260826T1101/20260826T1101_kernel_ep_tuned_r2.log: No such file or directory
+  [11:06:16] ep/tuned r2 rc=0 -> 20260826T1101_kernel_ep_tuned_r2.log
+d2_hardening.sh: line 33: /root/projects/vllm/experiments/moe_perf/raw/EXP-015/hardening_20260826T1101/20260826T1101_kernel_noep_tuned_r2.log: No such file or directory
+d2_hardening.sh: line 34: /root/projects/vllm/experiments/moe_perf/raw/EXP-015/hardening_20260826T1101/20260826T1101_kernel_noep_tuned_r2.log: No such file or directory
+  [11:06:16] noep/tuned r2 rc=0 -> 20260826T1101_kernel_noep_tuned_r2.log
+d2_hardening.sh: line 33: /root/projects/vllm/experiments/moe_perf/raw/EXP-015/hardening_20260826T1101/20260826T1101_kernel_ep_default_r2.log: No such file or directory
+d2_hardening.sh: line 34: /root/projects/vllm/experiments/moe_perf/raw/EXP-015/hardening_20260826T1101/20260826T1101_kernel_ep_default_r2.log: No such file or directory
+  [11:06:16] ep/default r2 rc=0 -> 20260826T1101_kernel_ep_default_r2.log
+d2_hardening.sh: line 33: /root/projects/vllm/experiments/moe_perf/raw/EXP-015/hardening_20260826T1101/20260826T1101_kernel_noep_default_r2.log: No such file or directory
+d2_hardening.sh: line 34: /root/projects/vllm/experiments/moe_perf/raw/EXP-015/hardening_20260826T1101/20260826T1101_kernel_noep_default_r2.log: No such file or directory
+  [11:06:16] noep/default r2 rc=0 -> 20260826T1101_kernel_noep_default_r2.log
+--- round 3 (次序: default tuned)
+d2_hardening.sh: line 33: /root/projects/vllm/experiments/moe_perf/raw/EXP-015/hardening_20260826T1101/20260826T1101_kernel_ep_default_r3.log: No such file or directory
+d2_hardening.sh: line 34: /root/projects/vllm/experiments/moe_perf/raw/EXP-015/hardening_20260826T1101/20260826T1101_kernel_ep_default_r3.log: No such file or directory
+  [11:06:16] ep/default r3 rc=0 -> 20260826T1101_kernel_ep_default_r3.log
+d2_hardening.sh: line 33: /root/projects/vllm/experiments/moe_perf/raw/EXP-015/hardening_20260826T1101/20260826T1101_kernel_noep_default_r3.log: No such file or directory
+d2_hardening.sh: line 34: /root/projects/vllm/experiments/moe_perf/raw/EXP-015/hardening_20260826T1101/20260826T1101_kernel_noep_default_r3.log: No such file or directory
+  [11:06:16] noep/default r3 rc=0 -> 20260826T1101_kernel_noep_default_r3.log
+d2_hardening.sh: line 33: /root/projects/vllm/experiments/moe_perf/raw/EXP-015/hardening_20260826T1101/20260826T1101_kernel_ep_tuned_r3.log: No such file or directory
+d2_hardening.sh: line 34: /root/projects/vllm/experiments/moe_perf/raw/EXP-015/hardening_20260826T1101/20260826T1101_kernel_ep_tuned_r3.log: No such file or directory
+  [11:06:16] ep/tuned r3 rc=0 -> 20260826T1101_kernel_ep_tuned_r3.log
+d2_hardening.sh: line 33: /root/projects/vllm/experiments/moe_perf/raw/EXP-015/hardening_20260826T1101/20260826T1101_kernel_noep_tuned_r3.log: No such file or directory
+d2_hardening.sh: line 34: /root/projects/vllm/experiments/moe_perf/raw/EXP-015/hardening_20260826T1101/20260826T1101_kernel_noep_tuned_r3.log: No such file or directory
+  [11:06:16] noep/tuned r3 rc=0 -> 20260826T1101_kernel_noep_tuned_r3.log
+d2_hardening.sh: line 49: 排除热漂移与次序效应: command not found
+--- round 3 (次序: default tuned)
+d2_hardening.sh: line 33: /root/projects/vllm/experiments/moe_perf/raw/EXP-015/hardening_20260826T1101/20260826T1101_kernel_ep_default_r3.log: No such file or directory
+d2_hardening.sh: line 34: /root/projects/vllm/experiments/moe_perf/raw/EXP-015/hardening_20260826T1101/20260826T1101_kernel_ep_default_r3.log: No such file or directory
+  [11:06:16] ep/default r3 rc=0 -> 20260826T1101_kernel_ep_default_r3.log
+d2_hardening.sh: line 33: /root/projects/vllm/experiments/moe_perf/raw/EXP-015/hardening_20260826T1101/20260826T1101_kernel_noep_default_r3.log: No such file or directory
+d2_hardening.sh: line 34: /root/projects/vllm/experiments/moe_perf/raw/EXP-015/hardening_20260826T1101/20260826T1101_kernel_noep_default_r3.log: No such file or directory
+  [11:06:16] noep/default r3 rc=0 -> 20260826T1101_kernel_noep_default_r3.log
+d2_hardening.sh: line 33: /root/projects/vllm/experiments/moe_perf/raw/EXP-015/hardening_20260826T1101/20260826T1101_kernel_ep_tuned_r3.log: No such file or directory
+d2_hardening.sh: line 34: /root/projects/vllm/experiments/moe_perf/raw/EXP-015/hardening_20260826T1101/20260826T1101_kernel_ep_tuned_r3.log: No such file or directory
+  [11:06:16] ep/tuned r3 rc=0 -> 20260826T1101_kernel_ep_tuned_r3.log
+d2_hardening.sh: line 33: /root/projects/vllm/experiments/moe_perf/raw/EXP-015/hardening_20260826T1101/20260826T1101_kernel_noep_tuned_r3.log: No such file or directory
+d2_hardening.sh: line 34: /root/projects/vllm/experiments/moe_perf/raw/EXP-015/hardening_20260826T1101/20260826T1101_kernel_noep_tuned_r3.log: No such file or directory
+  [11:06:16] noep/tuned r3 rc=0 -> 20260826T1101_kernel_noep_tuned_r3.log
+d2_hardening.sh: line 57: syntax error near unexpected token `done'
+d2_hardening.sh: line 57: `done'

@@ -1,0 +1,28 @@
+2026-09-15 11:51:39 NIXL INFO    _api.py:390 Backend UCX was instantiated
+2026-09-15 11:51:39 NIXL INFO    _api.py:268 Initialized NIXL agent: EXP026_D
+[11:51:39] D ready: local=134687490048000 remote_agent=b'EXP026_P' region=134.2 MB
+[11:51:40] A contiguous  G=   16KiB n_desc=  4096   175.12ms  0.383 GB/s   42.75 us/desc
+[11:51:41] A contiguous  G=   64KiB n_desc=  1024   174.57ms  0.384 GB/s  170.48 us/desc
+[11:51:42] A contiguous  G=  256KiB n_desc=   256   178.98ms  0.375 GB/s  699.13 us/desc
+[11:51:43] A contiguous  G= 1024KiB n_desc=    64   175.30ms  0.383 GB/s 2739.10 us/desc
+[11:51:44] A contiguous  G= 4096KiB n_desc=    16   175.97ms  0.381 GB/s 10998.07 us/desc
+[11:51:45] A contiguous  G=16384KiB n_desc=     4   178.62ms  0.376 GB/s 44655.06 us/desc
+[11:51:46] A scattered   G=   16KiB n_desc=  4096   270.64ms  0.248 GB/s   66.07 us/desc
+[11:51:47] A scattered   G=   64KiB n_desc=  1024   195.73ms  0.343 GB/s  191.14 us/desc
+[11:51:48] A scattered   G=  256KiB n_desc=   256   181.42ms  0.370 GB/s  708.66 us/desc
+[11:51:49] A scattered   G= 1024KiB n_desc=    64   180.17ms  0.372 GB/s 2815.14 us/desc
+[11:51:50] A scattered   G= 4096KiB n_desc=    16   178.91ms  0.375 GB/s 11181.77 us/desc
+[11:51:50] A scattered   G=16384KiB n_desc=     4   174.37ms  0.385 GB/s 43592.78 us/desc
+[11:51:51] C contiguous  G=   16KiB skip_merge=0   172.81ms  0.388 GB/s tel_descCount=1
+[11:51:53] C contiguous  G=   16KiB skip_merge=1   251.04ms  0.267 GB/s tel_descCount=4096
+[11:51:54] C scattered   G=   16KiB skip_merge=0   262.90ms  0.255 GB/s tel_descCount=4096
+[11:51:55] C scattered   G=   16KiB skip_merge=1   259.86ms  0.258 GB/s tel_descCount=4096
+[11:51:56] C contiguous  G= 1024KiB skip_merge=0   178.89ms  0.375 GB/s tel_descCount=1
+[11:51:57] C contiguous  G= 1024KiB skip_merge=1   179.58ms  0.374 GB/s tel_descCount=64
+[11:51:58] C scattered   G= 1024KiB skip_merge=0   177.80ms  0.377 GB/s tel_descCount=64
+[11:51:59] C scattered   G= 1024KiB skip_merge=1   176.11ms  0.381 GB/s tel_descCount=64
+[11:51:59] D size=    8MiB G=16KiB n_desc=   512    22.67ms  0.370 GB/s
+[11:51:59] D size=   32MiB G=16KiB n_desc=  2048    87.35ms  0.384 GB/s
+[11:52:01] D size=  128MiB G=16KiB n_desc=  8192   361.83ms  0.371 GB/s
+[11:52:01] 写出 pd_disagg/hw/exp026_20260915T1151/D.csv（23 行）
+[11:52:01] D 完成

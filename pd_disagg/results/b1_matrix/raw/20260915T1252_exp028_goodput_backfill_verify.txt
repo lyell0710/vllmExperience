@@ -1,0 +1,13 @@
+# provenance: env=ENV-B sha=752a3a5044 cmd="python3 scripts/collect_point.py --prefix <EXP-025 三点> --mode saturation --input-len 512 ... --dry-run" date=2026-09-15T12:52:27+00:00 gpu="n/a (纯重算)" driver=610.57.04 exp=EXP-028 note=用新增的 SLO 缺省表重算 EXP-025 三点的 goodput，与手算对照
+
+=== 对照：手算（EXP-025 §5） vs collect_point 新缺省 ===
+conc128 : 手算 5.1609  达标 280/1200 (23.3%)
+conc192 : 手算 0.4666  达标  23/1200 ( 1.9%)
+conc256 : 手算 0.0000  达标   0/1200 ( 0.0%)
+
+──── 20260915T1031 ────
+[collect_point] DRY-RUN（未写入） 20260915T1031_replica2_512x128_saturation goodput_slo_rps=5.1609 detail={'slo_ttft_ms': 328, 'slo_tpot_ms': 50.0, 'ok': 280, 'total': 1200, 'frac': 0.2333}
+──── 20260915T1034 ────
+[collect_point] DRY-RUN（未写入） 20260915T1034_replica2_512x128_saturation goodput_slo_rps=0.4666 detail={'slo_ttft_ms': 328, 'slo_tpot_ms': 50.0, 'ok': 23, 'total': 1200, 'frac': 0.0192}
+──── 20260915T1036 ────
+[collect_point] DRY-RUN（未写入） 20260915T1036_replica2_512x128_saturation goodput_slo_rps=0.0 detail={'slo_ttft_ms': 328, 'slo_tpot_ms': 50.0, 'ok': 0, 'total': 1200, 'frac': 0.0}

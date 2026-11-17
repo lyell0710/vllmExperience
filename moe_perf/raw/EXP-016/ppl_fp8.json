@@ -1,0 +1,8 @@
+{
+  "model": "Qwen/Qwen3-30B-A3B-FP8",
+  "ppl": 7.6633,
+  "tokens_scored": 31212,
+  "window": 2048,
+  "stride": 1536,
+  "seconds": 6.8
+}

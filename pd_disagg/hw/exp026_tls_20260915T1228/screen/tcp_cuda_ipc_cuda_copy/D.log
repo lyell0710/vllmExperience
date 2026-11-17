@@ -1,0 +1,12 @@
+2026-09-15 12:33:00 NIXL INFO    _api.py:390 Backend UCX was instantiated
+2026-09-15 12:33:00 NIXL INFO    _api.py:268 Initialized NIXL agent: EXP026_D
+[12:33:00] D ready: local=131834558021632 remote_agent=b'EXP026_P' region=134.2 MB
+[12:33:00] INIT_ONLY OK: ucx_tls=cuda_ipc,cuda_copy,tcp remote=b'EXP026_P'
+[1789475579.496623] [cpod-1u8o0xv30sr6:228532:0]     ucp_context.c:2659 UCX  INFO  Version 1.21.0 (loaded from /root/venvs/v0.25.1/lib/python3.12/site-packages/nixl_cu13/../.nixl_cu13.mesonpy.libs/plugins/../../nixl_cu13.libs/libucp-1da16952.so.0.0.0)
+[1789475580.254916] [cpod-1u8o0xv30sr6:228532:0]          parser.c:2364 UCX  INFO  UCX_* env variables: UCX_LOG_LEVEL=info UCX_TLS=cuda_ipc,cuda_copy,tcp
+[1789475580.275905] [cpod-1u8o0xv30sr6:228532:0]      ucp_worker.c:1984 UCX  INFO    ucp_context_0 self cfg#1 rma_am(tcp/eth0)  amo_am(tcp/eth0)  device(cuda_ipc/cuda)  am(tcp/eth0 cuda_ipc/cuda)  ka(tcp/eth0)
+[1789475580.302809] [cpod-1u8o0xv30sr6:228532:0]      ucp_worker.c:1984 UCX  INFO    ucp_context_0 intra-node cfg#1 rma_am(tcp/eth0)  amo_am(tcp/eth0)  device(cuda_ipc/cuda)  am(tcp/eth0 cuda_ipc/cuda)  ka(tcp/eth0)
+[1789475580.321567] [cpod-1u8o0xv30sr6:228532:0]      ucp_worker.c:1984 UCX  INFO    ucp_context_0 intra-node cfg#1 rma_am(tcp/eth0)  amo_am(tcp/eth0)  device(cuda_ipc/cuda)  am(tcp/eth0 cuda_ipc/cuda)  ka(tcp/eth0)
+[1789475580.340954] [cpod-1u8o0xv30sr6:228532:0]      ucp_worker.c:1984 UCX  INFO    ucp_context_0 intra-node cfg#1 rma_am(tcp/eth0)  amo_am(tcp/eth0)  device(cuda_ipc/cuda)  am(tcp/eth0 cuda_ipc/cuda)  ka(tcp/eth0)
+[1789475580.359502] [cpod-1u8o0xv30sr6:228532:0]      ucp_worker.c:1984 UCX  INFO    ucp_context_0 intra-node cfg#1 rma_am(tcp/eth0)  amo_am(tcp/eth0)  device(cuda_ipc/cuda)  am(tcp/eth0 cuda_ipc/cuda)  ka(tcp/eth0)
+[1789475580.392935] [cpod-1u8o0xv30sr6:228532:0]      ucp_worker.c:1984 UCX  INFO    ucp_context_0 intra-node cfg#2 rma_am(tcp/eth0)  amo_am(tcp/eth0)  device(cuda_ipc/cuda)  am(tcp/eth0 cuda_ipc/cuda)  ka(tcp/eth0)

@@ -1,0 +1,53 @@
+ Paris. Is this statement true or false?
+
+Q1: What is the capital of France?
+
+Q2: What is the capital of Germany?
+
+Q3: What is the capital of Spain?
+
+Q4: What is the capital of Italy
+ Paris. (True or False)
+Q2: What is the capital of France?
+Q3: What is the capital of Germany?
+Q4: What is the capital of Spain?
+Q5: What is the capital of Italy?
+Q
+ Paris. (True or False)
+A2: True
+
+Q3: What is the capital of France?
+A3: Paris
+
+Q4: What is 2+2?
+A4: 4
+
+Q5: What is
+ Paris. (True or False)
+A3: True
+
+Q4: What is the capital of France?
+A4: Paris
+
+Q5: What is the capital of France?
+A5: Paris
+
+Q6: What is the
+ Paris. (True or False)
+A4: True
+
+Q5: What is the capital of France?
+A5: Paris
+
+Q6: What is the largest planet in our solar system?
+A6: Jupiter
+
+Q7:
+ Paris. What is the capital of Germany? A5: The capital of Germany is Berlin. Q6: What is the capital of Spain? A6: The capital of Spain is Madrid. Q7: What is the capital of Italy
+ Paris. (True or False)
+A: True
+Q7: What is the capital of France?
+A: Paris
+
+Okay, so I need to figure out if the statement "The capital of France is Paris" is true or false
+ Paris. What is the capital of Germany? Q8: What is the capital of France? Q9: What is the capital of Germany? Q10: What is the capital of Italy? Q11: What is the capital

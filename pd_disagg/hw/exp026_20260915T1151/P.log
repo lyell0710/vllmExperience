@@ -1,0 +1,4 @@
+2026-09-15 11:51:36 NIXL INFO    _api.py:390 Backend UCX was instantiated
+2026-09-15 11:51:36 NIXL INFO    _api.py:268 Initialized NIXL agent: EXP026_P
+[11:51:36] P ready: addr=134885595414528 region=134.2 MB ... 等 D 结束
+[11:52:01] P 收到 stop，退出

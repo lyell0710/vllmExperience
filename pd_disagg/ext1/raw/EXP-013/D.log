@@ -1,0 +1,210 @@
+(APIServer pid=277854) INFO 08-23 07:50:30 [api_utils.py:339] 
+(APIServer pid=277854) INFO 08-23 07:50:30 [api_utils.py:339]        █     █     █▄   ▄█
+(APIServer pid=277854) INFO 08-23 07:50:30 [api_utils.py:339]  ▄▄ ▄█ █     █     █ ▀▄▀ █  version 0.25.1
+(APIServer pid=277854) INFO 08-23 07:50:30 [api_utils.py:339]   █▄█▀ █     █     █     █  model   Qwen/Qwen2-7B-Instruct
+(APIServer pid=277854) INFO 08-23 07:50:30 [api_utils.py:339]    ▀▀  ▀▀▀▀▀ ▀▀▀▀▀ ▀     ▀
+(APIServer pid=277854) INFO 08-23 07:50:30 [api_utils.py:339] 
+(APIServer pid=277854) INFO 08-23 07:50:30 [api_utils.py:273] non-default args: {'model_tag': 'Qwen/Qwen2-7B-Instruct', 'port': 8200, 'model': 'Qwen/Qwen2-7B-Instruct', 'max_model_len': 16384, 'kv_transfer_config': KVTransferConfig(kv_connector='NixlConnector', engine_id='9ceed0e0-3323-4f08-b93f-18dfb4c0381c', kv_buffer_device='cuda', kv_buffer_size=1000000000.0, kv_role='kv_consumer', kv_rank=None, kv_parallel_size=1, kv_ip='127.0.0.1', kv_port=14579, kv_connector_extra_config={}, kv_connector_module_path=None, enable_permute_local_kv=False, kv_load_failure_policy='fail')}
+(APIServer pid=277854) INFO 08-23 07:50:47 [model.py:619] Resolved architecture: Qwen2ForCausalLM
+(APIServer pid=277854) INFO 08-23 07:50:47 [model.py:1776] Using max model len 16384
+(APIServer pid=277854) INFO 08-23 07:50:47 [vllm.py:1042] Asynchronous scheduling is enabled.
+(APIServer pid=277854) INFO 08-23 07:50:47 [kernel.py:292] Final IR op priority after setting platform defaults: IrOpPriorityConfig(rms_norm=['native'], fused_add_rms_norm=['native'])
+(APIServer pid=277854) INFO 08-23 07:50:47 [nixl_utils.py:32] Setting UCX_RCACHE_MAX_UNRELEASED to '1024' to avoid a rare memory leak in UCX when using NIXL.
+(APIServer pid=277854) INFO 08-23 07:50:47 [nixl_utils.py:68] NIXL is available
+(EngineCore pid=278169) INFO 08-23 07:51:03 [core.py:114] Initializing a V1 LLM engine (v0.25.1) with config: model='Qwen/Qwen2-7B-Instruct', speculative_config=None, tokenizer='Qwen/Qwen2-7B-Instruct', skip_tokenizer_init=False, tokenizer_mode=auto, revision=None, tokenizer_revision=None, trust_remote_code=False, dtype=torch.bfloat16, max_seq_len=16384, download_dir=None, load_format=auto, tensor_parallel_size=1, pipeline_parallel_size=1, data_parallel_size=1, decode_context_parallel_size=1, dcp_comm_backend=ag_rs, disable_custom_all_reduce=False, quantization=None, quantization_config=None, enforce_eager=False, enable_return_routed_experts=False, kv_cache_dtype=auto, device_config=cuda, structured_outputs_config=StructuredOutputsConfig(backend='auto', disable_any_whitespace=False, disable_additional_properties=False, reasoning_parser='', reasoning_parser_plugin='', enable_in_reasoning=False), observability_config=ObservabilityConfig(show_hidden_metrics_for_version=None, otlp_traces_endpoint=None, collect_detailed_traces=None, kv_cache_metrics=False, kv_cache_metrics_sample=0.01, cudagraph_metrics=False, enable_layerwise_nvtx_tracing=False, enable_mfu_metrics=False, enable_mm_processor_stats=False, enable_logging_iteration_details=False, jit_monitor_mode='warn', jit_monitor_verbose=False), seed=0, served_model_name=Qwen/Qwen2-7B-Instruct, enable_prefix_caching=True, enable_chunked_prefill=True, pooler_config=None, compilation_config={'mode': <CompilationMode.VLLM_COMPILE: 3>, 'debug_dump_path': None, 'cache_dir': '', 'compile_cache_save_format': 'binary', 'backend': 'inductor', 'custom_ops': ['none'], 'ir_enable_torch_wrap': True, 'splitting_ops': ['vllm::unified_attention_with_output', 'vllm::unified_mla_attention_with_output', 'vllm::mamba_mixer2', 'vllm::mamba_mixer', 'vllm::short_conv', 'vllm::linear_attention', 'vllm::plamo2_mamba_mixer', 'vllm::qwen_gdn_attention_core', 'vllm::gdn_attention_core_xpu', 'vllm::olmo_hybrid_gdn_full_forward', 'vllm::kda_attention', 'vllm::sparse_attn_indexer', 'vllm::rocm_aiter_sparse_attn_indexer', 'vllm::deepseek_v4_attention', 'vllm::hpc_rope_norm_forward', 'vllm::unified_kv_cache_update', 'vllm::unified_mla_kv_cache_update'], 'compile_mm_encoder': False, 'cudagraph_mm_encoder': False, 'encoder_cudagraph_token_budgets': [], 'encoder_cudagraph_max_vision_items_per_batch': 0, 'encoder_cudagraph_max_frames_per_batch': None, 'compile_sizes': [], 'compile_ranges_endpoints': [2048], 'inductor_compile_config': {'enable_auto_functionalized_v2': False, 'size_asserts': False, 'alignment_asserts': False, 'scalar_asserts': False, 'combo_kernels': True, 'benchmark_combo_kernel': True}, 'inductor_passes': {}, 'cudagraph_mode': <CUDAGraphMode.FULL_AND_PIECEWISE: (2, 1)>, 'cudagraph_num_of_warmups': 1, 'cudagraph_capture_sizes': [1, 2, 4, 8, 16, 24, 32, 40, 48, 56, 64, 72, 80, 88, 96, 104, 112, 120, 128, 136, 144, 152, 160, 168, 176, 184, 192, 200, 208, 216, 224, 232, 240, 248, 256, 272, 288, 304, 320, 336, 352, 368, 384, 400, 416, 432, 448, 464, 480, 496, 512], 'cudagraph_copy_inputs': False, 'cudagraph_specialize_lora': True, 'use_inductor_graph_partition': False, 'pass_config': {'fuse_norm_quant': False, 'fuse_act_quant': False, 'fuse_attn_quant': False, 'enable_sp': False, 'fuse_gemm_comms': False, 'fuse_allreduce_rms': False, 'fuse_rope_kvcache_cat_mla': False, 'fuse_act_padding': False}, 'max_cudagraph_capture_size': 512, 'dynamic_shapes_config': {'type': <DynamicShapesType.BACKED: 'backed'>, 'evaluate_guards': False, 'assume_32_bit_indexing': False}, 'local_cache_dir': None, 'fast_moe_cold_start': False, 'static_all_moe_layers': []}, kernel_config=KernelConfig(ir_op_priority=IrOpPriorityConfig(rms_norm=['native'], fused_add_rms_norm=['native']), enable_flashinfer_autotune=True, enable_cutedsl_warmup=True, moe_backend='auto', linear_backend='auto')
+(EngineCore pid=278169) INFO 08-23 07:51:05 [parallel_state.py:1607] world_size=1 rank=0 local_rank=0 distributed_init_method=tcp://10.42.91.42:51319 backend=nccl
+(EngineCore pid=278169) INFO 08-23 07:51:05 [parallel_state.py:1942] rank 0 in world size 1 is assigned as DP rank 0, PP rank 0, PCP rank 0, TP rank 0, EP rank N/A, EPLB rank N/A
+(EngineCore pid=278169) INFO 08-23 07:51:05 [gpu_worker.py:360] Using V2 Model Runner
+(EngineCore pid=278169) INFO 08-23 07:51:05 [model_runner.py:281] Loading model from scratch...
+(EngineCore pid=278169) INFO 08-23 07:51:06 [cuda.py:476] Using FLASH_ATTN attention backend out of potential backends: ['FLASH_ATTN', 'FLASHINFER', 'TRITON_ATTN', 'FLEX_ATTENTION'].
+(EngineCore pid=278169) INFO 08-23 07:51:06 [flash_attn.py:718] Using FlashAttention version 2
+(EngineCore pid=278169) INFO 08-23 07:51:10 [weight_utils.py:849] Filesystem type for checkpoints: OVERLAY. Checkpoint size: 14.19 GiB. Available RAM: 120.82 GiB.
+(EngineCore pid=278169) INFO 08-23 07:51:10 [weight_utils.py:872] Auto-prefetch is disabled because the filesystem (OVERLAY) is not a recognized network FS (NFS/Lustre). If you want to force prefetching, start vLLM with --safetensors-load-strategy=prefetch.
+(EngineCore pid=278169) Loading safetensors checkpoint shards:   0% Completed | 0/4 [00:00<?, ?it/s]
+(EngineCore pid=278169) Loading safetensors checkpoint shards:  25% Completed | 1/4 [00:00<00:01,  1.56it/s]
+(EngineCore pid=278169) Loading safetensors checkpoint shards:  50% Completed | 2/4 [00:01<00:01,  1.58it/s]
+(EngineCore pid=278169) Loading safetensors checkpoint shards:  75% Completed | 3/4 [00:01<00:00,  1.69it/s]
+(EngineCore pid=278169) Loading safetensors checkpoint shards: 100% Completed | 4/4 [00:02<00:00,  1.76it/s]
+(EngineCore pid=278169) Loading safetensors checkpoint shards: 100% Completed | 4/4 [00:02<00:00,  1.71it/s]
+(EngineCore pid=278169) 
+(EngineCore pid=278169) INFO 08-23 07:51:12 [default_loader.py:430] Loading weights took 2.37 seconds
+(EngineCore pid=278169) INFO 08-23 07:51:12 [model_runner.py:302] Model loading took 14.29 GiB and 7.296181 seconds
+(EngineCore pid=278169) INFO 08-23 07:51:12 [topk_topp_sampler.py:55] Using FlashInfer for top-p & top-k sampling.
+(EngineCore pid=278169) INFO 08-23 07:51:13 [nixl_utils.py:68] NIXL is available
+(EngineCore pid=278169) INFO 08-23 07:51:13 [connector.py:154] NixlConnector setting KV cache layout to HND for better xfer performance.
+(EngineCore pid=278169) INFO 08-23 07:51:44 [backends.py:1089] Using cache directory: /root/.cache/vllm/torch_compile_cache/ac70997003/rank_0_0/backbone for vLLM's torch.compile
+(EngineCore pid=278169) INFO 08-23 07:51:44 [backends.py:1148] Dynamo bytecode transform time: 31.30 s
+(EngineCore pid=278169) INFO 08-23 07:51:45 [backends.py:292] Directly load the compiled graph(s) for compile range (1, 2048) from the cache, took 0.891 s
+(EngineCore pid=278169) INFO 08-23 07:51:45 [decorators.py:311] Directly load AOT compilation from path /root/.cache/vllm/torch_compile_cache/torch_aot_compile/499d317bbdc8036404dfda0f507ac73baf59e6d23f1af07b73676bd1fdf800b2/rank_0_0/model
+(EngineCore pid=278169) INFO 08-23 07:51:45 [monitor.py:53] torch.compile took 32.40 s in total
+(EngineCore pid=278169) INFO 08-23 07:51:45 [monitor.py:81] Initial profiling/warmup run took 0.20 s
+(EngineCore pid=278169) INFO 08-23 07:51:46 [gpu_worker.py:538] Available KV cache memory: 7.0 GiB
+(EngineCore pid=278169) INFO 08-23 07:51:46 [kv_cache_utils.py:2146] GPU KV cache size: 131,152 tokens
+(EngineCore pid=278169) INFO 08-23 07:51:46 [kv_cache_utils.py:2147] Maximum concurrency for 16,384 tokens per request: 8.00x
+(EngineCore pid=278169) INFO 08-23 07:51:46 [factory.py:62] Creating v1 connector with name: NixlPullConnector and engine_id: 9ceed0e0-3323-4f08-b93f-18dfb4c0381c
+(EngineCore pid=278169) WARNING 08-23 07:51:46 [base.py:190] Initializing KVConnectorBase_V1. This API is experimental and subject to change in the future as we iterate the design.
+(EngineCore pid=278169) INFO 08-23 07:51:46 [base_worker.py:249] Initializing NIXL wrapper
+(EngineCore pid=278169) INFO 08-23 07:51:46 [base_worker.py:250] Initializing NIXL worker 9ceed0e0-3323-4f08-b93f-18dfb4c0381c
+(EngineCore pid=278169) 2026-08-23 07:51:47 NIXL INFO    _api.py:390 Backend UCX was instantiated
+(EngineCore pid=278169) 2026-08-23 07:51:47 NIXL INFO    _api.py:268 Initialized NIXL agent: 5d14c880-d138-4ad5-a68b-4078c04b0b4b
+(EngineCore pid=278169) INFO 08-23 07:51:47 [base_worker.py:478] Detected attention backend(s) ['FLASH_ATTN']
+(EngineCore pid=278169) INFO 08-23 07:51:47 [base_worker.py:482] Detected kv cache layout HND
+(EngineCore pid=278169) INFO 08-23 07:51:47 [base_worker.py:986] Registering KV_Caches. use_mla: False, kv_buffer_device: cuda, use_host_buffer: False
+(EngineCore pid=278169) INFO 08-23 07:51:47 [cutedsl_warmup.py:97] Skipping CuTeDSL warmup because no compile units were requested.
+(EngineCore pid=278169) Capturing CUDA graphs (PIECEWISE):   0%|          | 0/51 [00:00<?, ?it/s]Capturing CUDA graphs (PIECEWISE):   4%|▍         | 2/51 [00:00<00:03, 15.14it/s]Capturing CUDA graphs (PIECEWISE):   8%|▊         | 4/51 [00:00<00:03, 15.55it/s]Capturing CUDA graphs (PIECEWISE):  12%|█▏        | 6/51 [00:00<00:02, 15.87it/s]Capturing CUDA graphs (PIECEWISE):  16%|█▌        | 8/51 [00:00<00:02, 16.10it/s]Capturing CUDA graphs (PIECEWISE):  20%|█▉        | 10/51 [00:00<00:02, 16.91it/s]Capturing CUDA graphs (PIECEWISE):  24%|██▎       | 12/51 [00:00<00:02, 17.55it/s]Capturing CUDA graphs (PIECEWISE):  27%|██▋       | 14/51 [00:00<00:02, 18.05it/s]Capturing CUDA graphs (PIECEWISE):  31%|███▏      | 16/51 [00:00<00:01, 18.50it/s]Capturing CUDA graphs (PIECEWISE):  37%|███▋      | 19/51 [00:01<00:01, 20.13it/s]Capturing CUDA graphs (PIECEWISE):  43%|████▎     | 22/51 [00:01<00:01, 20.96it/s]Capturing CUDA graphs (PIECEWISE):  49%|████▉     | 25/51 [00:01<00:01, 21.98it/s]Capturing CUDA graphs (PIECEWISE):  55%|█████▍    | 28/51 [00:01<00:00, 23.19it/s]Capturing CUDA graphs (PIECEWISE):  61%|██████    | 31/51 [00:01<00:00, 23.05it/s]Capturing CUDA graphs (PIECEWISE):  67%|██████▋   | 34/51 [00:01<00:00, 23.91it/s]Capturing CUDA graphs (PIECEWISE):  73%|███████▎  | 37/51 [00:01<00:00, 24.85it/s]Capturing CUDA graphs (PIECEWISE):  78%|███████▊  | 40/51 [00:01<00:00, 25.76it/s]Capturing CUDA graphs (PIECEWISE):  84%|████████▍ | 43/51 [00:01<00:00, 26.59it/s]Capturing CUDA graphs (PIECEWISE):  90%|█████████ | 46/51 [00:02<00:00, 27.36it/s]Capturing CUDA graphs (PIECEWISE):  98%|█████████▊| 50/51 [00:02<00:00, 28.60it/s]Capturing CUDA graphs (PIECEWISE): 100%|██████████| 51/51 [00:02<00:00, 22.46it/s]
+(EngineCore pid=278169) Capturing CUDA graphs (FULL):   0%|          | 0/35 [00:00<?, ?it/s]Capturing CUDA graphs (FULL):   9%|▊         | 3/35 [00:00<00:01, 21.69it/s]Capturing CUDA graphs (FULL):  17%|█▋        | 6/35 [00:00<00:01, 22.97it/s]Capturing CUDA graphs (FULL):  26%|██▌       | 9/35 [00:00<00:01, 23.73it/s]Capturing CUDA graphs (FULL):  34%|███▍      | 12/35 [00:00<00:00, 24.74it/s]Capturing CUDA graphs (FULL):  43%|████▎     | 15/35 [00:00<00:00, 24.75it/s]Capturing CUDA graphs (FULL):  51%|█████▏    | 18/35 [00:00<00:00, 25.86it/s]Capturing CUDA graphs (FULL):  60%|██████    | 21/35 [00:00<00:00, 26.87it/s]Capturing CUDA graphs (FULL):  71%|███████▏  | 25/35 [00:00<00:00, 28.28it/s]Capturing CUDA graphs (FULL):  83%|████████▎ | 29/35 [00:01<00:00, 29.16it/s]Capturing CUDA graphs (FULL):  94%|█████████▍| 33/35 [00:01<00:00, 30.53it/s]Capturing CUDA graphs (FULL): 100%|██████████| 35/35 [00:01<00:00, 27.71it/s]
+(EngineCore pid=278169) INFO 08-23 07:51:51 [model_runner.py:722] Graph capturing finished in 4 secs, took 0.53 GiB
+(EngineCore pid=278169) INFO 08-23 07:51:52 [jit_monitor.py:73] Kernel JIT monitor activated; monitored JIT compilations during inference will use mode=warn.
+(EngineCore pid=278169) INFO 08-23 07:51:52 [core.py:337] init engine (profile, create kv cache, warmup model) took 39.57 s (compilation: 32.40 s)
+(EngineCore pid=278169) INFO 08-23 07:51:57 [factory.py:62] Creating v1 connector with name: NixlPullConnector and engine_id: 9ceed0e0-3323-4f08-b93f-18dfb4c0381c
+(EngineCore pid=278169) WARNING 08-23 07:51:57 [base.py:190] Initializing KVConnectorBase_V1. This API is experimental and subject to change in the future as we iterate the design.
+(EngineCore pid=278169) INFO 08-23 07:51:57 [base_scheduler.py:96] Initializing NIXL Scheduler 9ceed0e0-3323-4f08-b93f-18dfb4c0381c
+(EngineCore pid=278169) INFO 08-23 07:51:57 [vllm.py:1042] Asynchronous scheduling is enabled.
+(EngineCore pid=278169) INFO 08-23 07:51:57 [kernel.py:292] Final IR op priority after setting platform defaults: IrOpPriorityConfig(rms_norm=['native'], fused_add_rms_norm=['native'])
+(APIServer pid=277854) INFO 08-23 07:51:57 [api_server.py:612] Supported tasks: ['generate']
+(APIServer pid=277854) WARNING 08-23 07:51:58 [model.py:1528] Default vLLM sampling parameters have been overridden by the model's `generation_config.json`: `{'repetition_penalty': 1.05, 'temperature': 0.7, 'top_k': 20, 'top_p': 0.8}`. If this is not intended, please relaunch vLLM instance with `--generation-config vllm`.
+(APIServer pid=277854) INFO 08-23 07:52:05 [hf.py:548] Detected the chat template content format to be 'string'. You can set `--chat-template-content-format` to override this.
+(APIServer pid=277854) INFO 08-23 07:52:08 [api_server.py:616] Starting vLLM server on http://0.0.0.0:8200
+(APIServer pid=277854) INFO 08-23 07:52:08 [launcher.py:37] Available routes are:
+(APIServer pid=277854) INFO 08-23 07:52:08 [launcher.py:46] Route: /openapi.json, Methods: HEAD, GET
+(APIServer pid=277854) INFO 08-23 07:52:08 [launcher.py:46] Route: /docs, Methods: HEAD, GET
+(APIServer pid=277854) INFO 08-23 07:52:08 [launcher.py:46] Route: /docs/oauth2-redirect, Methods: HEAD, GET
+(APIServer pid=277854) INFO 08-23 07:52:08 [launcher.py:46] Route: /redoc, Methods: HEAD, GET
+(APIServer pid=277854) INFO 08-23 07:52:08 [launcher.py:46] Route: /load, Methods: GET
+(APIServer pid=277854) INFO 08-23 07:52:08 [launcher.py:46] Route: /version, Methods: GET
+(APIServer pid=277854) INFO 08-23 07:52:08 [launcher.py:46] Route: /health, Methods: GET
+(APIServer pid=277854) INFO 08-23 07:52:08 [launcher.py:46] Route: /metrics, Methods: GET
+(APIServer pid=277854) INFO 08-23 07:52:08 [launcher.py:46] Route: /tokenize, Methods: POST
+(APIServer pid=277854) INFO 08-23 07:52:08 [launcher.py:46] Route: /detokenize, Methods: POST
+(APIServer pid=277854) INFO 08-23 07:52:08 [launcher.py:46] Route: /v1/models, Methods: GET
+(APIServer pid=277854) INFO 08-23 07:52:08 [launcher.py:46] Route: /ping, Methods: GET
+(APIServer pid=277854) INFO 08-23 07:52:08 [launcher.py:46] Route: /ping, Methods: POST
+(APIServer pid=277854) INFO 08-23 07:52:08 [launcher.py:46] Route: /invocations, Methods: POST
+(APIServer pid=277854) INFO 08-23 07:52:08 [launcher.py:46] Route: /v1/chat/completions, Methods: POST
+(APIServer pid=277854) INFO 08-23 07:52:08 [launcher.py:46] Route: /v1/chat/completions/batch, Methods: POST
+(APIServer pid=277854) INFO 08-23 07:52:08 [launcher.py:46] Route: /v1/responses, Methods: POST
+(APIServer pid=277854) INFO 08-23 07:52:08 [launcher.py:46] Route: /v1/responses/{response_id}, Methods: GET
+(APIServer pid=277854) INFO 08-23 07:52:08 [launcher.py:46] Route: /v1/responses/{response_id}/cancel, Methods: POST
+(APIServer pid=277854) INFO 08-23 07:52:08 [launcher.py:46] Route: /v1/completions, Methods: POST
+(APIServer pid=277854) INFO 08-23 07:52:08 [launcher.py:46] Route: /v1/messages, Methods: POST
+(APIServer pid=277854) INFO 08-23 07:52:08 [launcher.py:46] Route: /v1/messages/count_tokens, Methods: POST
+(APIServer pid=277854) INFO 08-23 07:52:08 [launcher.py:46] Route: /generative_scoring, Methods: POST
+(APIServer pid=277854) INFO 08-23 07:52:08 [launcher.py:46] Route: /scale_elastic_ep, Methods: POST
+(APIServer pid=277854) INFO 08-23 07:52:08 [launcher.py:46] Route: /is_scaling_elastic_ep, Methods: POST
+(APIServer pid=277854) INFO 08-23 07:52:08 [launcher.py:46] Route: /v1/chat/completions/render, Methods: POST
+(APIServer pid=277854) INFO 08-23 07:52:08 [launcher.py:46] Route: /v1/completions/render, Methods: POST
+(APIServer pid=277854) INFO 08-23 07:52:08 [launcher.py:46] Route: /v1/chat/completions/derender, Methods: POST
+(APIServer pid=277854) INFO 08-23 07:52:08 [launcher.py:46] Route: /v1/completions/derender, Methods: POST
+(APIServer pid=277854) INFO 08-23 07:52:08 [launcher.py:46] Route: /inference/v1/generate, Methods: POST
+(APIServer pid=277854) INFO:     Started server process [277854]
+(APIServer pid=277854) INFO:     Waiting for application startup.
+(APIServer pid=277854) INFO:     Application startup complete.
+(APIServer pid=277854) INFO:     127.0.0.1:52406 - "GET /health HTTP/1.1" 200 OK
+(APIServer pid=277854) INFO:     127.0.0.1:58392 - "GET /metrics HTTP/1.1" 200 OK
+(APIServer pid=277854) INFO:     127.0.0.1:34668 - "POST /v1/completions HTTP/1.1" 200 OK
+(EngineCore pid=278169) INFO 08-23 07:52:22 [base_worker.py:619] NIXL compatibility check passed (hash: 5c9722c4d475722327891b1232c2c4368f0fa1b25de8a4a0b1bd097e5342c92e)
+(EngineCore pid=278169) INFO 08-23 07:52:22 [base_worker.py:1493] Transfer plan: TransferTopology(tp_ratio=1, num_kv_heads=4, local_tp=1, remote_tp=1, remote_pp=0, local_rank=0, remote_block_len=32768)
+(EngineCore pid=278169) INFO 08-23 07:52:22 [base_worker.py:2101] EXT1_KV req_id=cmpl-ext1-512-000-953685-0-a404055b remote_request_id=cmpl-ext1-512-000-953685-0-8d767015 kv_wait_ms=409.792 t0_epoch=1787471542.562085 done_epoch=1787471542.971878 bytes=29360128 xfer_us=137775 post_us=1898 descs=1792 handles=1
+(APIServer pid=277854) INFO:     127.0.0.1:34668 - "POST /v1/completions HTTP/1.1" 200 OK
+(EngineCore pid=278169) INFO 08-23 07:52:23 [base_worker.py:2101] EXT1_KV req_id=cmpl-ext1-512-001-9a2a8b-0-8dfcbc22 remote_request_id=cmpl-ext1-512-001-9a2a8b-0-86127ae2 kv_wait_ms=104.929 t0_epoch=1787471543.576117 done_epoch=1787471543.681046 bytes=29360128 xfer_us=104560 post_us=1914 descs=1792 handles=1
+(APIServer pid=277854) INFO:     127.0.0.1:34668 - "POST /v1/completions HTTP/1.1" 200 OK
+(EngineCore pid=278169) INFO 08-23 07:52:24 [base_worker.py:2101] EXT1_KV req_id=cmpl-ext1-512-002-fec344-0-addb581f remote_request_id=cmpl-ext1-512-002-fec344-0-b4532932 kv_wait_ms=117.792 t0_epoch=1787471544.278436 done_epoch=1787471544.396228 bytes=29360128 xfer_us=117482 post_us=4071 descs=1792 handles=1
+(APIServer pid=277854) INFO:     127.0.0.1:34668 - "POST /v1/completions HTTP/1.1" 200 OK
+(EngineCore pid=278169) INFO 08-23 07:52:25 [base_worker.py:2101] EXT1_KV req_id=cmpl-ext1-512-003-b7922d-0-af89d72b remote_request_id=cmpl-ext1-512-003-b7922d-0-badc81aa kv_wait_ms=111.124 t0_epoch=1787471544.994291 done_epoch=1787471545.105415 bytes=29360128 xfer_us=110776 post_us=5730 descs=1792 handles=1
+(APIServer pid=277854) INFO:     127.0.0.1:34668 - "POST /v1/completions HTTP/1.1" 200 OK
+(EngineCore pid=278169) INFO 08-23 07:52:25 [base_worker.py:2101] EXT1_KV req_id=cmpl-ext1-512-004-8ab423-0-be01dcda remote_request_id=cmpl-ext1-512-004-8ab423-0-8293de92 kv_wait_ms=120.343 t0_epoch=1787471545.703611 done_epoch=1787471545.823955 bytes=29360128 xfer_us=120013 post_us=3791 descs=1792 handles=1
+(APIServer pid=277854) INFO:     127.0.0.1:34668 - "POST /v1/completions HTTP/1.1" 200 OK
+(EngineCore pid=278169) INFO 08-23 07:52:26 [base_worker.py:2101] EXT1_KV req_id=cmpl-ext1-512-005-3885a1-0-a87b77d4 remote_request_id=cmpl-ext1-512-005-3885a1-0-85da4e13 kv_wait_ms=123.575 t0_epoch=1787471546.421689 done_epoch=1787471546.545264 bytes=29360128 xfer_us=123257 post_us=4414 descs=1792 handles=1
+(APIServer pid=277854) INFO:     127.0.0.1:34668 - "POST /v1/completions HTTP/1.1" 200 OK
+(EngineCore pid=278169) INFO 08-23 07:52:27 [base_worker.py:2101] EXT1_KV req_id=cmpl-ext1-512-006-47fa5a-0-9c6c52ce remote_request_id=cmpl-ext1-512-006-47fa5a-0-99b8c567 kv_wait_ms=118.387 t0_epoch=1787471547.145097 done_epoch=1787471547.263483 bytes=29360128 xfer_us=118058 post_us=4643 descs=1792 handles=1
+(APIServer pid=277854) INFO:     127.0.0.1:34668 - "POST /v1/completions HTTP/1.1" 200 OK
+(EngineCore pid=278169) INFO 08-23 07:52:27 [base_worker.py:2101] EXT1_KV req_id=cmpl-ext1-512-007-8a063d-0-bb672a54 remote_request_id=cmpl-ext1-512-007-8a063d-0-85fc312e kv_wait_ms=121.750 t0_epoch=1787471547.859511 done_epoch=1787471547.981261 bytes=29360128 xfer_us=121423 post_us=4008 descs=1792 handles=1
+(APIServer pid=277854) INFO:     127.0.0.1:34668 - "POST /v1/completions HTTP/1.1" 200 OK
+(EngineCore pid=278169) INFO 08-23 07:52:28 [base_worker.py:2101] EXT1_KV req_id=cmpl-ext1-512-008-0cb8d8-0-b664ee06 remote_request_id=cmpl-ext1-512-008-0cb8d8-0-be8a244e kv_wait_ms=118.237 t0_epoch=1787471548.580418 done_epoch=1787471548.698655 bytes=29360128 xfer_us=117939 post_us=4446 descs=1792 handles=1
+(APIServer pid=277854) INFO 08-23 07:52:28 [loggers.py:273] Engine 000: Avg prompt throughput: 0.0 tokens/s, Avg generation throughput: 25.6 tokens/s, Running: 1 reqs, Waiting: 0 reqs, GPU KV cache usage: 0.4%, Prefix cache hit rate: 0.0%, External prefix cache hit rate: 100.0%
+(APIServer pid=277854) INFO 08-23 07:52:28 [metrics.py:103] KV Transfer metrics: Num successful transfers=9, Avg xfer time (ms)=119.031, P90 xfer time (ms)=126.161, Avg post time (ms)=3.879, P90 post time (ms)=4.86, Avg MB per transfer=28.0, Throughput (MB/s)=235.232, Avg number of descriptors=1792.0
+(APIServer pid=277854) INFO:     127.0.0.1:34668 - "POST /v1/completions HTTP/1.1" 200 OK
+(EngineCore pid=278169) INFO 08-23 07:52:29 [base_worker.py:2101] EXT1_KV req_id=cmpl-ext1-512-009-c445cc-0-ab84f1bb remote_request_id=cmpl-ext1-512-009-c445cc-0-a237069f kv_wait_ms=119.945 t0_epoch=1787471549.299742 done_epoch=1787471549.419687 bytes=29360128 xfer_us=119654 post_us=3304 descs=1792 handles=1
+(APIServer pid=277854) INFO:     127.0.0.1:34668 - "POST /v1/completions HTTP/1.1" 200 OK
+(EngineCore pid=278169) INFO 08-23 07:52:30 [base_worker.py:2101] EXT1_KV req_id=cmpl-ext1-512-010-4f88a5-0-a7f74ace remote_request_id=cmpl-ext1-512-010-4f88a5-0-9da9d1b7 kv_wait_ms=116.117 t0_epoch=1787471550.018522 done_epoch=1787471550.134639 bytes=29360128 xfer_us=115717 post_us=4471 descs=1792 handles=1
+(APIServer pid=277854) INFO:     127.0.0.1:34668 - "POST /v1/completions HTTP/1.1" 200 OK
+(EngineCore pid=278169) INFO 08-23 07:52:30 [base_worker.py:2101] EXT1_KV req_id=cmpl-ext1-512-011-3c2918-0-a327a6f8 remote_request_id=cmpl-ext1-512-011-3c2918-0-973f7834 kv_wait_ms=117.211 t0_epoch=1787471550.734668 done_epoch=1787471550.851879 bytes=29360128 xfer_us=116853 post_us=3935 descs=1792 handles=1
+(APIServer pid=277854) INFO:     127.0.0.1:34668 - "POST /v1/completions HTTP/1.1" 200 OK
+(EngineCore pid=278169) INFO 08-23 07:52:32 [base_worker.py:2101] EXT1_KV req_id=cmpl-ext1-2048-000-c1b42c-0-a49e26f8 remote_request_id=cmpl-ext1-2048-000-c1b42c-0-b2b01e8d kv_wait_ms=462.842 t0_epoch=1787471551.650131 done_epoch=1787471552.112973 bytes=117440512 xfer_us=462231 post_us=6729 descs=7168 handles=1
+(APIServer pid=277854) INFO:     127.0.0.1:34668 - "POST /v1/completions HTTP/1.1" 200 OK
+(EngineCore pid=278169) INFO 08-23 07:52:33 [base_worker.py:2101] EXT1_KV req_id=cmpl-ext1-2048-001-06fe4e-0-acb00227 remote_request_id=cmpl-ext1-2048-001-06fe4e-0-8eef3dc0 kv_wait_ms=487.024 t0_epoch=1787471552.912730 done_epoch=1787471553.399755 bytes=117440512 xfer_us=486419 post_us=6375 descs=7168 handles=1
+(APIServer pid=277854) INFO:     127.0.0.1:34668 - "POST /v1/completions HTTP/1.1" 200 OK
+(EngineCore pid=278169) INFO 08-23 07:52:34 [base_worker.py:2101] EXT1_KV req_id=cmpl-ext1-2048-002-dadae5-0-9237771a remote_request_id=cmpl-ext1-2048-002-dadae5-0-b8ca0f64 kv_wait_ms=480.046 t0_epoch=1787471554.200111 done_epoch=1787471554.680157 bytes=117440512 xfer_us=479217 post_us=5911 descs=7168 handles=1
+(APIServer pid=277854) INFO:     127.0.0.1:34668 - "POST /v1/completions HTTP/1.1" 200 OK
+(EngineCore pid=278169) INFO 08-23 07:52:35 [base_worker.py:2101] EXT1_KV req_id=cmpl-ext1-2048-003-b59bf0-0-800085a6 remote_request_id=cmpl-ext1-2048-003-b59bf0-0-89fe0524 kv_wait_ms=464.666 t0_epoch=1787471555.474825 done_epoch=1787471555.939491 bytes=117440512 xfer_us=464000 post_us=4229 descs=7168 handles=1
+(APIServer pid=277854) INFO:     127.0.0.1:34668 - "POST /v1/completions HTTP/1.1" 200 OK
+(EngineCore pid=278169) INFO 08-23 07:52:37 [base_worker.py:2101] EXT1_KV req_id=cmpl-ext1-2048-004-2b9610-0-afd4e490 remote_request_id=cmpl-ext1-2048-004-2b9610-0-9c27854a kv_wait_ms=455.746 t0_epoch=1787471556.739687 done_epoch=1787471557.195433 bytes=117440512 xfer_us=454532 post_us=3786 descs=7168 handles=1
+(APIServer pid=277854) INFO:     127.0.0.1:34668 - "POST /v1/completions HTTP/1.1" 200 OK
+(EngineCore pid=278169) INFO 08-23 07:52:38 [base_worker.py:2101] EXT1_KV req_id=cmpl-ext1-2048-005-15de63-0-acb1db27 remote_request_id=cmpl-ext1-2048-005-15de63-0-ba765ed2 kv_wait_ms=447.436 t0_epoch=1787471557.996788 done_epoch=1787471558.444223 bytes=117440512 xfer_us=446704 post_us=4343 descs=7168 handles=1
+(APIServer pid=277854) INFO 08-23 07:52:38 [loggers.py:273] Engine 000: Avg prompt throughput: 0.0 tokens/s, Avg generation throughput: 30.5 tokens/s, Running: 1 reqs, Waiting: 0 reqs, GPU KV cache usage: 1.6%, Prefix cache hit rate: 0.0%, External prefix cache hit rate: 100.0%
+(APIServer pid=277854) INFO 08-23 07:52:38 [metrics.py:103] KV Transfer metrics: Num successful transfers=9, Avg xfer time (ms)=349.481, P90 xfer time (ms)=480.657, Avg post time (ms)=4.787, P90 post time (ms)=6.446, Avg MB per transfer=84.0, Throughput (MB/s)=240.357, Avg number of descriptors=5376.0
+(APIServer pid=277854) INFO:     127.0.0.1:34668 - "POST /v1/completions HTTP/1.1" 200 OK
+(EngineCore pid=278169) INFO 08-23 07:52:39 [base_worker.py:2101] EXT1_KV req_id=cmpl-ext1-2048-006-89d227-0-8c4da30c remote_request_id=cmpl-ext1-2048-006-89d227-0-916c5bad kv_wait_ms=447.134 t0_epoch=1787471559.243321 done_epoch=1787471559.690455 bytes=117440512 xfer_us=446435 post_us=6392 descs=7168 handles=1
+(APIServer pid=277854) INFO:     127.0.0.1:34668 - "POST /v1/completions HTTP/1.1" 200 OK
+(EngineCore pid=278169) INFO 08-23 07:52:40 [base_worker.py:2101] EXT1_KV req_id=cmpl-ext1-2048-007-cfe063-0-a52ec782 remote_request_id=cmpl-ext1-2048-007-cfe063-0-b8caa9ff kv_wait_ms=437.115 t0_epoch=1787471560.489913 done_epoch=1787471560.927028 bytes=117440512 xfer_us=436404 post_us=5251 descs=7168 handles=1
+(APIServer pid=277854) INFO:     127.0.0.1:34668 - "POST /v1/completions HTTP/1.1" 200 OK
+(EngineCore pid=278169) INFO 08-23 07:52:42 [base_worker.py:2101] EXT1_KV req_id=cmpl-ext1-2048-008-422684-0-9045b579 remote_request_id=cmpl-ext1-2048-008-422684-0-88ae9d8a kv_wait_ms=446.250 t0_epoch=1787471561.725526 done_epoch=1787471562.171776 bytes=117440512 xfer_us=445573 post_us=4404 descs=7168 handles=1
+(APIServer pid=277854) INFO:     127.0.0.1:34668 - "POST /v1/completions HTTP/1.1" 200 OK
+(EngineCore pid=278169) INFO 08-23 07:52:43 [base_worker.py:2101] EXT1_KV req_id=cmpl-ext1-2048-009-3767ec-0-88514a1f remote_request_id=cmpl-ext1-2048-009-3767ec-0-810267fb kv_wait_ms=446.683 t0_epoch=1787471562.968906 done_epoch=1787471563.415589 bytes=117440512 xfer_us=445978 post_us=4877 descs=7168 handles=1
+(APIServer pid=277854) INFO:     127.0.0.1:34668 - "POST /v1/completions HTTP/1.1" 200 OK
+(EngineCore pid=278169) INFO 08-23 07:52:44 [base_worker.py:2101] EXT1_KV req_id=cmpl-ext1-2048-010-860e52-0-b1d94f4f remote_request_id=cmpl-ext1-2048-010-860e52-0-aaa0e382 kv_wait_ms=461.890 t0_epoch=1787471564.212078 done_epoch=1787471564.673969 bytes=117440512 xfer_us=461188 post_us=4887 descs=7168 handles=1
+(APIServer pid=277854) INFO:     127.0.0.1:34668 - "POST /v1/completions HTTP/1.1" 200 OK
+(EngineCore pid=278169) INFO 08-23 07:52:45 [base_worker.py:2101] EXT1_KV req_id=cmpl-ext1-2048-011-9c358e-0-a0d4acd6 remote_request_id=cmpl-ext1-2048-011-9c358e-0-96c401be kv_wait_ms=462.650 t0_epoch=1787471565.470619 done_epoch=1787471565.933269 bytes=117440512 xfer_us=461853 post_us=5371 descs=7168 handles=1
+(APIServer pid=277854) INFO:     127.0.0.1:34668 - "POST /v1/completions HTTP/1.1" 200 OK
+(APIServer pid=277854) INFO 08-23 07:52:48 [loggers.py:273] Engine 000: Avg prompt throughput: 0.0 tokens/s, Avg generation throughput: 20.7 tokens/s, Running: 0 reqs, Waiting: 1 reqs, Deferred: 1 reqs, GPU KV cache usage: 6.2%, Prefix cache hit rate: 0.0%, External prefix cache hit rate: 100.0%
+(APIServer pid=277854) INFO 08-23 07:52:48 [metrics.py:103] KV Transfer metrics: Num successful transfers=6, Avg xfer time (ms)=449.572, P90 xfer time (ms)=461.521, Avg post time (ms)=5.197, P90 post time (ms)=5.881, Avg MB per transfer=112.0, Throughput (MB/s)=249.126, Avg number of descriptors=7168.0
+(EngineCore pid=278169) INFO 08-23 07:52:49 [base_worker.py:2101] EXT1_KV req_id=cmpl-ext1-8192-000-04a5e4-0-b0c33cd4 remote_request_id=cmpl-ext1-8192-000-04a5e4-0-861d92d4 kv_wait_ms=1770.294 t0_epoch=1787471567.542467 done_epoch=1787471569.312761 bytes=469762048 xfer_us=1766828 post_us=17892 descs=28672 handles=1
+(APIServer pid=277854) INFO:     127.0.0.1:34668 - "POST /v1/completions HTTP/1.1" 200 OK
+(EngineCore pid=278169) INFO 08-23 07:52:52 [base_worker.py:2101] EXT1_KV req_id=cmpl-ext1-8192-001-db0d37-0-ab33a3e0 remote_request_id=cmpl-ext1-8192-001-db0d37-0-a59a1a93 kv_wait_ms=1727.958 t0_epoch=1787471570.859798 done_epoch=1787471572.587756 bytes=469762048 xfer_us=1726100 post_us=23081 descs=28672 handles=1
+(APIServer pid=277854) INFO:     127.0.0.1:34668 - "POST /v1/completions HTTP/1.1" 200 OK
+(EngineCore pid=278169) INFO 08-23 07:52:55 [base_worker.py:2101] EXT1_KV req_id=cmpl-ext1-8192-002-9464ed-0-a6018909 remote_request_id=cmpl-ext1-8192-002-9464ed-0-a0b48d42 kv_wait_ms=1723.174 t0_epoch=1787471574.144595 done_epoch=1787471575.867769 bytes=469762048 xfer_us=1721293 post_us=30663 descs=28672 handles=1
+(APIServer pid=277854) INFO:     127.0.0.1:34668 - "POST /v1/completions HTTP/1.1" 200 OK
+(APIServer pid=277854) INFO 08-23 07:52:58 [loggers.py:273] Engine 000: Avg prompt throughput: 0.0 tokens/s, Avg generation throughput: 9.6 tokens/s, Running: 0 reqs, Waiting: 1 reqs, Deferred: 1 reqs, GPU KV cache usage: 6.2%, Prefix cache hit rate: 0.0%, External prefix cache hit rate: 100.0%
+(APIServer pid=277854) INFO 08-23 07:52:58 [metrics.py:103] KV Transfer metrics: Num successful transfers=3, Avg xfer time (ms)=1738.074, P90 xfer time (ms)=1758.682, Avg post time (ms)=23.879, P90 post time (ms)=29.147, Avg MB per transfer=448.0, Throughput (MB/s)=257.757, Avg number of descriptors=28672.0
+(EngineCore pid=278169) INFO 08-23 07:52:59 [base_worker.py:2101] EXT1_KV req_id=cmpl-ext1-8192-003-d6c621-0-b7fb5ad1 remote_request_id=cmpl-ext1-8192-003-d6c621-0-9e0a1ae1 kv_wait_ms=1712.957 t0_epoch=1787471577.443335 done_epoch=1787471579.156292 bytes=469762048 xfer_us=1711382 post_us=19805 descs=28672 handles=1
+(APIServer pid=277854) INFO:     127.0.0.1:34668 - "POST /v1/completions HTTP/1.1" 200 OK
+(EngineCore pid=278169) INFO 08-23 07:53:02 [base_worker.py:2101] EXT1_KV req_id=cmpl-ext1-8192-004-3fa530-0-993bddc0 remote_request_id=cmpl-ext1-8192-004-3fa530-0-974f9974 kv_wait_ms=1723.700 t0_epoch=1787471580.747895 done_epoch=1787471582.471594 bytes=469762048 xfer_us=1721898 post_us=23429 descs=28672 handles=1
+(APIServer pid=277854) INFO:     127.0.0.1:34668 - "POST /v1/completions HTTP/1.1" 200 OK
+(EngineCore pid=278169) INFO 08-23 07:53:05 [base_worker.py:2101] EXT1_KV req_id=cmpl-ext1-8192-005-f431c7-0-90807e69 remote_request_id=cmpl-ext1-8192-005-f431c7-0-bbb0a62e kv_wait_ms=1729.272 t0_epoch=1787471584.065065 done_epoch=1787471585.794338 bytes=469762048 xfer_us=1727397 post_us=27571 descs=28672 handles=1
+(APIServer pid=277854) INFO:     127.0.0.1:34668 - "POST /v1/completions HTTP/1.1" 200 OK
+(APIServer pid=277854) INFO 08-23 07:53:08 [loggers.py:273] Engine 000: Avg prompt throughput: 0.0 tokens/s, Avg generation throughput: 9.6 tokens/s, Running: 0 reqs, Waiting: 1 reqs, Deferred: 1 reqs, GPU KV cache usage: 6.2%, Prefix cache hit rate: 0.0%, External prefix cache hit rate: 100.0%
+(APIServer pid=277854) INFO 08-23 07:53:08 [metrics.py:103] KV Transfer metrics: Num successful transfers=3, Avg xfer time (ms)=1720.226, P90 xfer time (ms)=1726.297, Avg post time (ms)=23.602, P90 post time (ms)=26.743, Avg MB per transfer=448.0, Throughput (MB/s)=260.431, Avg number of descriptors=28672.0
+(EngineCore pid=278169) INFO 08-23 07:53:09 [base_worker.py:2101] EXT1_KV req_id=cmpl-ext1-8192-006-46f9d1-0-af7e9178 remote_request_id=cmpl-ext1-8192-006-46f9d1-0-b174c2af kv_wait_ms=1790.473 t0_epoch=1787471587.384701 done_epoch=1787471589.175174 bytes=469762048 xfer_us=1788553 post_us=17564 descs=28672 handles=1
+(APIServer pid=277854) INFO:     127.0.0.1:34668 - "POST /v1/completions HTTP/1.1" 200 OK
+(EngineCore pid=278169) INFO 08-23 07:53:12 [base_worker.py:2101] EXT1_KV req_id=cmpl-ext1-8192-007-db7cc6-0-ab8d09c1 remote_request_id=cmpl-ext1-8192-007-db7cc6-0-acf1df1a kv_wait_ms=1777.239 t0_epoch=1787471590.763017 done_epoch=1787471592.540257 bytes=469762048 xfer_us=1776105 post_us=26333 descs=28672 handles=1
+(APIServer pid=277854) INFO:     127.0.0.1:34668 - "POST /v1/completions HTTP/1.1" 200 OK
+(EngineCore pid=278169) INFO 08-23 07:53:15 [base_worker.py:2101] EXT1_KV req_id=cmpl-ext1-8192-008-fac577-0-b79c2d1c remote_request_id=cmpl-ext1-8192-008-fac577-0-83819a1c kv_wait_ms=1763.778 t0_epoch=1787471594.119982 done_epoch=1787471595.883760 bytes=469762048 xfer_us=1762672 post_us=23735 descs=28672 handles=1
+(APIServer pid=277854) INFO:     127.0.0.1:34668 - "POST /v1/completions HTTP/1.1" 200 OK
+(APIServer pid=277854) INFO 08-23 07:53:18 [loggers.py:273] Engine 000: Avg prompt throughput: 0.0 tokens/s, Avg generation throughput: 9.6 tokens/s, Running: 0 reqs, Waiting: 1 reqs, Deferred: 1 reqs, GPU KV cache usage: 6.2%, Prefix cache hit rate: 0.0%, External prefix cache hit rate: 100.0%
+(APIServer pid=277854) INFO 08-23 07:53:18 [metrics.py:103] KV Transfer metrics: Num successful transfers=3, Avg xfer time (ms)=1775.777, P90 xfer time (ms)=1786.063, Avg post time (ms)=22.544, P90 post time (ms)=25.813, Avg MB per transfer=448.0, Throughput (MB/s)=252.284, Avg number of descriptors=28672.0
+(EngineCore pid=278169) INFO 08-23 07:53:19 [base_worker.py:2101] EXT1_KV req_id=cmpl-ext1-8192-009-031a44-0-a1c24e8a remote_request_id=cmpl-ext1-8192-009-031a44-0-8ef4e0c5 kv_wait_ms=1775.441 t0_epoch=1787471597.474820 done_epoch=1787471599.250261 bytes=469762048 xfer_us=1773664 post_us=27119 descs=28672 handles=1
+(APIServer pid=277854) INFO:     127.0.0.1:34668 - "POST /v1/completions HTTP/1.1" 200 OK
+(EngineCore pid=278169) INFO 08-23 07:53:22 [base_worker.py:2101] EXT1_KV req_id=cmpl-ext1-8192-010-77752d-0-aa597b5f remote_request_id=cmpl-ext1-8192-010-77752d-0-90d28659 kv_wait_ms=1828.710 t0_epoch=1787471600.826050 done_epoch=1787471602.654759 bytes=469762048 xfer_us=1827465 post_us=27072 descs=28672 handles=1
+(APIServer pid=277854) INFO:     127.0.0.1:34668 - "POST /v1/completions HTTP/1.1" 200 OK
+(EngineCore pid=278169) INFO 08-23 07:53:26 [base_worker.py:2101] EXT1_KV req_id=cmpl-ext1-8192-011-84a5b0-0-89e266e5 remote_request_id=cmpl-ext1-8192-011-84a5b0-0-956c6467 kv_wait_ms=1795.692 t0_epoch=1787471604.214082 done_epoch=1787471606.009774 bytes=469762048 xfer_us=1794605 post_us=25252 descs=28672 handles=1
+(APIServer pid=277854) INFO:     127.0.0.1:43142 - "GET /metrics HTTP/1.1" 200 OK
+(APIServer pid=277854) INFO 08-23 07:53:28 [launcher.py:100] [shutdown] API server: shutdown triggered
+(APIServer pid=277854) INFO 08-23 07:53:28 [launcher.py:116] [shutdown] API server: stopping engine client mode=abort timeout=0s
+(APIServer pid=277854) INFO 08-23 07:53:28 [core_client.py:655] [shutdown] MPClient: start timeout=0s
+(APIServer pid=277854) INFO 08-23 07:53:28 [core_client.py:657] [shutdown] MPClient: stopping engine manager
+(APIServer pid=277854) WARNING 08-23 07:53:28 [utils.py:626] [shutdown] Process manager: force killing remaining processes count=1
+(EngineCore pid=278169) INFO 08-23 07:53:28 [core.py:1214] [shutdown] EngineCore: trigger received signal=SIGTERM
+(EngineCore pid=278169) INFO 08-23 07:53:28 [core.py:1333] [shutdown] EngineCore: start mode=abort timeout=0s
+(EngineCore pid=278169) INFO 08-23 07:53:28 [core.py:1364] [shutdown] EngineCore: request processing complete; starting resource teardown
+(EngineCore pid=278169) INFO 08-23 07:53:28 [core.py:1227] [shutdown] EngineCore: exiting busy loop
+(APIServer pid=277854) INFO 08-23 07:53:28 [core_client.py:659] [shutdown] MPClient: engine manager stopped
+(APIServer pid=277854) INFO 08-23 07:53:28 [core_client.py:660] [shutdown] MPClient: cleaning up background resources
+(APIServer pid=277854) INFO 08-23 07:53:28 [core_client.py:662] [shutdown] MPClient: complete
+(APIServer pid=277854) INFO 08-23 07:53:28 [launcher.py:125] [shutdown] API server: engine client stopped
+(APIServer pid=277854) INFO 08-23 07:53:28 [launcher.py:128] [shutdown] API server: signalling HTTP server shutdown
+(APIServer pid=277854) INFO 08-23 07:53:28 [launcher.py:149] [shutdown] API server: shutting down FastAPI HTTP server
+(APIServer pid=277854) INFO:     Shutting down
+(APIServer pid=277854) INFO:     Waiting for application shutdown.
+(APIServer pid=277854) INFO:     Application shutdown complete.
+/usr/local/miniconda3/envs/py312/lib/python3.12/multiprocessing/resource_tracker.py:279: UserWarning: resource_tracker: There appear to be 1 leaked semaphore objects to clean up at shutdown
+  warnings.warn('resource_tracker: There appear to be %d '

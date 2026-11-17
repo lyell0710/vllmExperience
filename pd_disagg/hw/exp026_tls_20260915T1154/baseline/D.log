@@ -1,0 +1,36 @@
+2026-09-15 11:54:08 NIXL INFO    _api.py:390 Backend UCX was instantiated
+2026-09-15 11:54:08 NIXL INFO    _api.py:268 Initialized NIXL agent: EXP026_D
+[11:54:08] D ready: local=131538205278208 remote_agent=b'EXP026_P' region=134.2 MB
+[11:54:09] A contiguous  G=   16KiB n_desc=  4096   179.84ms  0.373 GB/s   43.91 us/desc
+[11:54:09] A contiguous  G=   64KiB n_desc=  1024   173.14ms  0.388 GB/s  169.08 us/desc
+[11:54:10] A contiguous  G=  256KiB n_desc=   256   175.97ms  0.381 GB/s  687.38 us/desc
+[11:54:10] A contiguous  G= 1024KiB n_desc=    64   177.35ms  0.378 GB/s 2771.17 us/desc
+[11:54:11] A contiguous  G= 4096KiB n_desc=    16   176.64ms  0.380 GB/s 11039.95 us/desc
+[11:54:11] A contiguous  G=16384KiB n_desc=     4   170.35ms  0.394 GB/s 42588.06 us/desc
+[11:54:12] A scattered   G=   16KiB n_desc=  4096   256.37ms  0.262 GB/s   62.59 us/desc
+[11:54:13] A scattered   G=   64KiB n_desc=  1024   198.90ms  0.337 GB/s  194.23 us/desc
+[11:54:13] A scattered   G=  256KiB n_desc=   256   181.85ms  0.369 GB/s  710.34 us/desc
+[11:54:14] A scattered   G= 1024KiB n_desc=    64   178.48ms  0.376 GB/s 2788.81 us/desc
+[11:54:14] A scattered   G= 4096KiB n_desc=    16   173.82ms  0.386 GB/s 10864.06 us/desc
+[11:54:15] A scattered   G=16384KiB n_desc=     4   172.33ms  0.389 GB/s 43081.53 us/desc
+[11:54:15] C contiguous  G=   16KiB skip_merge=0   174.53ms  0.385 GB/s tel_descCount=1
+[11:54:16] C contiguous  G=   16KiB skip_merge=1   253.06ms  0.265 GB/s tel_descCount=4096
+[11:54:17] C scattered   G=   16KiB skip_merge=0   249.43ms  0.269 GB/s tel_descCount=4096
+[11:54:18] C scattered   G=   16KiB skip_merge=1   255.87ms  0.262 GB/s tel_descCount=4096
+[11:54:18] C contiguous  G= 1024KiB skip_merge=0   195.54ms  0.343 GB/s tel_descCount=1
+[11:54:19] C contiguous  G= 1024KiB skip_merge=1   193.26ms  0.347 GB/s tel_descCount=64
+[11:54:19] C scattered   G= 1024KiB skip_merge=0   185.02ms  0.363 GB/s tel_descCount=64
+[11:54:20] C scattered   G= 1024KiB skip_merge=1   185.13ms  0.363 GB/s tel_descCount=64
+[11:54:20] D size=    8MiB G=16KiB n_desc=   512    23.36ms  0.359 GB/s
+[11:54:20] D size=   32MiB G=16KiB n_desc=  2048    92.08ms  0.364 GB/s
+[11:54:21] D size=  128MiB G=16KiB n_desc=  8192   369.47ms  0.363 GB/s
+[11:54:21] 写出 pd_disagg/hw/exp026_tls_20260915T1154/baseline/D.csv（23 行）
+[11:54:21] D 完成
+[1789473247.689167] [cpod-1u8o0xv30sr6:215277:0]     ucp_context.c:2659 UCX  INFO  Version 1.21.0 (loaded from /root/venvs/v0.25.1/lib/python3.12/site-packages/nixl_cu13/../.nixl_cu13.mesonpy.libs/plugins/../../nixl_cu13.libs/libucp-1da16952.so.0.0.0)
+[1789473248.455220] [cpod-1u8o0xv30sr6:215277:0]          parser.c:2364 UCX  INFO  UCX_* env variable: UCX_LOG_LEVEL=info
+[1789473248.497767] [cpod-1u8o0xv30sr6:215277:0]      ucp_worker.c:1984 UCX  INFO    ucp_context_0 self cfg#1 rma_am(tcp/eth0)  amo_am(tcp/eth0)  device(cuda_ipc/cuda)  am(tcp/eth0 cma/memory cuda_ipc/cuda)  ka(tcp/eth0)
+[1789473248.525250] [cpod-1u8o0xv30sr6:215277:0]      ucp_worker.c:1984 UCX  INFO    ucp_context_0 intra-node cfg#1 rma_am(tcp/eth0)  amo_am(tcp/eth0)  device(cuda_ipc/cuda)  am(tcp/eth0 cma/memory cuda_ipc/cuda)  ka(tcp/eth0)
+[1789473248.545421] [cpod-1u8o0xv30sr6:215277:0]      ucp_worker.c:1984 UCX  INFO    ucp_context_0 intra-node cfg#1 rma_am(tcp/eth0)  amo_am(tcp/eth0)  device(cuda_ipc/cuda)  am(tcp/eth0 cma/memory cuda_ipc/cuda)  ka(tcp/eth0)
+[1789473248.564967] [cpod-1u8o0xv30sr6:215277:0]      ucp_worker.c:1984 UCX  INFO    ucp_context_0 intra-node cfg#1 rma_am(tcp/eth0)  amo_am(tcp/eth0)  device(cuda_ipc/cuda)  am(tcp/eth0 cma/memory cuda_ipc/cuda)  ka(tcp/eth0)
+[1789473248.584025] [cpod-1u8o0xv30sr6:215277:0]      ucp_worker.c:1984 UCX  INFO    ucp_context_0 intra-node cfg#1 rma_am(tcp/eth0)  amo_am(tcp/eth0)  device(cuda_ipc/cuda)  am(tcp/eth0 cma/memory cuda_ipc/cuda)  ka(tcp/eth0)
+[1789473248.618717] [cpod-1u8o0xv30sr6:215277:0]      ucp_worker.c:1984 UCX  INFO    ucp_context_0 intra-node cfg#2 rma_am(tcp/eth0)  amo_am(tcp/eth0)  device(cuda_ipc/cuda)  am(tcp/eth0 cma/memory cuda_ipc/cuda)  ka(tcp/eth0)

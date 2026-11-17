@@ -1,0 +1,36 @@
+2026-09-15 12:35:56 NIXL INFO    _api.py:390 Backend UCX was instantiated
+2026-09-15 12:35:56 NIXL INFO    _api.py:268 Initialized NIXL agent: EXP026_D
+[12:35:57] D ready: local=135394012168192 remote_agent=b'EXP026_P' region=134.2 MB
+[12:35:57] A contiguous  G=   16KiB n_desc=  4096   176.33ms  0.381 GB/s   43.05 us/desc
+[12:35:58] A contiguous  G=   64KiB n_desc=  1024   172.23ms  0.390 GB/s  168.20 us/desc
+[12:35:58] A contiguous  G=  256KiB n_desc=   256   169.98ms  0.395 GB/s  663.99 us/desc
+[12:35:59] A contiguous  G= 1024KiB n_desc=    64   175.61ms  0.382 GB/s 2743.84 us/desc
+[12:35:59] A contiguous  G= 4096KiB n_desc=    16   178.21ms  0.377 GB/s 11138.27 us/desc
+[12:36:00] A contiguous  G=16384KiB n_desc=     4   170.61ms  0.393 GB/s 42652.40 us/desc
+[12:36:00] A scattered   G=   16KiB n_desc=  4096   263.64ms  0.255 GB/s   64.36 us/desc
+[12:36:01] A scattered   G=   64KiB n_desc=  1024   190.17ms  0.353 GB/s  185.72 us/desc
+[12:36:02] A scattered   G=  256KiB n_desc=   256   185.66ms  0.361 GB/s  725.25 us/desc
+[12:36:02] A scattered   G= 1024KiB n_desc=    64   179.48ms  0.374 GB/s 2804.40 us/desc
+[12:36:03] A scattered   G= 4096KiB n_desc=    16   179.38ms  0.374 GB/s 11211.21 us/desc
+[12:36:03] A scattered   G=16384KiB n_desc=     4   170.26ms  0.394 GB/s 42565.09 us/desc
+[12:36:04] C contiguous  G=   16KiB skip_merge=0   168.55ms  0.398 GB/s tel_descCount=1
+[12:36:04] C contiguous  G=   16KiB skip_merge=1   249.10ms  0.269 GB/s tel_descCount=4096
+[12:36:05] C scattered   G=   16KiB skip_merge=0   246.86ms  0.272 GB/s tel_descCount=4096
+[12:36:06] C scattered   G=   16KiB skip_merge=1   252.41ms  0.266 GB/s tel_descCount=4096
+[12:36:07] C contiguous  G= 1024KiB skip_merge=0   177.66ms  0.378 GB/s tel_descCount=1
+[12:36:07] C contiguous  G= 1024KiB skip_merge=1   179.20ms  0.375 GB/s tel_descCount=64
+[12:36:08] C scattered   G= 1024KiB skip_merge=0   180.28ms  0.372 GB/s tel_descCount=64
+[12:36:08] C scattered   G= 1024KiB skip_merge=1   171.10ms  0.392 GB/s tel_descCount=64
+[12:36:08] D size=    8MiB G=16KiB n_desc=   512    21.14ms  0.397 GB/s
+[12:36:08] D size=   32MiB G=16KiB n_desc=  2048    85.28ms  0.393 GB/s
+[12:36:09] D size=  128MiB G=16KiB n_desc=  8192   337.96ms  0.397 GB/s
+[12:36:09] 写出 pd_disagg/hw/exp026_tls_20260915T1228/bench/tcp_cuda_copy/D.csv（23 行）
+[12:36:09] D 完成
+[1789475756.114499] [cpod-1u8o0xv30sr6:230274:0]     ucp_context.c:2659 UCX  INFO  Version 1.21.0 (loaded from /root/venvs/v0.25.1/lib/python3.12/site-packages/nixl_cu13/../.nixl_cu13.mesonpy.libs/plugins/../../nixl_cu13.libs/libucp-1da16952.so.0.0.0)
+[1789475756.872315] [cpod-1u8o0xv30sr6:230274:0]          parser.c:2364 UCX  INFO  UCX_* env variables: UCX_LOG_LEVEL=info UCX_TLS=cuda_copy,tcp
+[1789475756.893729] [cpod-1u8o0xv30sr6:230274:0]      ucp_worker.c:1984 UCX  INFO    ucp_context_0 self cfg#1 rma_am(tcp/eth0)  amo_am(tcp/eth0)  am(tcp/eth0)  ka(tcp/eth0)
+[1789475756.922930] [cpod-1u8o0xv30sr6:230274:0]      ucp_worker.c:1984 UCX  INFO    ucp_context_0 intra-node cfg#1 rma_am(tcp/eth0)  amo_am(tcp/eth0)  am(tcp/eth0)  ka(tcp/eth0)
+[1789475756.941660] [cpod-1u8o0xv30sr6:230274:0]      ucp_worker.c:1984 UCX  INFO    ucp_context_0 intra-node cfg#1 rma_am(tcp/eth0)  amo_am(tcp/eth0)  am(tcp/eth0)  ka(tcp/eth0)
+[1789475756.960327] [cpod-1u8o0xv30sr6:230274:0]      ucp_worker.c:1984 UCX  INFO    ucp_context_0 intra-node cfg#1 rma_am(tcp/eth0)  amo_am(tcp/eth0)  am(tcp/eth0)  ka(tcp/eth0)
+[1789475756.979046] [cpod-1u8o0xv30sr6:230274:0]      ucp_worker.c:1984 UCX  INFO    ucp_context_0 intra-node cfg#1 rma_am(tcp/eth0)  amo_am(tcp/eth0)  am(tcp/eth0)  ka(tcp/eth0)
+[1789475757.013854] [cpod-1u8o0xv30sr6:230274:0]      ucp_worker.c:1984 UCX  INFO    ucp_context_0 intra-node cfg#2 rma_am(tcp/eth0)  amo_am(tcp/eth0)  am(tcp/eth0)  ka(tcp/eth0)

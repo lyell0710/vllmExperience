@@ -1,0 +1,36 @@
+# provenance: env=sys sha=717b683182 cmd="all_reduce_perf -b 8 -e 1M -f 2 -g 2 -n 100" date=2026-08-29T10:47:05+00:00 gpu="2 NVIDIA GeForce RTX 4090" driver=610.57.04 tool_sha=717b683182 nccl=libnccl.so.2.28.9 note=allreduce-size-scan-补EXP-002小消息缺口-仅代表TP-collective路径
+# nccl-tests version 2.19.7 nccl-headers=22809 nccl-library=22809
+# Collective test starting: all_reduce_perf
+# nThread 1 nGpus 2 minBytes 8 maxBytes 1048576 step: 2(factor) warmup iters: 1 iters: 100 agg iters: 1 validation: 1 graph: 0 unalign: 0
+#
+# Using devices
+#  Rank  0 Group  0 Pid 2357167 on cpod-1u8o0xv30sr6 device  0 [0000:c1:00] NVIDIA GeForce RTX 4090
+#  Rank  1 Group  0 Pid 2357167 on cpod-1u8o0xv30sr6 device  1 [0000:e1:00] NVIDIA GeForce RTX 4090
+#
+#                                                              out-of-place                       in-place          
+#       size         count      type   redop    root     time   algbw   busbw  #wrong     time   algbw   busbw  #wrong 
+#        (B)    (elements)                               (us)  (GB/s)  (GB/s)             (us)  (GB/s)  (GB/s)         
+           8             2     float     sum      -1    17.25    0.00    0.00       0    13.76    0.00    0.00       0
+          16             4     float     sum      -1    13.86    0.00    0.00       0    14.17    0.00    0.00       0
+          32             8     float     sum      -1    13.98    0.00    0.00       0    17.01    0.00    0.00       0
+          64            16     float     sum      -1    25.82    0.00    0.00       0    13.97    0.00    0.00       0
+         128            32     float     sum      -1    13.98    0.01    0.01       0    13.96    0.01    0.01       0
+         256            64     float     sum      -1    13.79    0.02    0.02       0    13.89    0.02    0.02       0
+         512           128     float     sum      -1    13.71    0.04    0.04       0    14.29    0.04    0.04       0
+        1024           256     float     sum      -1    13.78    0.07    0.07       0    13.63    0.08    0.08       0
+        2048           512     float     sum      -1    13.69    0.15    0.15       0    13.79    0.15    0.15       0
+        4096          1024     float     sum      -1    13.64    0.30    0.30       0    13.63    0.30    0.30       0
+        8192          2048     float     sum      -1    13.79    0.59    0.59       0    13.55    0.60    0.60       0
+       16384          4096     float     sum      -1    13.56    1.21    1.21       0    13.15    1.25    1.25       0
+       32768          8192     float     sum      -1    18.85    1.74    1.74       0    18.70    1.75    1.75       0
+       65536         16384     float     sum      -1    28.62    2.29    2.29       0    28.92    2.27    2.27       0
+      131072         32768     float     sum      -1    49.04    2.67    2.67       0    46.60    2.81    2.81       0
+      262144         65536     float     sum      -1    86.39    3.03    3.03       0    87.14    3.01    3.01       0
+      524288        131072     float     sum      -1   116.65    4.49    4.49       0   112.97    4.64    4.64       0
+     1048576        262144     float     sum      -1   221.70    4.73    4.73       0   222.00    4.72    4.72       0
+# Out of bounds values : 0 OK
+# Avg bus bandwidth    : 1.19462 
+#
+# Collective test concluded: all_reduce_perf
+#
+

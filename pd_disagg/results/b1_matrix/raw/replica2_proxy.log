@@ -1,0 +1,120 @@
+INFO:     Started server process [123623]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://127.0.0.1:8300 (Press CTRL+C to quit)
+INFO:     127.0.0.1:53108 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50692 - "POST /tokenize HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:57724 - "GET /metrics HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:57724 - "GET /metrics HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:57724 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57724 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57724 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57724 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57724 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57724 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57724 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57724 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57724 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57724 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57724 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57724 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57724 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57724 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57724 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57724 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57724 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57724 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57724 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57724 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57724 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57724 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57724 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57724 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57724 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57724 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57724 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57724 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57724 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57724 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57724 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57724 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57724 - "GET /metrics HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:57724 - "GET /metrics HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:45040 - "POST /tokenize HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:45048 - "GET /metrics HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:45048 - "GET /metrics HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:45048 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45048 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45048 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45048 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45048 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45048 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45048 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45048 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45048 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45048 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45048 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45048 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45048 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45048 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45048 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45048 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45048 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45048 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45048 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45048 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45048 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45048 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45048 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45048 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45048 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45048 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45048 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45048 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45048 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45048 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45048 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45048 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45048 - "GET /metrics HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:45048 - "GET /metrics HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:54166 - "POST /tokenize HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:54172 - "GET /metrics HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:54172 - "GET /metrics HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:54172 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54172 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54172 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54172 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54172 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54172 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54172 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54172 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54172 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54172 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54172 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54172 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54172 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54172 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54172 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54172 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54172 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54172 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54172 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54172 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54172 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54172 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54172 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54172 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54172 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54172 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54172 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54172 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54172 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54172 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54172 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54172 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54172 - "GET /metrics HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:54172 - "GET /metrics HTTP/1.1" 404 Not Found
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [123623]

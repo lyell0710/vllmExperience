@@ -1,0 +1,89 @@
+--- orig/base_worker.py	2026-08-23 07:45:49.999406031 +0000
++++ /root/venvs/v0.25.1/lib/python3.12/site-packages/vllm/distributed/kv_transfer/kv_connector/v1/nixl/base_worker.py	2026-08-23 07:46:42.500832394 +0000
+@@ -440,6 +440,10 @@
+         # background handshake thread, matching the _ready_requests pattern.
+         self._failed_recv_reqs: queue.Queue[ReqId] = queue.Queue()
+ 
++        # EXT1: per-request KV-wait timing + telemetry aggregation (local patch)
++        self._ext1_t0: dict[ReqId, tuple[float, float]] = {}  # EXT1
++        self._ext1_agg: dict[ReqId, list[float]] = {}  # EXT1
++
+         # Handshake metadata of this worker for NIXL transfers.
+         self.xfer_handshake_metadata: NixlHandshakePayload | None = None
+         # Background thread for initializing new NIXL handshakes.
+@@ -2042,6 +2046,12 @@
+                         # Get telemetry from NIXL
+                         res = self.nixl_wrapper.get_xfer_telemetry(handle)
+                         self.xfer_stats.record_transfer(res)
++                        agg = self._ext1_agg.setdefault(req_id, [0, 0, 0, 0, 0])  # EXT1
++                        agg[0] += res.totalBytes  # EXT1
++                        agg[1] += res.xferDuration  # EXT1
++                        agg[2] += res.postDuration  # EXT1
++                        agg[3] += res.descCount  # EXT1
++                        agg[4] += 1  # EXT1
+                         self.nixl_wrapper.release_xfer_handle(handle)
+                     elif xfer_state == "PROC":
+                         in_progress.append(handle)
+@@ -2067,10 +2077,43 @@
+                 # Only report request as completed when all transfers are done.
+                 done_req_ids.add(req_id)
+                 del transfers[req_id]
++                self._ext1_emit(req_id)  # EXT1
+             else:
+                 transfers[req_id] = in_progress
+         return done_req_ids
+ 
++    def _ext1_emit(self, req_id: str) -> None:  # EXT1
++        """EXT1 local patch: one line per completed recv request associating
++        request identity with KV-wait span and aggregated NIXL telemetry.
++        kv_wait_ms spans from D-connector first seeing the request
++        (start_load_kv, incl. handshake wait) to all read handles DONE.
++        Epochs are host wall-clock for cross-process alignment (same host)."""
++        t0 = self._ext1_t0.pop(req_id, None)
++        agg = self._ext1_agg.pop(req_id, None)
++        if t0 is None or agg is None:
++            return
++        meta = self._recving_metadata.get(req_id)
++        remote_req = (
++            meta.remote.request_id
++            if meta is not None and meta.remote is not None
++            else ""
++        )
++        logger.info(
++            "EXT1_KV req_id=%s remote_request_id=%s kv_wait_ms=%.3f "
++            "t0_epoch=%.6f done_epoch=%.6f bytes=%d xfer_us=%d post_us=%d "
++            "descs=%d handles=%d",
++            req_id,
++            remote_req,
++            (time.perf_counter() - t0[0]) * 1e3,
++            t0[1],
++            time.time(),
++            int(agg[0]),
++            int(agg[1]),
++            int(agg[2]),
++            int(agg[3]),
++            int(agg[4]),
++        )
++
+     def _handle_failed_transfer(self, req_id: str, handle: int | None):
+         """
+         Handle a failed transfer by marking all (logical) blocks as invalid and
+@@ -2084,6 +2127,8 @@
+         # TODO (NickLucche) handle failed transfer for HMA.
+         if (meta := self._recving_metadata.get(req_id)) and not self._is_hma_required:
+             self._invalid_block_ids.put(set(meta.local_block_ids[0]))
++        self._ext1_t0.pop(req_id, None)  # EXT1
++        self._ext1_agg.pop(req_id, None)  # EXT1
+         self._failed_recv_reqs.put(req_id)
+         if handle is not None:
+             self.nixl_wrapper.release_xfer_handle(handle)
+--- orig/pull_worker.py	2026-08-23 07:45:49.999406031 +0000
++++ /root/venvs/v0.25.1/lib/python3.12/site-packages/vllm/distributed/kv_transfer/kv_connector/v1/nixl/pull_worker.py	2026-08-23 07:46:54.292929631 +0000
+@@ -43,6 +43,7 @@
+         We check for these trnxs to complete in each step().
+         """
+         for req_id, meta in metadata.reqs_to_recv.items():
++            self._ext1_t0[req_id] = (time.perf_counter(), time.time())  # EXT1
+             meta.local_physical_block_ids = self._logical_to_kernel_block_ids(
+                 meta.local_block_ids
+             )

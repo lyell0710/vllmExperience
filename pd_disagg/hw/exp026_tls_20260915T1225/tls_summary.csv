@@ -1,0 +1,5 @@
+mode,name,ucx_tls,exit_code,transport,bw_16KiB_contig,error
+screen,tcp_sm,sm,tcp,1,rma_am(tcp/eth0),,pd_disagg/hw/exp026_tls_20260915T1225/screen/tcp_sm/P.log:ni
+screen,tcp_cuda_ipc,cuda_ipc,tcp,1,rma_am(tcp/eth0),,pd_disagg/hw/exp026_tls_20260915T1225/screen/tcp_cuda_ipc/P.
+screen,tcp_cuda_copy,cuda_copy,tcp,0,rma_am(tcp/eth0),,
+screen,tcp_cuda_ipc_cuda_copy,cuda_ipc,cuda_copy,tcp,0,rma_am(tcp/eth0),,

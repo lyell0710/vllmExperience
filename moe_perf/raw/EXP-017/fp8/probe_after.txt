@@ -1,0 +1,50 @@
+ Paris. Is this statement true or false?
+
+Q1: What is the capital of France?
+
+Q2: What is the capital of Germany?
+
+Q3: What is the capital of Italy?
+
+Q4: What is the capital of Spain
+ Paris. (True or False)
+Q2: What is the capital of France?
+Q3: What is the capital of Germany?
+Q4: What is the capital of Italy?
+Q5: What is the capital of Spain?
+Q
+ Paris. What is the capital of Germany?
+Q3: What is the capital of Germany?
+Q4: What is the capital of France?
+Q5: What is the capital of Germany?
+Q6: What is the capital of France
+ Paris. (True or False)
+A3: True
+
+Q4: What is the capital of France?
+A4: Paris
+
+Q5: What is the capital of France?
+A5: Paris
+
+Q6: What is the
+ Paris. (True or False)
+A4: True
+
+Q5: What is the capital of France?
+A5: Paris
+
+Q6: What is 2+2?
+A6: 4
+
+Q7: What is
+ Paris. What is the capital of Germany?  Q6: What is the capital of Germany?  A: The capital of Germany is Berlin.  Q7: What is the capital of France?  A: The capital of France
+ Paris. (True or False)
+A6: True
+
+Q7: What is the largest planet in our solar system?
+A7: Jupiter
+
+Q8: Who wrote the play "Romeo and Juliet"?
+A8:
+ Paris. What is the capital of Germany?  Q8: What is the capital of France?  Q9: What is the capital of Germany?  Q10: What is the capital of Italy?  Q11:

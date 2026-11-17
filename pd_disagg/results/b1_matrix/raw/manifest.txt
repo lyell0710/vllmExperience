@@ -1,0 +1,9 @@
+# manifest: pd_disagg/results/b1_matrix/raw/ 目录级 provenance 声明
+# 建于 2026-08-24(审计收尾批次)。
+# 本目录文件(bench JSON / 引擎与代理 log / gpu 遥测 CSV)不带首行 provenance——
+# provenance 权威 = ../runs.jsonl 每行的 provenance 字段
+# (env/sha/version/cmd/date/gpu/driver),与本目录文件通过文件名前缀
+# <UTCyyyymmddThhmm>_<arm>_<in>x<out>_<mode>[_rps<r>] 关联:runs.jsonl 行的
+# run_id 即该前缀,raw / snapshot_before / snapshot_after 字段列出具体文件。
+# schema 与 gate 规则见 ../../README.md(B1 数据规范)。
+# gates.pass=false 的行按规范保留于 runs.jsonl,对应 raw 文件同样保留、不进 derived/。

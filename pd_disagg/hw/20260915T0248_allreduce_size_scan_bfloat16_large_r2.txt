@@ -1,0 +1,126 @@
+# provenance: env=sys sha=717b683182 cmd="env LD_LIBRARY_PATH=/root/venvs/v0.25.1/lib/python3.12/site-packages/nvidia/nccl/lib NCCL_DEBUG=INFO NCCL_DEBUG_SUBSYS=INIT /root/tools/nccl-tests/build/all_reduce_perf -d bfloat16 -b 1M -e 512M -f 2 -g 2 -n 20" date=2026-09-15T02:49:35+00:00 gpu="RTX 4090 x2" driver=610.57.04 tool_sha=717b683182 nccl=libnccl.so.2.28.9 exp=EXP-021 dtype=bfloat16 range=large round=2 note=同EXP-018参数-仅代表TP-collective路径-SHM
+# nccl-tests version 2.19.7 nccl-headers=22809 nccl-library=22809
+# Collective test starting: all_reduce_perf
+# nThread 1 nGpus 2 minBytes 1048576 maxBytes 536870912 step: 2(factor) warmup iters: 1 iters: 20 agg iters: 1 validation: 1 graph: 0 unalign: 0
+#
+# Using devices
+#  Rank  0 Group  0 Pid  99777 on cpod-1u8o0xv30sr6 device  0 [0000:c1:00] NVIDIA GeForce RTX 4090
+#  Rank  1 Group  0 Pid  99777 on cpod-1u8o0xv30sr6 device  1 [0000:e1:00] NVIDIA GeForce RTX 4090
+cpod-1u8o0xv30sr6:99777:99777 [0] NCCL INFO ENV/Plugin: Could not find: libnccl-env.so
+cpod-1u8o0xv30sr6:99777:99777 [0] NCCL INFO cudaDriverVersion 13030
+cpod-1u8o0xv30sr6:99777:99777 [0] NCCL INFO cuMem host allocations do not appear to be working; falling back to a /dev/shm/ based implementation. This could be due to the container runtime disabling NUMA support. To disable this warning, set NCCL_CUMEM_HOST_ENABLE=0
+cpod-1u8o0xv30sr6:99777:99777 [0] NCCL INFO NCCL version 2.28.9+cuda13.0
+cpod-1u8o0xv30sr6:99777:99786 [1] NCCL INFO NET/Plugin: Could not find: libnccl-net.so
+cpod-1u8o0xv30sr6:99777:99786 [1] NCCL INFO Failed to open libibverbs.so[.1]
+cpod-1u8o0xv30sr6:99777:99786 [1] NCCL INFO transport/net_ib.cc:852 -> 3
+cpod-1u8o0xv30sr6:99777:99786 [1] NCCL INFO Failed to initialize NET plugin IB
+cpod-1u8o0xv30sr6:99777:99786 [1] NCCL INFO NET/Socket : Using [0]eth0:10.42.91.62<0>
+cpod-1u8o0xv30sr6:99777:99786 [1] NCCL INFO Initialized NET plugin Socket
+cpod-1u8o0xv30sr6:99777:99786 [1] NCCL INFO Assigned NET plugin Socket to comm
+cpod-1u8o0xv30sr6:99777:99786 [1] NCCL INFO Using network Socket
+cpod-1u8o0xv30sr6:99777:99785 [0] NCCL INFO Initialized NET plugin Socket
+cpod-1u8o0xv30sr6:99777:99785 [0] NCCL INFO Assigned NET plugin Socket to comm
+cpod-1u8o0xv30sr6:99777:99785 [0] NCCL INFO Using network Socket
+cpod-1u8o0xv30sr6:99777:99786 [1] NCCL INFO ncclCommInitRankConfig comm 0x6420042cb4c0 rank 1 nranks 2 cudaDev 1 nvmlDev 1 busId e1000 commId 0x1e52dcbe6921a2f3 - Init START
+cpod-1u8o0xv30sr6:99777:99785 [0] NCCL INFO ncclCommInitRankConfig comm 0x6420041c0de0 rank 0 nranks 2 cudaDev 0 nvmlDev 0 busId c1000 commId 0x1e52dcbe6921a2f3 - Init START
+cpod-1u8o0xv30sr6:99777:99786 [1] NCCL INFO RAS client listening socket at ::1<28028>
+cpod-1u8o0xv30sr6:99777:99786 [1] NCCL INFO P2P is disabled between connected GPUs 1 and 0. You can repress this message with NCCL_IGNORE_DISABLED_P2P=1.
+cpod-1u8o0xv30sr6:99777:99786 [1] NCCL INFO P2P is disabled between connected GPUs 1 and 0. You can repress this message with NCCL_IGNORE_DISABLED_P2P=1.
+cpod-1u8o0xv30sr6:99777:99786 [1] NCCL INFO P2P is disabled between connected GPUs 0 and 1. You can repress this message with NCCL_IGNORE_DISABLED_P2P=1.
+cpod-1u8o0xv30sr6:99777:99786 [1] NCCL INFO P2P is disabled between connected GPUs 0 and 1. You can repress this message with NCCL_IGNORE_DISABLED_P2P=1.
+cpod-1u8o0xv30sr6:99777:99786 [1] NCCL INFO P2P is disabled between connected GPUs 1 and 0. You can repress this message with NCCL_IGNORE_DISABLED_P2P=1.
+cpod-1u8o0xv30sr6:99777:99786 [1] NCCL INFO P2P is disabled between connected GPUs 1 and 0. You can repress this message with NCCL_IGNORE_DISABLED_P2P=1.
+cpod-1u8o0xv30sr6:99777:99786 [1] NCCL INFO P2P is disabled between connected GPUs 0 and 1. You can repress this message with NCCL_IGNORE_DISABLED_P2P=1.
+cpod-1u8o0xv30sr6:99777:99786 [1] NCCL INFO P2P is disabled between connected GPUs 0 and 1. You can repress this message with NCCL_IGNORE_DISABLED_P2P=1.
+cpod-1u8o0xv30sr6:99777:99786 [1] NCCL INFO ncclTopoGetCpuAffinity: Affinity for GPU 1 is 32-45,96-109. (GPU affinity = 32-63,96-127 ; CPU affinity = 32-45,96-109).
+cpod-1u8o0xv30sr6:99777:99786 [1] NCCL INFO NVLS multicast support is not available on dev 1 (NVLS_NCHANNELS 0)
+cpod-1u8o0xv30sr6:99777:99785 [0] NCCL INFO P2P is disabled between connected GPUs 1 and 0. You can repress this message with NCCL_IGNORE_DISABLED_P2P=1.
+cpod-1u8o0xv30sr6:99777:99785 [0] NCCL INFO P2P is disabled between connected GPUs 1 and 0. You can repress this message with NCCL_IGNORE_DISABLED_P2P=1.
+cpod-1u8o0xv30sr6:99777:99785 [0] NCCL INFO P2P is disabled between connected GPUs 0 and 1. You can repress this message with NCCL_IGNORE_DISABLED_P2P=1.
+cpod-1u8o0xv30sr6:99777:99785 [0] NCCL INFO P2P is disabled between connected GPUs 0 and 1. You can repress this message with NCCL_IGNORE_DISABLED_P2P=1.
+cpod-1u8o0xv30sr6:99777:99785 [0] NCCL INFO P2P is disabled between connected GPUs 1 and 0. You can repress this message with NCCL_IGNORE_DISABLED_P2P=1.
+cpod-1u8o0xv30sr6:99777:99785 [0] NCCL INFO P2P is disabled between connected GPUs 1 and 0. You can repress this message with NCCL_IGNORE_DISABLED_P2P=1.
+cpod-1u8o0xv30sr6:99777:99785 [0] NCCL INFO P2P is disabled between connected GPUs 0 and 1. You can repress this message with NCCL_IGNORE_DISABLED_P2P=1.
+cpod-1u8o0xv30sr6:99777:99785 [0] NCCL INFO P2P is disabled between connected GPUs 0 and 1. You can repress this message with NCCL_IGNORE_DISABLED_P2P=1.
+cpod-1u8o0xv30sr6:99777:99785 [0] NCCL INFO ncclTopoGetCpuAffinity: Affinity for GPU 0 is 32-45,96-109. (GPU affinity = 32-63,96-127 ; CPU affinity = 32-45,96-109).
+cpod-1u8o0xv30sr6:99777:99785 [0] NCCL INFO NVLS multicast support is not available on dev 0 (NVLS_NCHANNELS 0)
+cpod-1u8o0xv30sr6:99777:99785 [0] NCCL INFO comm 0x6420041c0de0 rank 0 nRanks 2 nNodes 1 localRanks 2 localRank 0 MNNVL 0
+cpod-1u8o0xv30sr6:99777:99786 [1] NCCL INFO comm 0x6420042cb4c0 rank 1 nRanks 2 nNodes 1 localRanks 2 localRank 1 MNNVL 0
+cpod-1u8o0xv30sr6:99777:99785 [0] NCCL INFO Channel 00/04 : 0 1
+cpod-1u8o0xv30sr6:99777:99785 [0] NCCL INFO Channel 01/04 : 0 1
+cpod-1u8o0xv30sr6:99777:99785 [0] NCCL INFO Channel 02/04 : 0 1
+cpod-1u8o0xv30sr6:99777:99785 [0] NCCL INFO Channel 03/04 : 0 1
+cpod-1u8o0xv30sr6:99777:99786 [1] NCCL INFO Trees [0] -1/-1/-1->1->0 [1] 0/-1/-1->1->-1 [2] -1/-1/-1->1->0 [3] 0/-1/-1->1->-1
+cpod-1u8o0xv30sr6:99777:99786 [1] NCCL INFO P2P Chunksize set to 131072
+cpod-1u8o0xv30sr6:99777:99785 [0] NCCL INFO Trees [0] 1/-1/-1->0->-1 [1] -1/-1/-1->0->1 [2] 1/-1/-1->0->-1 [3] -1/-1/-1->0->1
+cpod-1u8o0xv30sr6:99777:99785 [0] NCCL INFO P2P Chunksize set to 131072
+cpod-1u8o0xv30sr6:99777:99786 [1] NCCL INFO PROFILER/Plugin: Could not find: libnccl-profiler.so
+cpod-1u8o0xv30sr6:99777:99786 [1] NCCL INFO P2P is disabled between connected GPUs 0 and 1. You can repress this message with NCCL_IGNORE_DISABLED_P2P=1.
+cpod-1u8o0xv30sr6:99777:99786 [1] NCCL INFO Check P2P Type isAllDirectP2p 0 directMode 1 isAllCudaP2p 0
+cpod-1u8o0xv30sr6:99777:99785 [0] NCCL INFO PROFILER/Plugin: Could not find: libnccl-profiler.so
+cpod-1u8o0xv30sr6:99777:99785 [0] NCCL INFO P2P is disabled between connected GPUs 0 and 1. You can repress this message with NCCL_IGNORE_DISABLED_P2P=1.
+cpod-1u8o0xv30sr6:99777:99785 [0] NCCL INFO Check P2P Type isAllDirectP2p 0 directMode 1 isAllCudaP2p 0
+cpod-1u8o0xv30sr6:99777:99788 [0] NCCL INFO [Proxy Service] Device 1 CPU core 36
+cpod-1u8o0xv30sr6:99777:99789 [0] NCCL INFO [Proxy Service UDS] Device 1 CPU core 106
+cpod-1u8o0xv30sr6:99777:99790 [0] NCCL INFO [Proxy Service] Device 0 CPU core 96
+cpod-1u8o0xv30sr6:99777:99791 [0] NCCL INFO [Proxy Service UDS] Device 0 CPU core 102
+cpod-1u8o0xv30sr6:99777:99786 [1] NCCL INFO TUNER/Plugin: Could not find: libnccl-tuner.so
+cpod-1u8o0xv30sr6:99777:99786 [1] NCCL INFO threadThresholds 8/8/64 | 16/8/64 | 512 | 512
+cpod-1u8o0xv30sr6:99777:99786 [1] NCCL INFO 4 coll channels, 4 collnet channels, 0 nvls channels, 4 p2p channels, 2 p2p channels per peer
+cpod-1u8o0xv30sr6:99777:99785 [0] NCCL INFO threadThresholds 8/8/64 | 16/8/64 | 512 | 512
+cpod-1u8o0xv30sr6:99777:99785 [0] NCCL INFO 4 coll channels, 4 collnet channels, 0 nvls channels, 4 p2p channels, 2 p2p channels per peer
+cpod-1u8o0xv30sr6:99777:99785 [0] NCCL INFO CC Off, workFifoBytes 1048576
+cpod-1u8o0xv30sr6:99777:99786 [1] NCCL INFO ncclCommInitRankConfig comm 0x6420042cb4c0 rank 1 nranks 2 cudaDev 1 nvmlDev 1 busId e1000 commId 0x1e52dcbe6921a2f3 - Init COMPLETE
+cpod-1u8o0xv30sr6:99777:99786 [1] NCCL INFO Init timings - ncclCommInitRankConfig: rank 1 nranks 2 total 0.40 (kernels 0.32, alloc 0.05, bootstrap 0.00, allgathers 0.00, topo 0.01, graphs 0.00, connections 0.01, rest 0.00)
+cpod-1u8o0xv30sr6:99777:99785 [0] NCCL INFO ncclCommInitRankConfig comm 0x6420041c0de0 rank 0 nranks 2 cudaDev 0 nvmlDev 0 busId c1000 commId 0x1e52dcbe6921a2f3 - Init COMPLETE
+cpod-1u8o0xv30sr6:99777:99785 [0] NCCL INFO Init timings - ncclCommInitRankConfig: rank 0 nranks 2 total 0.40 (kernels 0.32, alloc 0.05, bootstrap 0.00, allgathers 0.00, topo 0.01, graphs 0.00, connections 0.01, rest 0.00)
+#
+#                                                              out-of-place                       in-place          
+#       size         count      type   redop    root     time   algbw   busbw  #wrong     time   algbw   busbw  #wrong 
+#        (B)    (elements)                               (us)  (GB/s)  (GB/s)             (us)  (GB/s)  (GB/s)         
+cpod-1u8o0xv30sr6:99777:99792 [1] NCCL INFO P2P is disabled between connected GPUs 1 and 0. You can repress this message with NCCL_IGNORE_DISABLED_P2P=1.
+cpod-1u8o0xv30sr6:99777:99793 [0] NCCL INFO P2P is disabled between connected GPUs 0 and 1. You can repress this message with NCCL_IGNORE_DISABLED_P2P=1.
+cpod-1u8o0xv30sr6:99777:99792 [1] NCCL INFO P2P is disabled between connected GPUs 1 and 0. You can repress this message with NCCL_IGNORE_DISABLED_P2P=1.
+cpod-1u8o0xv30sr6:99777:99793 [0] NCCL INFO P2P is disabled between connected GPUs 0 and 1. You can repress this message with NCCL_IGNORE_DISABLED_P2P=1.
+cpod-1u8o0xv30sr6:99777:99792 [1] NCCL INFO P2P is disabled between connected GPUs 1 and 0. You can repress this message with NCCL_IGNORE_DISABLED_P2P=1.
+cpod-1u8o0xv30sr6:99777:99793 [0] NCCL INFO P2P is disabled between connected GPUs 0 and 1. You can repress this message with NCCL_IGNORE_DISABLED_P2P=1.
+cpod-1u8o0xv30sr6:99777:99792 [1] NCCL INFO P2P is disabled between connected GPUs 1 and 0. You can repress this message with NCCL_IGNORE_DISABLED_P2P=1.
+cpod-1u8o0xv30sr6:99777:99793 [0] NCCL INFO P2P is disabled between connected GPUs 0 and 1. You can repress this message with NCCL_IGNORE_DISABLED_P2P=1.
+cpod-1u8o0xv30sr6:99777:99792 [1] NCCL INFO P2P is disabled between connected GPUs 1 and 0. You can repress this message with NCCL_IGNORE_DISABLED_P2P=1.
+cpod-1u8o0xv30sr6:99777:99793 [0] NCCL INFO P2P is disabled between connected GPUs 0 and 1. You can repress this message with NCCL_IGNORE_DISABLED_P2P=1.
+cpod-1u8o0xv30sr6:99777:99792 [1] NCCL INFO Channel 00 : 1[1] -> 0[0] via SHM/direct/direct
+cpod-1u8o0xv30sr6:99777:99792 [1] NCCL INFO P2P is disabled between connected GPUs 1 and 0. You can repress this message with NCCL_IGNORE_DISABLED_P2P=1.
+cpod-1u8o0xv30sr6:99777:99793 [0] NCCL INFO Channel 00 : 0[0] -> 1[1] via SHM/direct/direct
+cpod-1u8o0xv30sr6:99777:99793 [0] NCCL INFO P2P is disabled between connected GPUs 0 and 1. You can repress this message with NCCL_IGNORE_DISABLED_P2P=1.
+cpod-1u8o0xv30sr6:99777:99792 [1] NCCL INFO Channel 01 : 1[1] -> 0[0] via SHM/direct/direct
+cpod-1u8o0xv30sr6:99777:99792 [1] NCCL INFO P2P is disabled between connected GPUs 1 and 0. You can repress this message with NCCL_IGNORE_DISABLED_P2P=1.
+cpod-1u8o0xv30sr6:99777:99793 [0] NCCL INFO Channel 01 : 0[0] -> 1[1] via SHM/direct/direct
+cpod-1u8o0xv30sr6:99777:99793 [0] NCCL INFO P2P is disabled between connected GPUs 0 and 1. You can repress this message with NCCL_IGNORE_DISABLED_P2P=1.
+cpod-1u8o0xv30sr6:99777:99792 [1] NCCL INFO Channel 02 : 1[1] -> 0[0] via SHM/direct/direct
+cpod-1u8o0xv30sr6:99777:99792 [1] NCCL INFO P2P is disabled between connected GPUs 1 and 0. You can repress this message with NCCL_IGNORE_DISABLED_P2P=1.
+cpod-1u8o0xv30sr6:99777:99793 [0] NCCL INFO Channel 02 : 0[0] -> 1[1] via SHM/direct/direct
+cpod-1u8o0xv30sr6:99777:99793 [0] NCCL INFO P2P is disabled between connected GPUs 0 and 1. You can repress this message with NCCL_IGNORE_DISABLED_P2P=1.
+cpod-1u8o0xv30sr6:99777:99792 [1] NCCL INFO Channel 03 : 1[1] -> 0[0] via SHM/direct/direct
+cpod-1u8o0xv30sr6:99777:99793 [0] NCCL INFO Channel 03 : 0[0] -> 1[1] via SHM/direct/direct
+cpod-1u8o0xv30sr6:99777:99792 [1] NCCL INFO Connected all rings, use ring PXN 0 GDR 1
+cpod-1u8o0xv30sr6:99777:99793 [0] NCCL INFO Connected all rings, use ring PXN 0 GDR 1
+     1048576        524288  bfloat16     sum      -1   197.75    5.30    5.30       0   173.17    6.06    6.06       0
+     2097152       1048576  bfloat16     sum      -1   365.41    5.74    5.74       0   327.16    6.41    6.41       0
+     4194304       2097152  bfloat16     sum      -1   622.12    6.74    6.74       0   653.82    6.42    6.42       0
+     8388608       4194304  bfloat16     sum      -1  1229.58    6.82    6.82       0  1271.31    6.60    6.60       0
+    16777216       8388608  bfloat16     sum      -1  2522.59    6.65    6.65       0  2515.00    6.67    6.67       0
+    33554432      16777216  bfloat16     sum      -1  5030.89    6.67    6.67       0  5069.73    6.62    6.62       0
+    67108864      33554432  bfloat16     sum      -1  10135.6    6.62    6.62       0  9978.91    6.73    6.73       0
+   134217728      67108864  bfloat16     sum      -1  19620.5    6.84    6.84       0  19606.4    6.85    6.85       0
+   268435456     134217728  bfloat16     sum      -1  38863.0    6.91    6.91       0  38402.6    6.99    6.99       0
+   536870912     268435456  bfloat16     sum      -1  77580.9    6.92    6.92       0  79022.5    6.79    6.79       0
+cpod-1u8o0xv30sr6:99777:99777 [0] NCCL INFO comm 0x6420041c0de0 rank 0 nranks 2 cudaDev 0 busId c1000 - Destroy COMPLETE
+cpod-1u8o0xv30sr6:99777:99777 [1] NCCL INFO comm 0x6420042cb4c0 rank 1 nranks 2 cudaDev 1 busId e1000 - Destroy COMPLETE
+# Out of bounds values : 0 OK
+# Avg bus bandwidth    : 6.56693 
+#
+# Collective test concluded: all_reduce_perf
+#
+
+cpod-1u8o0xv30sr6:99777:99777 [1] NCCL INFO ENV/Plugin: Closing env plugin ncclEnvDefault
+# exit_code=0

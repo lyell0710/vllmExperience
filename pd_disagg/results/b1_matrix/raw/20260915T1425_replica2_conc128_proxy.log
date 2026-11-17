@@ -1,0 +1,11 @@
+# provenance: env=ENV-B sha=752a3a5044 cmd="/root/venvs/v0.25.1/bin/python matrix/rr_proxy.py --port 8300 --backends 127.0.0.1:8100 127.0.0.1:8200" date=2026-09-15T14:25:22+00:00 gpu="n/a" driver=610.57.04 exp=EXP-023
+INFO:     Started server process [251043]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://127.0.0.1:8300 (Press CTRL+C to quit)
+INFO:     127.0.0.1:43896 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:43908 - "GET /health HTTP/1.1" 200 OK
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [251043]

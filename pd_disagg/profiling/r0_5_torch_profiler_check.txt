@@ -1,0 +1,9 @@
+# provenance: env=ENV-B sha=752a3a5044 version=0.25.1 cmd="vllm serve ... --profiler-config.profiler=torch --profiler-config.torch_profiler_dir=... + profile_ctl.sh start/stop 8100 + 1 completion" date=2026-08-21T15:16:00+00:00 gpu="2 NVIDIA GeForce RTX 4090" driver=610.57.04 gate=R0-5-torch-profiler note=v0.25.1 弃用 VLLM_TORCH_PROFILER_DIR 环境变量，改用 --profiler-config.* CLI（0.17.1 仍是环境变量，版本差异需记入 B3）
+trace files:
+total 8104
+drwxr-xr-x 2 root root     161 Aug 21 15:15 .
+drwxr-xr-x 3 root root      86 Aug 21 15:13 ..
+-rw-r--r-- 1 root root 1300912 Aug 21 15:15 cpod-1u8o0xv30sr6_116434.async_llm.1787325334727386413.pt.trace.json.gz
+-rw-r--r-- 1 root root   20656 Aug 21 15:15 profiler_out_0.txt
+-rw-r--r-- 1 root root 6968415 Aug 21 15:15 rank0.1787325335893677634.pt.trace.json.gz
+nsys_smoke_check: PASS — nsys profile 在本容器可用（CUDA trace 正常生成，文件 profiling/nsys_smoke.nsys-rep，torch matmul 冒烟负载）

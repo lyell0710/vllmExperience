@@ -1,0 +1,16 @@
+2026-08-23 13:55:34,007	INFO worker.py:2024 -- Started a local Ray instance.
+Namespace(model='Qwen/Qwen1.5-MoE-A2.7B-Chat', tp_size=2, enable_expert_parallel=True, dtype='auto', use_deep_gemm=False, save_dir='./', seed=0, batch_size=[1, 8, 32, 64, 128, 256], tune=False, trust_remote_code=False, model_prefix=None)
+[36m(BenchmarkWorker pid=361454)[0m WARNING 08-23 13:55:45 [fused_moe.py:1161] Using default MoE config. Performance might be sub-optimal! Config file not found at /root/projects/vllm/vllm/model_executor/layers/fused_moe/configs/E=30,N=1408,device_name=NVIDIA_GeForce_RTX_4090.json
+Batch size: 1, config: {'BLOCK_SIZE_M': 16, 'BLOCK_SIZE_N': 64, 'BLOCK_SIZE_K': 128, 'GROUP_SIZE_M': 1, 'SPLIT_K': 1, 'num_warps': 4, 'num_stages': 4}
+Kernel time: 38.16 us
+Batch size: 8, config: {'BLOCK_SIZE_M': 16, 'BLOCK_SIZE_N': 64, 'BLOCK_SIZE_K': 128, 'GROUP_SIZE_M': 1, 'SPLIT_K': 1, 'num_warps': 4, 'num_stages': 4}
+Kernel time: 389.44 us
+Batch size: 32, config: {'BLOCK_SIZE_M': 16, 'BLOCK_SIZE_N': 64, 'BLOCK_SIZE_K': 128, 'GROUP_SIZE_M': 1, 'SPLIT_K': 1, 'num_warps': 4, 'num_stages': 4}
+Kernel time: 563.38 us
+Batch size: 64, config: {'BLOCK_SIZE_M': 32, 'BLOCK_SIZE_N': 64, 'BLOCK_SIZE_K': 128, 'GROUP_SIZE_M': 1, 'SPLIT_K': 1, 'num_warps': 4, 'num_stages': 3}
+Kernel time: 578.19 us
+Batch size: 128, config: {'BLOCK_SIZE_M': 64, 'BLOCK_SIZE_N': 128, 'BLOCK_SIZE_K': 64, 'GROUP_SIZE_M': 1, 'SPLIT_K': 1, 'num_warps': 4, 'num_stages': 3}
+Kernel time: 609.75 us
+Batch size: 256, config: {'BLOCK_SIZE_M': 64, 'BLOCK_SIZE_N': 128, 'BLOCK_SIZE_K': 64, 'GROUP_SIZE_M': 1, 'SPLIT_K': 1, 'num_warps': 8, 'num_stages': 3}
+Kernel time: 621.41 us
+[36m(BenchmarkWorker pid=361462)[0m WARNING 08-23 13:55:45 [fused_moe.py:1161] Using default MoE config. Performance might be sub-optimal! Config file not found at /root/projects/vllm/vllm/model_executor/layers/fused_moe/configs/E=30,N=1408,device_name=NVIDIA_GeForce_RTX_4090.json

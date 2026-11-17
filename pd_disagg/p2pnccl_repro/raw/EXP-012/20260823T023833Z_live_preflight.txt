@@ -1,0 +1,6 @@
+provenance: EXP-012 LIVE repro attempt, 20260823T023833Z on monthlyrent_4090_2, HEAD 30b4df03700d16af2681dd8c1f8aae2706575f49
+
+GPU:
+0, 1 MiB, 0 %
+1, 1 MiB, 0 %
+ports free (pre-launch): 0
